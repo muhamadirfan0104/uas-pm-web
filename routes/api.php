@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\Pembeli\AlamatApiController;
 use App\Http\Controllers\Api\Pembeli\PesananApiController;
 use App\Http\Controllers\Api\Pembeli\UlasanApiController;
+use App\Http\Controllers\Api\Pembeli\KeranjangApiController;
 use App\Http\Controllers\Api\PublicApiController;
 use App\Http\Middleware\ApiTokenMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -33,7 +34,14 @@ Route::middleware(ApiTokenMiddleware::class)->group(function () {
     Route::apiResource('/addresses', AlamatApiController::class)->except(['show']);
     Route::patch('/addresses/{alamat}/main', [AlamatApiController::class, 'setUtama']);
 
+    Route::get('/cart', [KeranjangApiController::class, 'index']);
+    Route::post('/cart/items', [KeranjangApiController::class, 'store']);
+    Route::patch('/cart/items/{itemKeranjang}', [KeranjangApiController::class, 'update']);
+    Route::delete('/cart/items/{itemKeranjang}', [KeranjangApiController::class, 'destroy']);
+    Route::delete('/cart', [KeranjangApiController::class, 'clear']);
+
     Route::get('/orders', [PesananApiController::class, 'index']);
+    Route::post('/checkout', [PesananApiController::class, 'checkoutFromCart']);
     Route::post('/orders', [PesananApiController::class, 'store']);
     Route::get('/orders/{pesanan}', [PesananApiController::class, 'show']);
     Route::patch('/orders/{pesanan}/cancel', [PesananApiController::class, 'cancel']);

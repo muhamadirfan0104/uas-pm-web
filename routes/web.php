@@ -16,6 +16,9 @@ use App\Http\Controllers\Admin\UlasanController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KasirController;
 use App\Http\Controllers\WebPembeli\HomeController as WebPembeliHomeController;
+use App\Http\Controllers\WebPembeli\KeranjangController as WebPembeliKeranjangController;
+use App\Http\Controllers\WebPembeli\CheckoutController as WebPembeliCheckoutController;
+use App\Http\Controllers\WebPembeli\PesananController as WebPembeliPesananController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\KasirMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -27,7 +30,25 @@ Route::prefix('pembeli-web')
     ->name('pembeli-web.')
     ->group(function () {
         Route::get('/', [WebPembeliHomeController::class, 'home'])->name('home');
+
         Route::get('/produk', [WebPembeliHomeController::class, 'produk'])->name('produk');
+        Route::get('/produk/{produk}', [WebPembeliHomeController::class, 'detailProduk'])->name('produk.detail');
+
+        Route::get('/keranjang', [WebPembeliKeranjangController::class, 'index'])->name('keranjang.index');
+        Route::post('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'store'])->name('keranjang.store');
+        Route::patch('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'update'])->name('keranjang.update');
+        Route::delete('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'destroy'])->name('keranjang.destroy');
+        Route::delete('/keranjang', [WebPembeliKeranjangController::class, 'clear'])->name('keranjang.clear');
+
+        Route::get('/checkout', [WebPembeliCheckoutController::class, 'index'])->name('checkout.index');
+        Route::post('/checkout', [WebPembeliCheckoutController::class, 'store'])->name('checkout.store');
+        Route::get('/checkout/sukses/{pesanan}', [WebPembeliCheckoutController::class, 'success'])->name('checkout.success');
+
+        Route::get('/pesanan', [WebPembeliPesananController::class, 'index'])->name('pesanan.index');
+        Route::get('/pesanan/{nomor_invoice}', [WebPembeliPesananController::class, 'show'])->name('pesanan.show');
+
+        Route::get('/profil', [WebPembeliHomeController::class, 'profil'])->name('profil');
+
         Route::get('/coming-soon', [WebPembeliHomeController::class, 'comingSoon'])->name('coming-soon');
     });
 
