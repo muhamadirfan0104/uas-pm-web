@@ -413,8 +413,13 @@
             Kembali
         </a>
 
-        <a class="btn btn-brand px-3" href="{{ route('admin.pembayaran.index') }}">
-            <i class="bi bi-credit-card me-1"></i>
+        <a class="btn btn-brand px-3" href="{{ route('admin.pesanan.invoice', $pesanan) }}" target="_blank">
+            <i class="bi bi-printer me-1"></i>
+            Cetak Invoice
+        </a>
+
+        <a class="btn btn-light border fw-bold px-3" href="{{ route('admin.pembayaran.index') }}">
+            <i class="bi bi-credit-card me-1 text-muted"></i>
             Cek Pembayaran
         </a>
     </div>
@@ -530,6 +535,31 @@
                         <div class="info-label">Alamat</div>
                         <div class="info-value">
                             {{ $alamatTujuan }}
+
+                            @php
+                                $latitudeTujuan = $pesanan->pengiriman?->latitude_tujuan
+                                    ?? $pesanan->alamatPengiriman?->latitude;
+
+                                $longitudeTujuan = $pesanan->pengiriman?->longitude_tujuan
+                                    ?? $pesanan->alamatPengiriman?->longitude;
+                            @endphp
+
+                            @if($latitudeTujuan && $longitudeTujuan)
+                                <div class="mt-2">
+                                    <a
+                                        href="https://www.google.com/maps?q={{ $latitudeTujuan }},{{ $longitudeTujuan }}"
+                                        target="_blank"
+                                        class="small-btn"
+                                    >
+                                        <i class="bi bi-map"></i>
+                                        Buka Maps
+                                    </a>
+                                </div>
+
+                                <div class="text-muted small fw-semibold mt-2">
+                                    Koordinat: {{ $latitudeTujuan }}, {{ $longitudeTujuan }}
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>

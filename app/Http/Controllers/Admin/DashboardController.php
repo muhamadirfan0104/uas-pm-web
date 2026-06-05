@@ -33,32 +33,80 @@ class DashboardController extends Controller
         $endOfPeriod = $startOfPeriod->copy()->endOfMonth()->endOfDay();
         $periodeLabel = $startOfPeriod->translatedFormat('F Y');
 
-        $paidInPeriod = Pembayaran::where('status', 'dibayar')
+        $paidInPeriod = Pembayaran::query()
+            ->where('status', 'dibayar')
             ->whereBetween('created_at', [$startOfPeriod, $endOfPeriod]);
 
-        $pesananInPeriod = Pesanan::whereBetween('tanggal_pesanan', [$startOfPeriod, $endOfPeriod]);
+        $pesananInPeriod = Pesanan::query()
+            ->whereBetween('tanggal_pesanan', [$startOfPeriod, $endOfPeriod]);
+
+        $statusPesanan = Pesanan::query()
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
 
         $stats = [
-            'total_penjualan' => (clone $paidInPeriod)->sum('jumlah'),
-            'total_penjualan_all' => Pembayaran::where('status', 'dibayar')->sum('jumlah'),
-            'penjualan_hari_ini' => Pembayaran::where('status', 'dibayar')->whereDate('created_at', $today)->sum('jumlah'),
-            'penjualan_bulan_ini' => (clone $paidInPeriod)->sum('jumlah'),
-            'total_pesanan' => (clone $pesananInPeriod)->count(),
-            'total_pesanan_all' => Pesanan::count(),
-            'pesanan_hari_ini' => Pesanan::whereDate('tanggal_pesanan', $today)->count(),
-            'pesanan_diproses' => Pesanan::where('status', 'diproses')->count(),
-            'menunggu_pembayaran' => Pesanan::where('status_pembayaran', 'menunggu_pembayaran')->count(),
-            'produk_aktif' => Produk::where('aktif', true)->count(),
-            'stok_menipis' => Produk::where('stok', '>', 0)->whereColumn('stok', '<=', 'min_stok')->count(),
-            'stok_habis' => Produk::where('stok', '<=', 0)->count(),
-            'total_pembeli' => User::where('role', 'pembeli')->count(),
-            'total_ulasan' => Ulasan::count(),
+            'penjualan_hari_ini' => Pembayaran::query()
+                ->where('status', 'dibayar')
+                ->whereDate('created_at', $today)
+                ->sum('jumlah'),
+
+            'penjualan_periode' => (clone $paidInPeriod)->sum('jumlah'),
+
+            'penjualan_semua' => Pembayaran::query()
+                ->where('status', 'dibayar')
+                ->sum('jumlah'),
+
+            'pesanan_hari_ini' => Pesanan::query()
+                ->whereDate('tanggal_pesanan', $today)
+                ->count(),
+
+            'pesanan_periode' => (clone $pesananInPeriod)->count(),
+
+            'pesanan_semua' => Pesanan::query()->count(),
+
+            'menunggu_pembayaran' => Pesanan::query()
+                ->where('status_pembayaran', 'menunggu_pembayaran')
+                ->count(),
+
+            'dibayar' => (int) ($statusPesanan['dibayar'] ?? 0),
+            'diproses' => (int) ($statusPesanan['diproses'] ?? 0),
+            'siap_diambil' => (int) ($statusPesanan['siap_diambil'] ?? 0),
+            'dalam_pengantaran' => (int) ($statusPesanan['dalam_pengantaran'] ?? 0),
+            'selesai' => (int) ($statusPesanan['selesai'] ?? 0),
+            'dibatalkan' => (int) ($statusPesanan['dibatalkan'] ?? 0),
+
+            'produk_aktif' => Produk::query()
+                ->where('aktif', true)
+                ->count(),
+
+            'stok_menipis' => Produk::query()
+                ->where('stok', '>', 0)
+                ->whereColumn('stok', '<=', 'min_stok')
+                ->count(),
+
+            'stok_habis' => Produk::query()
+                ->where('stok', '<=', 0)
+                ->count(),
+
+            'total_pembeli' => User::query()
+                ->where('role', 'pembeli')
+                ->count(),
+
+            'total_ulasan' => Ulasan::query()->count(),
+
+            'ulasan_video' => Ulasan::query()
+                ->whereNotNull('video_ulasan')
+                ->count(),
         ];
 
-        $produkTerlaris = Produk::withSum([
+        $produkTerlaris = Produk::query()
+            ->with(['gambarUtama'])
+            ->withSum([
                 'itemPesanan as total_terjual' => function ($query) use ($startOfPeriod, $endOfPeriod) {
                     $query->whereHas('pesanan', function ($pesananQuery) use ($startOfPeriod, $endOfPeriod) {
-                        $pesananQuery->whereBetween('tanggal_pesanan', [$startOfPeriod, $endOfPeriod]);
+                        $pesananQuery->whereBetween('tanggal_pesanan', [$startOfPeriod, $endOfPeriod])
+                            ->whereNotIn('status', ['dibatalkan']);
                     });
                 },
             ], 'jumlah')
@@ -66,24 +114,38 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        $pesananTerbaru = Pesanan::with(['user', 'pembayaran'])
-            ->whereBetween('tanggal_pesanan', [$startOfPeriod, $endOfPeriod])
+        $stokPerhatian = Produk::query()
+            ->with(['gambarUtama'])
+            ->where(function ($query) {
+                $query->where('stok', '<=', 0)
+                    ->orWhere(function ($subQuery) {
+                        $subQuery->where('stok', '>', 0)
+                            ->whereColumn('stok', '<=', 'min_stok');
+                    });
+            })
+            ->orderBy('stok')
+            ->limit(6)
+            ->get();
+
+        $pesananTerbaru = Pesanan::query()
+            ->with(['user', 'pembayaran', 'pengiriman'])
             ->latest('tanggal_pesanan')
             ->limit(6)
             ->get();
 
-        $penjualanMingguan = collect(range(1, $startOfPeriod->daysInMonth))->map(function ($day) use ($startOfPeriod) {
+        $penjualanHarian = collect(range(1, $startOfPeriod->daysInMonth))->map(function ($day) use ($startOfPeriod) {
             $tanggal = $startOfPeriod->copy()->day($day);
 
             return [
                 'label' => $tanggal->format('d'),
-                'total' => (float) Pembayaran::where('status', 'dibayar')
+                'total' => (float) Pembayaran::query()
+                    ->where('status', 'dibayar')
                     ->whereDate('created_at', $tanggal)
                     ->sum('jumlah'),
             ];
         });
 
-        $maxPenjualan = max($penjualanMingguan->max('total'), 1);
+        $maxPenjualan = max((float) $penjualanHarian->max('total'), 1);
 
         $daftarBulan = collect(range(1, 12))->mapWithKeys(function ($bulan) {
             return [$bulan => Carbon::create(null, $bulan, 1)->translatedFormat('F')];
@@ -94,8 +156,9 @@ class DashboardController extends Controller
         return view('admin.dashboard', compact(
             'stats',
             'produkTerlaris',
+            'stokPerhatian',
             'pesananTerbaru',
-            'penjualanMingguan',
+            'penjualanHarian',
             'maxPenjualan',
             'filterBulan',
             'filterTahun',

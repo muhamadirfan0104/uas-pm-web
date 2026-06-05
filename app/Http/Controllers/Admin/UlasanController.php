@@ -15,6 +15,21 @@ class UlasanController extends Controller
     {
         $query = Ulasan::with(['user', 'produk', 'pesanan'])->latest();
 
+        if ($request->filled('q')) {
+            $keyword = trim((string) $request->q);
+
+            $query->where(function ($q) use ($keyword) {
+                $q->where('komentar', 'like', '%' . $keyword . '%')
+                    ->orWhereHas('produk', function ($produk) use ($keyword) {
+                        $produk->where('nama', 'like', '%' . $keyword . '%');
+                    })
+                    ->orWhereHas('user', function ($user) use ($keyword) {
+                        $user->where('name', 'like', '%' . $keyword . '%')
+                            ->orWhere('email', 'like', '%' . $keyword . '%');
+                    });
+            });
+        }
+
         if ($request->filled('rating')) {
             $query->where('rating', $request->rating);
         }
@@ -29,6 +44,7 @@ class UlasanController extends Controller
             'rata_rata' => round((float) Ulasan::avg('rating'), 1),
             'total' => Ulasan::count(),
             'foto' => Ulasan::whereNotNull('foto_ulasan')->count(),
+            'video' => Ulasan::whereNotNull('video_ulasan')->count(),
             'disembunyikan' => Ulasan::where('ditampilkan', false)->count(),
         ];
 
@@ -37,7 +53,9 @@ class UlasanController extends Controller
 
     public function toggle(Ulasan $ulasan): RedirectResponse
     {
-        $ulasan->update(['ditampilkan' => ! $ulasan->ditampilkan]);
+        $ulasan->update([
+            'ditampilkan' => ! $ulasan->ditampilkan,
+        ]);
 
         return back()->with('success', 'Status ulasan berhasil diubah.');
     }
@@ -47,6 +65,11 @@ class UlasanController extends Controller
         if ($ulasan->foto_ulasan) {
             Storage::disk('public')->delete($ulasan->foto_ulasan);
         }
+
+        if ($ulasan->video_ulasan) {
+            Storage::disk('public')->delete($ulasan->video_ulasan);
+        }
+
         $ulasan->delete();
 
         return back()->with('success', 'Ulasan berhasil dihapus.');

@@ -5,152 +5,203 @@
 
 @section('content')
 @php
-    $totalStokBermasalah = ($stats['stok_menipis'] ?? 0) + ($stats['stok_habis'] ?? 0);
-    $totalPendapatanBulan = $stats['penjualan_bulan_ini'] ?? 0;
-    $totalPendapatanAll = $stats['total_penjualan_all'] ?? 0;
-    $totalPesananAll = $stats['total_pesanan_all'] ?? 0;
+    $stokBermasalah = ($stats['stok_menipis'] ?? 0) + ($stats['stok_habis'] ?? 0);
+
+    $statusLabels = [
+        'dibayar' => 'Dibayar',
+        'diproses' => 'Diproses',
+        'siap_diambil' => 'Siap Diambil',
+        'dalam_pengantaran' => 'Dalam Pengantaran',
+        'selesai' => 'Selesai',
+        'dibatalkan' => 'Dibatalkan',
+    ];
+
+    $statusClass = [
+        'menunggu_pembayaran' => 'bg-warning-subtle text-warning-emphasis',
+        'dibayar' => 'bg-primary-subtle text-primary-emphasis',
+        'diproses' => 'bg-info-subtle text-info-emphasis',
+        'siap_diambil' => 'bg-success-subtle text-success-emphasis',
+        'dalam_pengantaran' => 'bg-primary-subtle text-primary-emphasis',
+        'selesai' => 'bg-success-subtle text-success-emphasis',
+        'dibatalkan' => 'bg-danger-subtle text-danger-emphasis',
+    ];
 @endphp
 
 <style>
-    .dashboard-quick {
+    .dash-hero {
         display: grid;
-        grid-template-columns: 1.35fr 0.65fr;
-        gap: 16px;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 18px;
         margin-bottom: 18px;
     }
 
-    .welcome-panel {
+    .dash-welcome {
         position: relative;
         overflow: hidden;
         padding: 24px;
-        border-radius: 22px;
+        border-radius: 24px;
         border: 1px solid var(--border);
         background:
-            radial-gradient(circle at top right, rgba(223, 186, 104, 0.24), transparent 38%),
+            radial-gradient(circle at top right, rgba(223, 186, 104, 0.25), transparent 36%),
             linear-gradient(135deg, #ffffff, #fff8e8);
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow-soft);
     }
 
-    .welcome-panel::after {
+    .dash-welcome::after {
         content: "";
         position: absolute;
-        width: 180px;
-        height: 180px;
-        right: -60px;
-        bottom: -90px;
+        right: -70px;
+        bottom: -100px;
+        width: 210px;
+        height: 210px;
         border-radius: 999px;
-        background: rgba(223, 186, 104, 0.18);
+        background: rgba(223, 186, 104, 0.16);
     }
 
-    .welcome-kicker {
+    .dash-kicker {
+        position: relative;
+        z-index: 1;
         display: inline-flex;
         align-items: center;
         gap: 7px;
         padding: 7px 11px;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.8);
-        border: 1px solid rgba(223, 186, 104, 0.25);
+        background: rgba(255,255,255,.82);
+        border: 1px solid rgba(223, 186, 104, .34);
         color: var(--brand-dark);
-        font-size: 0.76rem;
-        font-weight: 850;
+        font-size: .76rem;
+        font-weight: 900;
         margin-bottom: 13px;
     }
 
-    .welcome-title {
+    .dash-title {
         position: relative;
+        z-index: 1;
+        max-width: 760px;
         margin: 0;
-        max-width: 620px;
         color: var(--text);
-        font-size: 1.65rem;
+        font-size: clamp(1.55rem, 3vw, 2.25rem);
+        line-height: 1.05;
+        letter-spacing: -.065em;
         font-weight: 950;
-        letter-spacing: -0.05em;
-        line-height: 1.08;
-        z-index: 1;
     }
 
-    .welcome-desc {
+    .dash-desc {
         position: relative;
-        max-width: 620px;
-        margin: 9px 0 0;
+        z-index: 1;
+        max-width: 720px;
+        margin: 10px 0 0;
         color: var(--muted);
-        font-size: 0.92rem;
-        font-weight: 650;
+        font-size: .93rem;
         line-height: 1.6;
-        z-index: 1;
+        font-weight: 650;
     }
 
-    .welcome-actions {
+    .dash-actions {
         position: relative;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 18px;
         z-index: 1;
+        margin-top: 18px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
     }
 
-    .period-panel {
+    .dash-filter {
         padding: 18px;
-        border-radius: 22px;
+        border-radius: 24px;
         border: 1px solid var(--border);
         background: #fff;
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow-soft);
     }
 
-    .period-panel label {
-        color: var(--muted);
-        font-size: 0.76rem;
-        font-weight: 850;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 8px;
-    }
-
-    .period-title {
-        margin-bottom: 14px;
+    .dash-filter h2 {
+        margin: 0 0 14px;
         color: var(--text);
+        font-size: 1rem;
+        font-weight: 950;
+        letter-spacing: -.035em;
+    }
+
+    .dash-filter label {
+        margin-bottom: 7px;
+        color: var(--muted);
+        font-size: .74rem;
         font-weight: 900;
-        letter-spacing: -0.03em;
+        text-transform: uppercase;
+        letter-spacing: .06em;
     }
 
-    .action-card {
-        height: 100%;
+    .dash-metric {
+        min-height: 128px;
+        padding: 18px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: #fff;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        box-shadow: var(--shadow-soft);
+        transition: .18s ease;
         text-decoration: none;
-        transition: 0.18s ease;
     }
 
-    .action-card:hover {
+    .dash-metric:hover {
         transform: translateY(-2px);
+        border-color: rgba(223, 186, 104, .45);
         box-shadow: var(--shadow);
-        border-color: rgba(223, 186, 104, 0.42);
     }
 
-    .action-icon {
-        width: 44px;
-        height: 44px;
+    .metric-label {
+        color: var(--muted);
+        font-size: .76rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: .055em;
+    }
+
+    .metric-value {
+        margin-top: 9px;
+        color: var(--text);
+        font-size: 1.75rem;
+        line-height: 1;
+        font-weight: 950;
+        letter-spacing: -.06em;
+    }
+
+    .metric-value.money {
+        font-size: 1.22rem;
+        line-height: 1.15;
+        letter-spacing: -.04em;
+    }
+
+    .metric-note {
+        display: inline-block;
+        margin-top: 9px;
+        font-size: .75rem;
+        font-weight: 850;
+    }
+
+    .metric-icon {
+        width: 46px;
+        height: 46px;
         border-radius: 16px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        font-size: 1.12rem;
+        font-size: 1.18rem;
     }
 
-   .action-value {
-        margin-top: 10px;
-        font-size: 1.65rem;
-        line-height: 1;
-        font-weight: 950;
-        letter-spacing: -0.06em;
-        color: var(--text);
+    .dash-section {
+        border-radius: 22px;
+        border: 1px solid var(--border);
+        background: #fff;
+        box-shadow: var(--shadow-soft);
+        overflow: hidden;
     }
 
-    .action-label {
-        color: var(--muted);
-        font-size: 0.82rem;
-        font-weight: 800;
-    }
-
-    .dash-card-head {
+    .section-head {
         padding: 18px 18px 0;
         display: flex;
         align-items: flex-start;
@@ -158,75 +209,75 @@
         gap: 12px;
     }
 
-    .dash-card-title {
+    .section-head h2 {
         margin: 0;
         color: var(--text);
-        font-size: 1rem;
-        font-weight: 900;
-        letter-spacing: -0.03em;
+        font-size: 1.02rem;
+        font-weight: 950;
+        letter-spacing: -.035em;
     }
 
-    .dash-card-desc {
-        margin: 4px 0 0;
+    .section-head p {
+        margin: 5px 0 0;
         color: var(--muted);
-        font-size: 0.82rem;
+        font-size: .82rem;
+        line-height: 1.5;
         font-weight: 650;
     }
 
     .chart-box {
-        height: 275px;
-        padding: 28px 22px 20px;
+        height: 285px;
+        padding: 32px 20px 22px;
         display: flex;
         align-items: flex-end;
         justify-content: center;
-        gap: 18px;
-        overflow: hidden;
-        max-width: 100%;
+        gap: 12px;
+        overflow-x: auto;
     }
 
     .chart-item {
+        min-width: 28px;
+        max-width: 42px;
         flex: 1;
-        max-width: 56px;
         height: 100%;
-        min-width: 34px;
         display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
         align-items: center;
+        justify-content: flex-end;
+        flex-direction: column;
         gap: 8px;
     }
 
     .chart-bar {
         width: 100%;
-        max-width: 42px;
+        max-width: 34px;
         border-radius: 999px 999px 8px 8px;
         background: linear-gradient(180deg, var(--brand), #f0d58d);
-        position: relative;
         min-height: 8px;
-        transition: 0.18s ease;
+        position: relative;
+        transition: .16s ease;
     }
 
     .chart-bar:hover {
         transform: translateY(-3px);
-        filter: brightness(0.98);
+        filter: brightness(.98);
     }
 
     .chart-bar::before {
         content: attr(data-value);
         position: absolute;
-        top: -27px;
         left: 50%;
+        top: -27px;
         transform: translateX(-50%);
-        padding: 4px 7px;
+        padding: 4px 8px;
         border-radius: 999px;
         background: #111827;
         color: #fff;
-        font-size: 0.68rem;
+        font-size: .68rem;
         font-weight: 850;
+        white-space: nowrap;
         opacity: 0;
         pointer-events: none;
-        white-space: nowrap;
-        transition: 0.16s ease;
+        transition: .16s ease;
     }
 
     .chart-bar:hover::before {
@@ -234,171 +285,168 @@
     }
 
     .chart-label {
-        color: var(--muted-2);
-        font-size: 0.7rem;
+        color: #9ca3af;
+        font-size: .68rem;
         font-weight: 850;
     }
 
-    .summary-list {
-        padding: 4px 18px 18px;
+    .status-list {
+        padding: 12px 18px 18px;
+        display: grid;
+        gap: 10px;
     }
 
-    .summary-item {
-        padding: 15px 0;
-        border-bottom: 1px dashed var(--border);
+    .status-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 14px;
-    }
-
-    .summary-item:last-child {
-        border-bottom: 0;
-    }
-
-    .summary-label {
-        color: var(--muted);
-        font-size: 0.8rem;
-        font-weight: 750;
-    }
-
-    .summary-value {
-        margin-top: 3px;
-        color: var(--text);
-        font-size: 1.25rem;
-        font-weight: 950;
-        letter-spacing: -0.04em;
-    }
-
-    .summary-pill {
-        padding: 7px 10px;
-        border-radius: 999px;
-        background: var(--brand-soft);
-        color: var(--brand-dark);
-        font-size: 0.72rem;
-        font-weight: 900;
-        white-space: nowrap;
-    }
-
-    .order-row,
-    .product-row {
-        padding: 15px 18px;
-        border-bottom: 1px solid #f1f2f4;
-        display: flex;
-        align-items: center;
-        gap: 13px;
-        text-decoration: none;
-        transition: 0.16s ease;
-    }
-
-    .order-row:last-child,
-    .product-row:last-child {
-        border-bottom: 0;
-    }
-
-    .order-row:hover,
-    .product-row:hover {
+        gap: 12px;
+        padding: 12px;
+        border: 1px solid #f1f2f4;
+        border-radius: 16px;
         background: #fafafa;
     }
 
-    .invoice-text,
-    .product-name {
-        color: var(--text);
-        font-size: 0.9rem;
-        font-weight: 900;
+    .status-row span:first-child {
+        color: var(--muted);
+        font-size: .83rem;
+        font-weight: 850;
     }
 
-    .small-muted {
+    .status-row strong {
+        color: var(--text);
+        font-size: 1.1rem;
+        font-weight: 950;
+    }
+
+    .list-row {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        padding: 15px 18px;
+        border-top: 1px solid #f1f2f4;
+        text-decoration: none;
+        transition: .16s ease;
+    }
+
+    .list-row:hover {
+        background: #fafafa;
+    }
+
+    .list-main {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .list-title {
+        color: var(--text);
+        font-size: .9rem;
+        font-weight: 950;
+        letter-spacing: -.02em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .list-sub {
+        margin-top: 4px;
         color: var(--muted);
-        font-size: 0.76rem;
-        font-weight: 650;
+        font-size: .76rem;
+        font-weight: 700;
+    }
+
+    .list-price {
+        color: var(--brand-dark);
+        font-size: .9rem;
+        font-weight: 950;
+        white-space: nowrap;
+        text-align: right;
     }
 
     .rank-badge {
-        width: 30px;
-        height: 30px;
-        border-radius: 11px;
-        background: var(--gray-soft);
-        color: var(--muted);
+        width: 32px;
+        height: 32px;
+        border-radius: 12px;
+        background: var(--brand-soft);
+        color: var(--brand-dark);
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.78rem;
+        font-size: .78rem;
         font-weight: 950;
         flex-shrink: 0;
     }
 
-    .empty-state {
-        padding: 46px 18px;
-        text-align: center;
-    }
-
-    .empty-state-icon {
-        width: 56px;
-        height: 56px;
-        margin: 0 auto 12px;
-        border-radius: 18px;
-        background: var(--gray-soft);
-        color: var(--muted);
-        display: flex;
+    .stok-badge {
+        width: 42px;
+        height: 42px;
+        border-radius: 15px;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.45rem;
+        background: #fef2f2;
+        color: #b91c1c;
+        font-weight: 950;
+        flex-shrink: 0;
     }
 
-    @media (max-width: 1100px) {
-        .dashboard-quick {
+    .empty-box {
+        padding: 40px 18px;
+        text-align: center;
+        color: var(--muted);
+        font-size: .86rem;
+        font-weight: 700;
+    }
+
+    @media (max-width: 1120px) {
+        .dash-hero {
             grid-template-columns: 1fr;
         }
     }
 
-    @media (max-width: 640px) {
-        .welcome-panel,
-        .period-panel {
-            border-radius: 18px;
+    @media (max-width: 700px) {
+        .dash-welcome,
+        .dash-filter {
             padding: 18px;
-        }
-
-        .welcome-title {
-            font-size: 1.35rem;
+            border-radius: 20px;
         }
 
         .chart-box {
-            gap: 5px;
-            overflow-x: auto;
-            align-items: flex-end;
+            justify-content: flex-start;
         }
 
-        .chart-item {
-            min-width: 28px;
+        .metric-value.money {
+            font-size: 1rem;
         }
     }
 </style>
 
-<div class="dashboard-quick">
-    <section class="welcome-panel">
-        <div class="welcome-kicker">
+<div class="dash-hero">
+    <section class="dash-welcome">
+        <div class="dash-kicker">
             <i class="bi bi-stars"></i>
-            Periode {{ $periodeLabel }}
+            Dashboard periode {{ $periodeLabel }}
         </div>
 
-        <h1 class="welcome-title">
-            Halo Admin, pantau toko tahumu dari satu dashboard.
+        <h1 class="dash-title">
+            Pantau pesanan, pembayaran, stok, dan performa produk dari satu tempat.
         </h1>
 
-        <p class="welcome-desc">
-            Cek pesanan masuk, pembayaran, stok produk, ulasan pembeli, sampai performa penjualan tanpa perlu pindah-pindah alur.
+        <p class="dash-desc">
+            Dashboard ini dibuat lebih ringkas supaya admin tidak bingung:
+            bagian atas untuk kondisi penting, bagian bawah untuk grafik, pesanan terbaru,
+            produk terlaris, dan stok yang perlu diperhatikan.
         </p>
 
-        <div class="welcome-actions">
-            <a href="{{ route('admin.produk.create') }}" class="btn btn-brand px-3">
-                <i class="bi bi-plus-lg me-1"></i>
-                Tambah Produk
+        <div class="dash-actions">
+            <a href="{{ route('admin.pesanan.index') }}" class="btn btn-brand px-3">
+                <i class="bi bi-receipt me-1"></i>
+                Cek Pesanan
             </a>
 
-            <a href="{{ route('admin.pesanan.index') }}" class="btn btn-light border px-3 fw-bold">
-                <i class="bi bi-receipt me-1 text-muted"></i>
-                Cek Pesanan
+            <a href="{{ route('admin.produk.create') }}" class="btn btn-light border px-3 fw-bold">
+                <i class="bi bi-plus-lg me-1 text-muted"></i>
+                Tambah Produk
             </a>
 
             <a href="{{ route('admin.stok.index') }}" class="btn btn-light border px-3 fw-bold">
@@ -408,11 +456,11 @@
         </div>
     </section>
 
-    <section class="period-panel">
-        <div class="period-title">
+    <section class="dash-filter">
+        <h2>
             <i class="bi bi-calendar3 me-1 text-warning"></i>
             Filter Dashboard
-        </div>
+        </h2>
 
         <form class="js-instant-filter" method="GET">
             <div class="mb-3">
@@ -441,63 +489,111 @@
 </div>
 
 <div class="grid g4 mb-4">
-    <a href="{{ route('admin.pembayaran.index') }}" class="page-card action-card stat">
+    <a href="{{ route('admin.pembayaran.index') }}" class="dash-metric">
         <div>
-            <div class="action-label">Menunggu Bayar</div>
-            <div class="action-value">{{ $stats['menunggu_pembayaran'] ?? 0 }}</div>
-            <span class="stat-note text-warning">Perlu dicek</span>
+            <div class="metric-label">Menunggu Bayar</div>
+            <div class="metric-value">{{ $stats['menunggu_pembayaran'] ?? 0 }}</div>
+            <span class="metric-note text-warning">Perlu dicek admin</span>
         </div>
 
-        <div class="action-icon bg-warning-subtle text-warning-emphasis">
-            <i class="bi bi-credit-card-2-front"></i>
+        <div class="metric-icon bg-warning-subtle text-warning-emphasis">
+            <i class="bi bi-credit-card-2-front-fill"></i>
         </div>
     </a>
 
-    <a href="{{ route('admin.pesanan.index') }}" class="page-card action-card stat">
+    <a href="{{ route('admin.pesanan.index') }}" class="dash-metric">
         <div>
-            <div class="action-label">Pesanan Hari Ini</div>
-            <div class="action-value">{{ $stats['pesanan_hari_ini'] ?? 0 }}</div>
-            <span class="stat-note text-primary">Transaksi masuk</span>
+            <div class="metric-label">Pesanan Hari Ini</div>
+            <div class="metric-value">{{ $stats['pesanan_hari_ini'] ?? 0 }}</div>
+            <span class="metric-note text-primary">Checkout masuk</span>
         </div>
 
-        <div class="action-icon bg-primary-subtle text-primary-emphasis">
-            <i class="bi bi-bag-check"></i>
+        <div class="metric-icon bg-primary-subtle text-primary-emphasis">
+            <i class="bi bi-bag-check-fill"></i>
         </div>
     </a>
 
-    <div class="page-card stat">
+    <div class="dash-metric">
         <div>
-            <div class="action-label">Penjualan Hari Ini</div>
-            <div class="action-value" style="font-size: 1.25rem;">
-                {{ $rupiah($stats['penjualan_hari_ini'] ?? 0) }}
-            </div>
-            <span class="stat-note text-success">Pembayaran dibayar</span>
+            <div class="metric-label">Penjualan Hari Ini</div>
+            <div class="metric-value money">{{ $rupiah($stats['penjualan_hari_ini'] ?? 0) }}</div>
+            <span class="metric-note text-success">Pembayaran dibayar</span>
         </div>
 
-        <div class="action-icon bg-success-subtle text-success-emphasis">
+        <div class="metric-icon bg-success-subtle text-success-emphasis">
             <i class="bi bi-cash-stack"></i>
         </div>
     </div>
 
-    <a href="{{ route('admin.stok.index') }}" class="page-card action-card stat">
+    <a href="{{ route('admin.stok.index') }}" class="dash-metric">
         <div>
-            <div class="action-label">Stok Bermasalah</div>
-            <div class="action-value">{{ $totalStokBermasalah }}</div>
-            <span class="stat-note text-danger">Menipis / habis</span>
+            <div class="metric-label">Stok Bermasalah</div>
+            <div class="metric-value">{{ $stokBermasalah }}</div>
+            <span class="metric-note text-danger">Menipis / habis</span>
         </div>
 
-        <div class="action-icon bg-danger-subtle text-danger-emphasis">
-            <i class="bi bi-exclamation-triangle"></i>
+        <div class="metric-icon bg-danger-subtle text-danger-emphasis">
+            <i class="bi bi-exclamation-triangle-fill"></i>
         </div>
     </a>
 </div>
 
+<div class="grid g4 mb-4">
+    <div class="dash-metric">
+        <div>
+            <div class="metric-label">Produk Aktif</div>
+            <div class="metric-value">{{ $stats['produk_aktif'] ?? 0 }}</div>
+            <span class="metric-note text-success">Tampil ke pembeli</span>
+        </div>
+
+        <div class="metric-icon bg-success-subtle text-success-emphasis">
+            <i class="bi bi-box2-heart-fill"></i>
+        </div>
+    </div>
+
+    <a href="{{ route('admin.pembeli.index') }}" class="dash-metric">
+        <div>
+            <div class="metric-label">Total Pembeli</div>
+            <div class="metric-value">{{ $stats['total_pembeli'] ?? 0 }}</div>
+            <span class="metric-note text-primary">Akun pembeli</span>
+        </div>
+
+        <div class="metric-icon bg-primary-subtle text-primary-emphasis">
+            <i class="bi bi-people-fill"></i>
+        </div>
+    </a>
+
+    <a href="{{ route('admin.ulasan.index') }}" class="dash-metric">
+        <div>
+            <div class="metric-label">Total Ulasan</div>
+            <div class="metric-value">{{ $stats['total_ulasan'] ?? 0 }}</div>
+            <span class="metric-note text-warning">{{ $stats['ulasan_video'] ?? 0 }} ulasan video</span>
+        </div>
+
+        <div class="metric-icon bg-warning-subtle text-warning-emphasis">
+            <i class="bi bi-star-fill"></i>
+        </div>
+    </a>
+
+    <div class="dash-metric">
+        <div>
+            <div class="metric-label">Penjualan Periode</div>
+            <div class="metric-value money">{{ $rupiah($stats['penjualan_periode'] ?? 0) }}</div>
+            <span class="metric-note text-success">{{ $periodeLabel }}</span>
+        </div>
+
+        <div class="metric-icon bg-success-subtle text-success-emphasis">
+            <i class="bi bi-graph-up-arrow"></i>
+        </div>
+    </div>
+</div>
+
 <div class="grid g2 mb-4">
-    <section class="page-card">
-        <div class="dash-card-head">
+    <section class="dash-section">
+        <div class="section-head">
             <div>
-                <h2 class="dash-card-title">Grafik Penjualan Harian</h2>
-                <p class="dash-card-desc">Pendapatan pembayaran berstatus dibayar pada {{ $periodeLabel }}.</p>
+                <h2>Grafik Penjualan Harian</h2>
+                <p>Pendapatan dari pembayaran berstatus dibayar pada {{ $periodeLabel }}.</p>
             </div>
 
             <a href="{{ route('admin.laporan.index') }}" class="small-btn">
@@ -507,169 +603,172 @@
         </div>
 
         <div class="chart-box">
-            @php
-                $grafikDashboard = collect($penjualanMingguan)->take(-7);
-                $maxGrafikDashboard = max($grafikDashboard->max('total') ?? 1, 1);
-            @endphp
-
-            @foreach($grafikDashboard as $item)
+            @foreach($penjualanHarian as $item)
                 @php
                     $total = (float) ($item['total'] ?? 0);
-                    $height = max(8, round(($total / $maxGrafikDashboard) * 100));
+                    $height = max(8, round(($total / $maxPenjualan) * 100));
                 @endphp
 
                 <div class="chart-item">
-                    <div class="chart-bar"
+                    <div
+                        class="chart-bar"
                         style="height: {{ $height }}%;"
-                        data-value="{{ $rupiah($total) }}">
-                    </div>
+                        data-value="{{ $rupiah($total) }}"
+                    ></div>
                     <div class="chart-label">{{ $item['label'] }}</div>
                 </div>
             @endforeach
         </div>
     </section>
 
-    <section class="page-card">
-        <div class="dash-card-head">
+    <section class="dash-section">
+        <div class="section-head">
             <div>
-                <h2 class="dash-card-title">Ringkasan Bisnis</h2>
-                <p class="dash-card-desc">Rekap singkat performa toko pada periode terpilih.</p>
+                <h2>Status Pesanan</h2>
+                <p>Ringkasan status pesanan yang perlu dipantau admin.</p>
             </div>
         </div>
 
-        <div class="summary-list">
-            <div class="summary-item">
-                <div>
-                    <div class="summary-label">Pendapatan Periode Ini</div>
-                    <div class="summary-value">{{ $rupiah($totalPendapatanBulan) }}</div>
-                </div>
-                <span class="summary-pill">Bulan ini</span>
+        <div class="status-list">
+            <div class="status-row">
+                <span>Menunggu Pembayaran</span>
+                <strong>{{ $stats['menunggu_pembayaran'] ?? 0 }}</strong>
             </div>
 
-            <div class="summary-item">
-                <div>
-                    <div class="summary-label">Total Pendapatan Semua Periode</div>
-                    <div class="summary-value">{{ $rupiah($totalPendapatanAll) }}</div>
+            @foreach($statusLabels as $key => $label)
+                <div class="status-row">
+                    <span>{{ $label }}</span>
+                    <strong>{{ $stats[$key] ?? 0 }}</strong>
                 </div>
-                <span class="summary-pill">All time</span>
-            </div>
-
-            <div class="summary-item">
-                <div>
-                    <div class="summary-label">Total Pesanan Semua Periode</div>
-                    <div class="summary-value">{{ $totalPesananAll }} pesanan</div>
-                </div>
-                <span class="summary-pill">Checkout</span>
-            </div>
-
-            <div class="summary-item">
-                <div>
-                    <div class="summary-label">Stok Habis</div>
-                    <div class="summary-value">{{ $stats['stok_habis'] ?? 0 }} produk</div>
-                </div>
-                <span class="summary-pill">Stok</span>
-            </div>
+            @endforeach
         </div>
     </section>
 </div>
 
-<div class="grid g2">
-    <section class="page-card">
-        <div class="dash-card-head mb-3">
+<div class="grid g2 mb-4">
+    <section class="dash-section">
+        <div class="section-head">
             <div>
-                <h2 class="dash-card-title">Pesanan Terbaru</h2>
-                <p class="dash-card-desc">Pesanan terbaru pada periode {{ $periodeLabel }}.</p>
+                <h2>Pesanan Terbaru</h2>
+                <p>Pesanan terbaru dari pembeli, tidak dibatasi periode filter.</p>
             </div>
 
             <a href="{{ route('admin.pesanan.index') }}" class="small-btn">
-                Lihat Semua
+                <i class="bi bi-arrow-right"></i>
+                Semua
             </a>
         </div>
 
-        <div>
-            @forelse($pesananTerbaru as $order)
-                <a href="{{ route('admin.pesanan.show', $order) }}" class="order-row">
-                    <div class="rank-badge">
-                        <i class="bi bi-receipt"></i>
-                    </div>
-
-                    <div class="flex-grow-1 min-w-0">
-                        <div class="invoice-text text-truncate">{{ $order->nomor_invoice }}</div>
-                        <div class="small-muted text-truncate">
-                            {{ $order->user?->name ?? 'Pembeli' }}
-                            ·
-                            {{ optional($order->tanggal_pesanan)->format('d M Y H:i') }}
-                        </div>
-                    </div>
-
-                    <div class="text-end">
-                        <div class="fw-bold text-dark small mb-1">
-                            {{ $rupiah($order->total_bayar) }}
-                        </div>
-                        <span class="chip {{ $statusClass($order->status) }}">
-                            {{ $statusLabel($order->status) }}
-                        </span>
-                    </div>
-                </a>
-            @empty
-                <div class="empty-state">
-                    <div class="empty-state-icon">
-                        <i class="bi bi-inbox"></i>
-                    </div>
-                    <strong class="d-block text-dark mb-1">Belum ada pesanan</strong>
-                    <span class="small-muted">Pesanan dari mobile akan muncul di sini setelah pembeli checkout.</span>
+        @forelse($pesananTerbaru as $order)
+            <a href="{{ route('admin.pesanan.show', $order) }}" class="list-row">
+                <div class="rank-badge">
+                    <i class="bi bi-receipt"></i>
                 </div>
-            @endforelse
-        </div>
+
+                <div class="list-main">
+                    <div class="list-title">{{ $order->nomor_invoice }}</div>
+                    <div class="list-sub">
+                        {{ $order->user?->name ?? 'Pembeli' }}
+                        · {{ $order->tanggal_pesanan?->format('d/m/Y H:i') }}
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <div class="list-price">{{ $rupiah($order->total_bayar ?? 0) }}</div>
+                    <span class="badge {{ $statusClass[$order->status] ?? 'bg-secondary-subtle text-secondary-emphasis' }}">
+                        {{ ucwords(str_replace('_', ' ', $order->status)) }}
+                    </span>
+                </div>
+            </a>
+        @empty
+            <div class="empty-box">
+                Belum ada pesanan terbaru.
+            </div>
+        @endforelse
     </section>
 
-    <section class="page-card">
-        <div class="dash-card-head mb-3">
+    <section class="dash-section">
+        <div class="section-head">
             <div>
-                <h2 class="dash-card-title">Produk Terlaris</h2>
-                <p class="dash-card-desc">Berdasarkan jumlah item pesanan pada periode terpilih.</p>
+                <h2>Produk Terlaris</h2>
+                <p>Produk dengan penjualan terbanyak pada {{ $periodeLabel }}.</p>
             </div>
 
             <a href="{{ route('admin.produk.index') }}" class="small-btn">
+                <i class="bi bi-arrow-right"></i>
                 Produk
             </a>
         </div>
 
-        <div>
-            @forelse($produkTerlaris as $produk)
-                <div class="product-row">
-                    <div class="rank-badge">#{{ $loop->iteration }}</div>
+        @forelse($produkTerlaris as $index => $produk)
+            <a href="{{ route('admin.produk.edit', $produk) }}" class="list-row">
+                <div class="rank-badge">
+                    {{ $index + 1 }}
+                </div>
 
-                    <div class="cover d-flex align-items-center justify-content-center">
-                        <i class="bi bi-box-seam text-muted"></i>
-                    </div>
-
-                    <div class="flex-grow-1 min-w-0">
-                        <div class="product-name text-truncate">{{ $produk->nama }}</div>
-                        <div class="small-muted">
-                            {{ $rupiah($produk->harga) }}
-                            ·
-                            Stok {{ $produk->stok ?? 0 }}
-                        </div>
-                    </div>
-
-                    <div class="text-end">
-                        <div class="fw-bold text-dark">
-                            {{ (int) ($produk->total_terjual ?? 0) }}
-                        </div>
-                        <div class="small-muted">terjual</div>
+                <div class="list-main">
+                    <div class="list-title">{{ $produk->nama }}</div>
+                    <div class="list-sub">
+                        Terjual {{ (int) ($produk->total_terjual ?? 0) }} item
+                        · Stok {{ $produk->stok }}
                     </div>
                 </div>
-            @empty
-                <div class="empty-state">
-                    <div class="empty-state-icon">
-                        <i class="bi bi-bar-chart"></i>
-                    </div>
-                    <strong class="d-block text-dark mb-1">Belum ada data produk terlaris</strong>
-                    <span class="small-muted">Data akan muncul setelah ada item pesanan.</span>
+
+                <div class="list-price">
+                    {{ $rupiah($produk->harga ?? 0) }}
                 </div>
-            @endforelse
-        </div>
+            </a>
+        @empty
+            <div class="empty-box">
+                Belum ada produk terjual pada periode ini.
+            </div>
+        @endforelse
     </section>
 </div>
+
+<section class="dash-section">
+    <div class="section-head">
+        <div>
+            <h2>Stok Perlu Diperhatikan</h2>
+            <p>Produk habis atau stoknya sudah menyentuh batas minimum.</p>
+        </div>
+
+        <a href="{{ route('admin.stok.index') }}" class="small-btn">
+            <i class="bi bi-box-seam"></i>
+            Kelola Stok
+        </a>
+    </div>
+
+    @forelse($stokPerhatian as $produk)
+        <a href="{{ route('admin.stok.index') }}" class="list-row">
+            <div class="stok-badge">
+                {{ $produk->stok }}
+            </div>
+
+            <div class="list-main">
+                <div class="list-title">{{ $produk->nama }}</div>
+                <div class="list-sub">
+                    Minimum stok {{ $produk->min_stok ?? 0 }}
+                    · {{ $produk->satuan ?? 'satuan' }}
+                </div>
+            </div>
+
+            <div class="text-end">
+                @if($produk->stok <= 0)
+                    <span class="badge bg-danger-subtle text-danger-emphasis">
+                        Habis
+                    </span>
+                @else
+                    <span class="badge bg-warning-subtle text-warning-emphasis">
+                        Menipis
+                    </span>
+                @endif
+            </div>
+        </a>
+    @empty
+        <div class="empty-box">
+            Aman, belum ada stok yang habis atau menipis.
+        </div>
+    @endforelse
+</section>
 @endsection

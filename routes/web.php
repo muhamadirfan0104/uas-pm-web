@@ -15,110 +15,374 @@ use App\Http\Controllers\Admin\StokController;
 use App\Http\Controllers\Admin\UlasanController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KasirController;
+use App\Http\Controllers\WebPembeli\AlamatController as WebPembeliAlamatController;
+use App\Http\Controllers\WebPembeli\AuthController as WebPembeliAuthController;
+use App\Http\Controllers\WebPembeli\CheckoutController as WebPembeliCheckoutController;
 use App\Http\Controllers\WebPembeli\HomeController as WebPembeliHomeController;
 use App\Http\Controllers\WebPembeli\KeranjangController as WebPembeliKeranjangController;
-use App\Http\Controllers\WebPembeli\CheckoutController as WebPembeliCheckoutController;
 use App\Http\Controllers\WebPembeli\PesananController as WebPembeliPesananController;
+use App\Http\Controllers\WebPembeli\UlasanController as WebPembeliUlasanController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\KasirMiddleware;
+use App\Http\Middleware\PembeliWebMiddleware;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => redirect()->route('login'));
+/*
+|--------------------------------------------------------------------------
+| HALAMAN AWAL
+|--------------------------------------------------------------------------
+*/
+Route::get('/', fn () => redirect()->route('pembeli-web.home'));
 
-
+/*
+|--------------------------------------------------------------------------
+| WEB PEMBELI
+|--------------------------------------------------------------------------
+*/
 Route::prefix('pembeli-web')
     ->name('pembeli-web.')
     ->group(function () {
-        Route::get('/', [WebPembeliHomeController::class, 'home'])->name('home');
+        /*
+        |--------------------------------------------------------------------------
+        | Halaman publik pembeli
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/', [WebPembeliHomeController::class, 'home'])
+            ->name('home');
 
-        Route::get('/produk', [WebPembeliHomeController::class, 'produk'])->name('produk');
-        Route::get('/produk/{produk}', [WebPembeliHomeController::class, 'detailProduk'])->name('produk.detail');
+        Route::get('/login', [WebPembeliAuthController::class, 'showLogin'])
+            ->name('login');
 
-        Route::get('/keranjang', [WebPembeliKeranjangController::class, 'index'])->name('keranjang.index');
-        Route::post('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'store'])->name('keranjang.store');
-        Route::patch('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'update'])->name('keranjang.update');
-        Route::delete('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'destroy'])->name('keranjang.destroy');
-        Route::delete('/keranjang', [WebPembeliKeranjangController::class, 'clear'])->name('keranjang.clear');
+        Route::post('/login', [WebPembeliAuthController::class, 'login'])
+            ->name('login.post');
 
-        Route::get('/checkout', [WebPembeliCheckoutController::class, 'index'])->name('checkout.index');
-        Route::post('/checkout', [WebPembeliCheckoutController::class, 'store'])->name('checkout.store');
-        Route::get('/checkout/sukses/{pesanan}', [WebPembeliCheckoutController::class, 'success'])->name('checkout.success');
+        Route::get('/register', [WebPembeliAuthController::class, 'showRegister'])
+            ->name('register');
 
-        Route::get('/pesanan', [WebPembeliPesananController::class, 'index'])->name('pesanan.index');
-        Route::get('/pesanan/{nomor_invoice}', [WebPembeliPesananController::class, 'show'])->name('pesanan.show');
+        Route::post('/register', [WebPembeliAuthController::class, 'register'])
+            ->name('register.post');
 
-        Route::get('/profil', [WebPembeliHomeController::class, 'profil'])->name('profil');
+        Route::post('/logout', [WebPembeliAuthController::class, 'logout'])
+            ->middleware('auth')
+            ->name('logout');
 
-        Route::get('/coming-soon', [WebPembeliHomeController::class, 'comingSoon'])->name('coming-soon');
+        Route::get('/produk', [WebPembeliHomeController::class, 'produk'])
+            ->name('produk');
+
+        Route::get('/produk/{produk}', [WebPembeliHomeController::class, 'detailProduk'])
+            ->name('produk.detail');
+
+        Route::get('/coming-soon', [WebPembeliHomeController::class, 'comingSoon'])
+            ->name('coming-soon');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Halaman pembeli yang wajib login sebagai pembeli
+        |--------------------------------------------------------------------------
+        */
+        Route::middleware([PembeliWebMiddleware::class])->group(function () {
+            /*
+            |--------------------------------------------------------------------------
+            | Keranjang
+            |--------------------------------------------------------------------------
+            */
+            Route::get('/keranjang', [WebPembeliKeranjangController::class, 'index'])
+                ->name('keranjang.index');
+
+            Route::post('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'store'])
+                ->name('keranjang.store');
+
+            Route::patch('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'update'])
+                ->name('keranjang.update');
+
+            Route::delete('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'destroy'])
+                ->name('keranjang.destroy');
+
+            Route::delete('/keranjang', [WebPembeliKeranjangController::class, 'clear'])
+                ->name('keranjang.clear');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Checkout
+            |--------------------------------------------------------------------------
+            */
+            Route::get('/checkout', [WebPembeliCheckoutController::class, 'index'])
+                ->name('checkout.index');
+
+            Route::post('/checkout', [WebPembeliCheckoutController::class, 'store'])
+                ->name('checkout.store');
+
+            Route::get('/checkout/sukses/{pesanan}', [WebPembeliCheckoutController::class, 'success'])
+                ->name('checkout.success');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Pesanan Pembeli
+            |--------------------------------------------------------------------------
+            */
+            Route::get('/pesanan', [WebPembeliPesananController::class, 'index'])
+                ->name('pesanan.index');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Ulasan Pembeli
+            |--------------------------------------------------------------------------
+            | Harus sebelum detail pesanan supaya route ulasan tidak ketangkep
+            | sebagai detail pesanan biasa.
+            */
+            Route::get('/pesanan/{nomor_invoice}/ulasan/{produk}/buat', [WebPembeliUlasanController::class, 'create'])
+                ->name('ulasan.create');
+
+            Route::post('/pesanan/{nomor_invoice}/ulasan/{produk}', [WebPembeliUlasanController::class, 'store'])
+                ->name('ulasan.store');
+
+            Route::patch('/pesanan/{nomor_invoice}/batalkan', [WebPembeliPesananController::class, 'cancel'])
+                ->name('pesanan.cancel');
+
+            Route::patch('/pesanan/{nomor_invoice}/diterima', [WebPembeliPesananController::class, 'confirmReceived'])
+                ->name('pesanan.confirm-received');
+
+            Route::get('/pesanan/{nomor_invoice}', [WebPembeliPesananController::class, 'show'])
+                ->name('pesanan.show');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Alamat Pembeli
+            |--------------------------------------------------------------------------
+            */
+            Route::get('/alamat', [WebPembeliAlamatController::class, 'index'])
+                ->name('alamat.index');
+
+            Route::get('/alamat/tambah', [WebPembeliAlamatController::class, 'create'])
+                ->name('alamat.create');
+
+            Route::post('/alamat', [WebPembeliAlamatController::class, 'store'])
+                ->name('alamat.store');
+
+            Route::get('/alamat/{alamat}/edit', [WebPembeliAlamatController::class, 'edit'])
+                ->name('alamat.edit');
+
+            Route::put('/alamat/{alamat}', [WebPembeliAlamatController::class, 'update'])
+                ->name('alamat.update');
+
+            Route::patch('/alamat/{alamat}/utama', [WebPembeliAlamatController::class, 'setUtama'])
+                ->name('alamat.utama');
+
+            Route::delete('/alamat/{alamat}', [WebPembeliAlamatController::class, 'destroy'])
+                ->name('alamat.destroy');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Profil Pembeli
+            |--------------------------------------------------------------------------
+            */
+            Route::get('/profil', [WebPembeliHomeController::class, 'profil'])
+                ->name('profil');
+        });
     });
 
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+/*
+|--------------------------------------------------------------------------
+| LOGIN ADMIN / KASIR
+|--------------------------------------------------------------------------
+*/
+Route::get('/login', [AuthController::class, 'showLogin'])
+    ->name('login');
 
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+Route::post('/login', [AuthController::class, 'login'])
+    ->name('login.post');
 
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', AdminMiddleware::class])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'index'])
+            ->name('dashboard');
 
-        Route::get('/akun', [AkunController::class, 'edit'])->name('akun.edit');
-        Route::patch('/akun', [AkunController::class, 'update'])->name('akun.update');
+        /*
+        |--------------------------------------------------------------------------
+        | Akun Admin Login
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/akun', [AkunController::class, 'edit'])
+            ->name('akun.edit');
 
-        Route::patch('/pengguna-admin/{penggunaAdmin}/toggle', [PenggunaAdminController::class, 'toggle'])->name('pengguna-admin.toggle');
-        Route::resource('pengguna-admin', PenggunaAdminController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::patch('/akun', [AkunController::class, 'update'])
+            ->name('akun.update');
 
-        Route::patch('/produk/{produk}/toggle', [ProdukController::class, 'toggle'])->name('produk.toggle');
-        Route::resource('produk', ProdukController::class)->except(['show']);
+        /*
+        |--------------------------------------------------------------------------
+        | Pengguna Admin
+        |--------------------------------------------------------------------------
+        */
+        Route::patch('/pengguna-admin/{penggunaAdmin}/toggle', [PenggunaAdminController::class, 'toggle'])
+            ->name('pengguna-admin.toggle');
 
-        Route::get('/stok', [StokController::class, 'index'])->name('stok.index');
-        Route::patch('/stok/{produk}', [StokController::class, 'update'])->name('stok.update');
+        Route::resource('pengguna-admin', PenggunaAdminController::class)
+            ->only(['index', 'store', 'update', 'destroy']);
 
-        Route::get('/pesanan', [PesananController::class, 'index'])->name('pesanan.index');
-        Route::get('/pesanan/{pesanan}', [PesananController::class, 'show'])->name('pesanan.show');
-        Route::patch('/pesanan/{pesanan}/status', [PesananController::class, 'updateStatus'])->name('pesanan.status');
+        /*
+        |--------------------------------------------------------------------------
+        | Produk
+        |--------------------------------------------------------------------------
+        */
+        Route::patch('/produk/{produk}/toggle', [ProdukController::class, 'toggle'])
+            ->name('produk.toggle');
 
-        Route::get('/pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
-        Route::patch('/pembayaran/{pembayaran}/status', [PembayaranController::class, 'updateStatus'])->name('pembayaran.status');
+        Route::resource('produk', ProdukController::class)
+            ->except(['show']);
 
-        Route::get('/pengiriman', [PengirimanController::class, 'index'])->name('pengiriman.index');
-        Route::put('/pengiriman/pengaturan', [PengirimanController::class, 'updatePengaturan'])->name('pengiriman.pengaturan.update');
-        Route::patch('/pengiriman/{pengiriman}/status', [PengirimanController::class, 'updateStatus'])->name('pengiriman.status');
+        /*
+        |--------------------------------------------------------------------------
+        | Stok
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/stok', [StokController::class, 'index'])
+            ->name('stok.index');
 
-        Route::get('/pembeli', [PembeliController::class, 'index'])->name('pembeli.index');
-        Route::get('/pembeli/{pembeli}', [PembeliController::class, 'show'])->name('pembeli.show');
-        Route::patch('/pembeli/{pembeli}/toggle', [PembeliController::class, 'toggle'])->name('pembeli.toggle');
+        Route::patch('/stok/{produk}', [StokController::class, 'update'])
+            ->name('stok.update');
 
-        Route::get('/ulasan', [UlasanController::class, 'index'])->name('ulasan.index');
-        Route::patch('/ulasan/{ulasan}/toggle', [UlasanController::class, 'toggle'])->name('ulasan.toggle');
-        Route::delete('/ulasan/{ulasan}', [UlasanController::class, 'destroy'])->name('ulasan.destroy');
+        /*
+        |--------------------------------------------------------------------------
+        | Pesanan Admin
+        |--------------------------------------------------------------------------
+        | Route invoice wajib di atas route show.
+        */
+        Route::get('/pesanan', [PesananController::class, 'index'])
+            ->name('pesanan.index');
 
-        Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
-        Route::get('/laporan/export-csv', [LaporanController::class, 'exportCsv'])->name('laporan.export.csv');
+        Route::get('/pesanan/{pesanan}/invoice', [PesananController::class, 'invoice'])
+            ->name('pesanan.invoice');
 
-        Route::get('/pengaturan', [PengaturanTokoController::class, 'edit'])->name('pengaturan.edit');
-        Route::put('/pengaturan', [PengaturanTokoController::class, 'update'])->name('pengaturan.update');
+        Route::get('/pesanan/{pesanan}', [PesananController::class, 'show'])
+            ->name('pesanan.show');
 
-        Route::patch('/banner/{banner}/toggle', [BannerController::class, 'toggle'])->name('banner.toggle');
-        Route::resource('banner', BannerController::class)->except(['show']);
+        Route::patch('/pesanan/{pesanan}/status', [PesananController::class, 'updateStatus'])
+            ->name('pesanan.status');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pembayaran
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/pembayaran', [PembayaranController::class, 'index'])
+            ->name('pembayaran.index');
+
+        Route::patch('/pembayaran/{pembayaran}/status', [PembayaranController::class, 'updateStatus'])
+            ->name('pembayaran.status');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pengiriman
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/pengiriman', [PengirimanController::class, 'index'])
+            ->name('pengiriman.index');
+
+        Route::put('/pengiriman/pengaturan', [PengirimanController::class, 'updatePengaturan'])
+            ->name('pengiriman.pengaturan.update');
+
+        Route::patch('/pengiriman/{pengiriman}/status', [PengirimanController::class, 'updateStatus'])
+            ->name('pengiriman.status');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pembeli
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/pembeli', [PembeliController::class, 'index'])
+            ->name('pembeli.index');
+
+        Route::get('/pembeli/{pembeli}', [PembeliController::class, 'show'])
+            ->name('pembeli.show');
+
+        Route::patch('/pembeli/{pembeli}/toggle', [PembeliController::class, 'toggle'])
+            ->name('pembeli.toggle');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Ulasan
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/ulasan', [UlasanController::class, 'index'])
+            ->name('ulasan.index');
+
+        Route::patch('/ulasan/{ulasan}/toggle', [UlasanController::class, 'toggle'])
+            ->name('ulasan.toggle');
+
+        Route::delete('/ulasan/{ulasan}', [UlasanController::class, 'destroy'])
+            ->name('ulasan.destroy');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Laporan
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/laporan', [LaporanController::class, 'index'])
+            ->name('laporan.index');
+
+        Route::get('/laporan/export-csv', [LaporanController::class, 'exportCsv'])
+            ->name('laporan.export.csv');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pengaturan Toko
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/pengaturan', [PengaturanTokoController::class, 'edit'])
+            ->name('pengaturan.edit');
+
+        Route::put('/pengaturan', [PengaturanTokoController::class, 'update'])
+            ->name('pengaturan.update');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Banner
+        |--------------------------------------------------------------------------
+        */
+        Route::patch('/banner/{banner}/toggle', [BannerController::class, 'toggle'])
+            ->name('banner.toggle');
+
+        Route::resource('banner', BannerController::class)
+            ->except(['show']);
 
         Route::fallback(function () {
             return response()->view('errors.admin-404', [], 404);
         })->name('not-found');
     });
 
+/*
+|--------------------------------------------------------------------------
+| KASIR
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', KasirMiddleware::class])
     ->prefix('kasir')
     ->name('kasir.')
     ->group(function () {
-        Route::get('/dashboard', [KasirController::class, 'dashboard'])->name('dashboard');
+        Route::get('/dashboard', [KasirController::class, 'dashboard'])
+            ->name('dashboard');
 
         Route::fallback(function () {
             return response()->view('errors.kasir-404', [], 404);
         })->name('not-found');
     });
 
+/*
+|--------------------------------------------------------------------------
+| FALLBACK GLOBAL
+|--------------------------------------------------------------------------
+*/
 Route::fallback(function () {
     return response()->view('errors.404', [], 404);
 });

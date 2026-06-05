@@ -1,161 +1,587 @@
 @extends('layouts.admin')
+
 @section('title', 'Detail Pembeli - SiTahu')
+@section('page_title', 'Detail Pembeli')
 
 @section('content')
+@php
+    $initial = strtoupper(substr($pembeli->name ?? 'P', 0, 2));
+
+    $statusClass = [
+        'menunggu_pembayaran' => 'bg-warning-subtle text-warning-emphasis',
+        'dibayar' => 'bg-primary-subtle text-primary-emphasis',
+        'diproses' => 'bg-info-subtle text-info-emphasis',
+        'siap_diambil' => 'bg-success-subtle text-success-emphasis',
+        'dalam_pengantaran' => 'bg-primary-subtle text-primary-emphasis',
+        'selesai' => 'bg-success-subtle text-success-emphasis',
+        'dibatalkan' => 'bg-danger-subtle text-danger-emphasis',
+    ];
+
+    $formatStatus = function ($value) {
+        return ucwords(str_replace('_', ' ', (string) $value));
+    };
+@endphp
+
 <style>
-    /* Styling Standar CRM */
-    .sc-box { border: 1px solid #e5e7eb; border-radius: 0.75rem; background: #fff; margin-bottom: 1.5rem; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
-    .sc-header { padding: 1.25rem 1.5rem; font-weight: 700; font-size: 1rem; border-bottom: 1px solid #f3f4f6; color: #111827; }
-    
-    .profile-hero { background: linear-gradient(135deg, var(--brand-active-bg, #fbf1d4), #f9fafb); padding: 2rem 1.5rem; text-align: center; border-bottom: 1px solid #e5e7eb; }
-    .profile-avatar { width: 80px; height: 80px; border-radius: 50%; font-size: 2rem; font-weight: 800; color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; background: var(--brand-color, #dfba68); box-shadow: 0 4px 10px rgba(223, 186, 104, 0.3); border: 3px solid #fff; }
-    
-    .info-list { display: flex; flex-direction: column; }
-    .info-item { padding: 1rem 1.5rem; border-bottom: 1px solid #f3f4f6; display: flex; flex-direction: column; gap: 0.25rem; }
-    .info-item:last-child { border-bottom: none; }
-    
-    .address-card { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; background: #f9fafb; transition: border-color 0.2s; }
-    .address-card:hover { border-color: var(--brand-color, #dfba68); background: #fff; }
-    .address-card:last-child { margin-bottom: 0; }
-    
-    .map-placeholder { height: 200px; background-color: #e5e7eb; background-image: radial-gradient(#d1d5db 1px, transparent 0); background-size: 20px 20px; display: flex; align-items: center; justify-content: center; position: relative; }
-    .map-pin { font-size: 2.5rem; color: #ef4444; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
-    
-    .table-enterprise th { border-bottom: 2px solid #e5e7eb; color: #6b7280; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 1rem 1.5rem; font-weight: 600; background: #fafafa; }
-    .table-enterprise td { vertical-align: middle; padding: 1rem 1.5rem; border-bottom: 1px solid #f3f4f6; color: #111827; }
+    .buyer-hero {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 18px;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 24px;
+        border-radius: 24px;
+        border: 1px solid var(--border);
+        background:
+            radial-gradient(circle at top right, rgba(223, 186, 104, .24), transparent 35%),
+            linear-gradient(135deg, #ffffff, #fff8e8);
+        box-shadow: var(--shadow-soft);
+    }
+
+    .buyer-profile {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        min-width: 0;
+    }
+
+    .buyer-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 24px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, var(--brand), #c89335);
+        color: #fff;
+        font-size: 1.45rem;
+        font-weight: 950;
+        letter-spacing: -.06em;
+        box-shadow: 0 14px 28px rgba(223, 186, 104, .28);
+        flex-shrink: 0;
+    }
+
+    .buyer-profile h1 {
+        margin: 0;
+        color: var(--text);
+        font-size: clamp(1.45rem, 3vw, 2rem);
+        font-weight: 950;
+        letter-spacing: -.06em;
+        line-height: 1.1;
+    }
+
+    .buyer-profile p {
+        margin: 7px 0 0;
+        color: var(--muted);
+        font-size: .9rem;
+        font-weight: 650;
+        line-height: 1.5;
+    }
+
+    .buyer-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .buyer-card {
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        background: #fff;
+        box-shadow: var(--shadow-soft);
+        overflow: hidden;
+    }
+
+    .buyer-card-head {
+        padding: 18px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .buyer-card-head h2 {
+        margin: 0;
+        color: var(--text);
+        font-size: 1.02rem;
+        font-weight: 950;
+        letter-spacing: -.035em;
+    }
+
+    .buyer-card-head p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: .8rem;
+        font-weight: 650;
+        line-height: 1.5;
+    }
+
+    .buyer-info-list {
+        padding: 6px 18px 18px;
+        display: grid;
+        gap: 10px;
+    }
+
+    .buyer-info-row {
+        display: grid;
+        grid-template-columns: 160px minmax(0, 1fr);
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px dashed #eef0f3;
+        font-size: .88rem;
+    }
+
+    .buyer-info-row:last-child {
+        border-bottom: 0;
+    }
+
+    .buyer-info-row span {
+        color: var(--muted);
+        font-weight: 850;
+    }
+
+    .buyer-info-row strong {
+        color: var(--text);
+        font-weight: 900;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .buyer-metric {
+        min-height: 116px;
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: var(--shadow-soft);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .buyer-metric-label {
+        color: var(--muted);
+        font-size: .75rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: .055em;
+    }
+
+    .buyer-metric-value {
+        margin-top: 8px;
+        color: var(--text);
+        font-size: 1.55rem;
+        font-weight: 950;
+        line-height: 1;
+        letter-spacing: -.055em;
+    }
+
+    .buyer-metric-note {
+        display: inline-block;
+        margin-top: 8px;
+        font-size: .76rem;
+        font-weight: 850;
+    }
+
+    .buyer-metric-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 15px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        font-size: 1.1rem;
+    }
+
+    .address-list,
+    .order-list {
+        display: grid;
+    }
+
+    .address-row,
+    .order-row {
+        padding: 16px 18px;
+        border-top: 1px solid #f1f2f4;
+        display: grid;
+        gap: 8px;
+        transition: .16s ease;
+    }
+
+    .order-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        text-decoration: none;
+    }
+
+    .order-row:hover {
+        background: #fafafa;
+    }
+
+    .address-title,
+    .order-title {
+        color: var(--text);
+        font-size: .93rem;
+        font-weight: 950;
+        letter-spacing: -.02em;
+    }
+
+    .address-sub,
+    .order-sub {
+        color: var(--muted);
+        font-size: .79rem;
+        font-weight: 700;
+        line-height: 1.55;
+    }
+
+    .address-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+    }
+
+    .empty-box {
+        padding: 34px 18px;
+        text-align: center;
+        color: var(--muted);
+        font-size: .85rem;
+        font-weight: 700;
+    }
+
+    @media (max-width: 900px) {
+        .buyer-hero {
+            grid-template-columns: 1fr;
+        }
+
+        .buyer-actions {
+            justify-content: flex-start;
+        }
+
+        .order-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .buyer-hero {
+            padding: 18px;
+        }
+
+        .buyer-profile {
+            align-items: flex-start;
+        }
+
+        .buyer-avatar {
+            width: 58px;
+            height: 58px;
+            border-radius: 20px;
+        }
+
+        .buyer-info-row {
+            grid-template-columns: 1fr;
+            gap: 5px;
+        }
+    }
 </style>
 
-<div class="d-flex align-items-center justify-content-between mb-4">
-    <div class="d-flex align-items-center gap-3">
-        <a href="{{ route('admin.pembeli.index') }}" class="btn btn-light border rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-            <i class="bi bi-arrow-left"></i>
+<section class="buyer-hero">
+    <div class="buyer-profile">
+        <div class="buyer-avatar">
+            {{ $initial }}
+        </div>
+
+        <div class="min-w-0">
+            <h1>{{ $pembeli->name }}</h1>
+
+            <p>
+                {{ $pembeli->email }}
+                @if($pembeli->telepon)
+                    · {{ $pembeli->telepon }}
+                @endif
+            </p>
+
+            <div class="mt-2">
+                <span class="badge {{ $pembeli->aktif ? 'bg-success-subtle text-success-emphasis' : 'bg-danger-subtle text-danger-emphasis' }}">
+                    {{ $pembeli->aktif ? 'Akun Aktif' : 'Akun Nonaktif' }}
+                </span>
+
+                <span class="badge bg-warning-subtle text-warning-emphasis">
+                    Pembeli
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="buyer-actions">
+        <a href="{{ route('admin.pembeli.index') }}" class="btn btn-light border fw-bold px-3">
+            <i class="bi bi-arrow-left me-1"></i>
+            Kembali
         </a>
+
+        <form
+            method="POST"
+            action="{{ route('admin.pembeli.toggle', $pembeli) }}"
+            class="inline-form"
+            data-confirm-title="Ubah Status Pembeli"
+            data-confirm-message="Yakin ingin mengubah status akun pembeli ini?"
+            data-confirm-button="Ubah Status"
+        >
+            @csrf
+            @method('PATCH')
+
+            <button type="submit" class="btn btn-brand px-3">
+                @if($pembeli->aktif)
+                    <i class="bi bi-person-x me-1"></i>
+                    Nonaktifkan
+                @else
+                    <i class="bi bi-person-check me-1"></i>
+                    Aktifkan
+                @endif
+            </button>
+        </form>
+    </div>
+</section>
+
+<div class="grid g4 mb-4">
+    <div class="buyer-metric">
         <div>
-            <h1 class="h4 fw-bold text-dark mb-1">Profil Pelanggan</h1>
-            <p class="text-muted small mb-0">Detail informasi dan riwayat transaksi pembeli.</p>
+            <div class="buyer-metric-label">Total Pesanan</div>
+            <div class="buyer-metric-value">{{ $totalPesanan }}</div>
+            <span class="buyer-metric-note text-primary">Semua transaksi</span>
+        </div>
+
+        <div class="buyer-metric-icon bg-primary-subtle text-primary-emphasis">
+            <i class="bi bi-bag-check-fill"></i>
+        </div>
+    </div>
+
+    <div class="buyer-metric">
+        <div>
+            <div class="buyer-metric-label">Pesanan Aktif</div>
+            <div class="buyer-metric-value">{{ $pesananAktif }}</div>
+            <span class="buyer-metric-note text-warning">Belum selesai</span>
+        </div>
+
+        <div class="buyer-metric-icon bg-warning-subtle text-warning-emphasis">
+            <i class="bi bi-hourglass-split"></i>
+        </div>
+    </div>
+
+    <div class="buyer-metric">
+        <div>
+            <div class="buyer-metric-label">Pesanan Selesai</div>
+            <div class="buyer-metric-value">{{ $pesananSelesai }}</div>
+            <span class="buyer-metric-note text-success">Sudah diterima</span>
+        </div>
+
+        <div class="buyer-metric-icon bg-success-subtle text-success-emphasis">
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+    </div>
+
+    <div class="buyer-metric">
+        <div>
+            <div class="buyer-metric-label">Total Belanja</div>
+            <div class="buyer-metric-value" style="font-size:1.08rem;">
+                {{ $rupiah($totalBelanja) }}
+            </div>
+            <span class="buyer-metric-note text-success">Pembayaran dibayar</span>
+        </div>
+
+        <div class="buyer-metric-icon bg-success-subtle text-success-emphasis">
+            <i class="bi bi-cash-stack"></i>
         </div>
     </div>
 </div>
 
-<div class="row g-4">
-    
-    <div class="col-12 col-xl-4">
-        
-        <div class="sc-box">
-            <div class="profile-hero">
-                <div class="profile-avatar">
-                    {{ strtoupper(substr($pembeli->name, 0, 2)) }}
-                </div>
-                <h2 class="h5 fw-bold text-dark mb-1">{{ $pembeli->name }}</h2>
-                <div class="badge rounded-pill {{ $pembeli->aktif ? 'bg-success-subtle text-success-emphasis' : 'bg-danger-subtle text-danger-emphasis' }} mb-2">
-                    {{ $pembeli->aktif ? 'Akun Aktif' : 'Akun Nonaktif' }}
-                </div>
-                <div class="text-muted small">Bergabung sejak {{ $pembeli->created_at->format('d M Y') }}</div>
-            </div>
-            <div class="info-list">
-                <div class="info-item">
-                    <span class="text-muted small fw-bold text-uppercase">Email</span>
-                    <span class="text-dark fw-medium">{{ $pembeli->email }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="text-muted small fw-bold text-uppercase">Telepon / WhatsApp</span>
-                    <span class="text-dark fw-medium">{{ $pembeli->telepon ?? 'Belum ditambahkan' }}</span>
-                </div>
+<div class="grid g2 mb-4">
+    <section class="buyer-card">
+        <div class="buyer-card-head">
+            <div>
+                <h2>Data Akun Pembeli</h2>
+                <p>Informasi akun yang digunakan pembeli untuk login.</p>
             </div>
         </div>
 
-        <div class="sc-box">
-            <div class="sc-header">
-                <i class="bi bi-geo-alt text-danger me-2"></i> Peta Lokasi (Utama)
+        <div class="buyer-info-list">
+            <div class="buyer-info-row">
+                <span>Nama</span>
+                <strong>{{ $pembeli->name }}</strong>
             </div>
-            <div class="map-placeholder">
-                <i class="bi bi-geo-alt-fill map-pin"></i>
-                <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-white bg-opacity-75 text-center small fw-medium">
-                    Koordinat GPS Mobile
+
+            <div class="buyer-info-row">
+                <span>Email</span>
+                <strong>{{ $pembeli->email }}</strong>
+            </div>
+
+            <div class="buyer-info-row">
+                <span>Telepon</span>
+                <strong>{{ $pembeli->telepon ?: '-' }}</strong>
+            </div>
+
+            <div class="buyer-info-row">
+                <span>Status</span>
+                <strong>{{ $pembeli->aktif ? 'Aktif' : 'Nonaktif' }}</strong>
+            </div>
+
+            <div class="buyer-info-row">
+                <span>Terdaftar</span>
+                <strong>{{ optional($pembeli->created_at)->format('d/m/Y H:i') ?? '-' }}</strong>
+            </div>
+
+            <div class="buyer-info-row">
+                <span>Total Ulasan</span>
+                <strong>{{ $totalUlasan }} ulasan</strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="buyer-card">
+        <div class="buyer-card-head">
+            <div>
+                <h2>Alamat Utama</h2>
+                <p>Alamat utama pembeli untuk pengiriman kurir toko.</p>
+            </div>
+        </div>
+
+        @if($alamatUtama)
+            <div class="buyer-info-list">
+                <div class="buyer-info-row">
+                    <span>Penerima</span>
+                    <strong>{{ $alamatUtama->nama_penerima }}</strong>
+                </div>
+
+                <div class="buyer-info-row">
+                    <span>Telepon</span>
+                    <strong>{{ $alamatUtama->telepon }}</strong>
+                </div>
+
+                <div class="buyer-info-row">
+                    <span>Alamat</span>
+                    <strong>{{ $alamatUtama->alamat_lengkap }}</strong>
+                </div>
+
+                <div class="buyer-info-row">
+                    <span>Koordinat</span>
+                    <strong>
+                        @if($alamatUtama->latitude && $alamatUtama->longitude)
+                            {{ $alamatUtama->latitude }}, {{ $alamatUtama->longitude }}
+                            <br>
+                            <a
+                                href="https://www.google.com/maps?q={{ $alamatUtama->latitude }},{{ $alamatUtama->longitude }}"
+                                target="_blank"
+                                class="small-btn mt-2"
+                            >
+                                <i class="bi bi-map"></i>
+                                Buka Maps
+                            </a>
+                        @else
+                            -
+                        @endif
+                    </strong>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-xl-8">
-        
-        <div class="sc-box">
-            <div class="sc-header">
-                Buku Alamat Tersimpan
+        @else
+            <div class="empty-box">
+                Pembeli belum memiliki alamat utama.
             </div>
-            <div class="p-4">
-                @forelse($pembeli->alamat as $alamat)
-                    <div class="address-card d-flex justify-content-between align-items-start gap-3">
-                        <div>
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <strong class="text-dark">{{ $alamat->nama_penerima }}</strong>
-                                @if($alamat->utama)
-                                    <span class="badge bg-success-subtle text-success-emphasis rounded-pill" style="font-size: 0.65rem;">Alamat Utama</span>
-                                @endif
-                            </div>
-                            <p class="text-muted small mb-0 lh-lg" style="max-width: 500px;">
-                                {{ $alamat->alamat_lengkap }}
-                            </p>
-                        </div>
-                        <i class="bi bi-house-door text-muted fs-4 opacity-50"></i>
-                    </div>
-                @empty
-                    <div class="text-center py-4">
-                        <i class="bi bi-journal-x fs-1 text-muted mb-2 d-block"></i>
-                        <strong class="text-dark">Belum ada alamat tersimpan</strong>
-                        <div class="text-muted small mt-1">Alamat akan otomatis muncul setelah pembeli menambahkannya via aplikasi mobile.</div>
-                    </div>
-                @endforelse
+        @endif
+    </section>
+</div>
+
+<div class="grid g2">
+    <section class="buyer-card">
+        <div class="buyer-card-head">
+            <div>
+                <h2>Daftar Alamat</h2>
+                <p>Semua alamat yang tersimpan pada akun pembeli.</p>
             </div>
         </div>
 
-        <div class="sc-box mb-0">
-            <div class="sc-header d-flex justify-content-between align-items-center">
-                <span>10 Riwayat Pesanan Terbaru</span>
-                <span class="badge bg-light text-secondary border fw-normal">{{ $pembeli->pesanan->count() }} Total Transaksi</span>
-            </div>
-            <div class="table-responsive bg-white">
-                <table class="table table-enterprise table-borderless mb-0">
-                    <thead>
-                        <tr>
-                            <th class="ps-4">No. Invoice</th>
-                            <th>Tanggal</th>
-                            <th>Status Transaksi</th>
-                            <th class="text-end pe-4">Total Bayar</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($pembeli->pesanan as $order)
-                        <tr>
-                            <td class="ps-4">
-                                <strong class="text-dark">{{ $order->nomor_invoice }}</strong>
-                            </td>
-                            <td class="text-muted small">
-                                {{ optional($order->tanggal_pesanan)->format('d M Y, H:i') }}
-                            </td>
-                            <td>
-                                <span class="badge rounded-pill fw-medium px-2 py-1 {{ str_replace('text-bg-', 'bg-', $statusClass($order->status)) }}-subtle text-{{ str_replace('text-bg-', '', $statusClass($order->status)) }}-emphasis" style="font-size: 0.75rem;">
-                                    {{ $statusLabel($order->status) }}
+        <div class="address-list">
+            @forelse($pembeli->alamat as $alamat)
+                <div class="address-row">
+                    <div>
+                        <div class="address-title">
+                            {{ $alamat->nama_penerima }}
+                            @if($alamat->utama)
+                                <span class="badge bg-warning-subtle text-warning-emphasis ms-1">
+                                    Utama
                                 </span>
-                            </td>
-                            <td class="text-end pe-4 fw-bold text-dark">
-                                {{ $rupiah($order->total_bayar) }}
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4" class="text-center py-5">
-                                <i class="bi bi-cart-x fs-2 text-muted mb-2 d-block"></i>
-                                <strong class="text-dark">Belum pernah berbelanja</strong>
-                                <div class="text-muted small mt-1">Riwayat pesanan akan dicatat saat pembeli melakukan checkout.</div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                            @endif
+                        </div>
+
+                        <div class="address-sub">
+                            {{ $alamat->telepon }} · {{ $alamat->alamat_lengkap }}
+                        </div>
+
+                        @if($alamat->latitude && $alamat->longitude)
+                            <div class="address-actions">
+                                <a
+                                    href="https://www.google.com/maps?q={{ $alamat->latitude }},{{ $alamat->longitude }}"
+                                    target="_blank"
+                                    class="small-btn"
+                                >
+                                    <i class="bi bi-map"></i>
+                                    Buka Maps
+                                </a>
+
+                                <span class="small-btn">
+                                    {{ $alamat->latitude }}, {{ $alamat->longitude }}
+                                </span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @empty
+                <div class="empty-box">
+                    Belum ada alamat tersimpan.
+                </div>
+            @endforelse
+        </div>
+    </section>
+
+    <section class="buyer-card">
+        <div class="buyer-card-head">
+            <div>
+                <h2>Riwayat Pesanan</h2>
+                <p>Pesanan terbaru yang dibuat oleh pembeli ini.</p>
             </div>
         </div>
 
-    </div>
+        <div class="order-list">
+            @forelse($pembeli->pesanan as $order)
+                <a href="{{ route('admin.pesanan.show', $order) }}" class="order-row">
+                    <div class="min-w-0">
+                        <div class="order-title">
+                            {{ $order->nomor_invoice }}
+                        </div>
+
+                        <div class="order-sub">
+                            {{ optional($order->tanggal_pesanan)->format('d/m/Y H:i') ?? '-' }}
+                            · {{ $order->item->count() }} produk
+                            · {{ $formatStatus($order->metode_pengambilan) }}
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <div class="fw-bold text-dark">
+                            {{ $rupiah($order->total_bayar ?? 0) }}
+                        </div>
+
+                        <span class="badge {{ $statusClass[$order->status] ?? 'bg-secondary-subtle text-secondary-emphasis' }}">
+                            {{ $formatStatus($order->status) }}
+                        </span>
+                    </div>
+                </a>
+            @empty
+                <div class="empty-box">
+                    Pembeli ini belum pernah membuat pesanan.
+                </div>
+            @endforelse
+        </div>
+    </section>
 </div>
 @endsection

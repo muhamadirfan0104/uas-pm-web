@@ -26,47 +26,80 @@
 
     .order-hero p {
         margin: 12px 0 0;
-        max-width: 720px;
+        max-width: 760px;
         color: var(--muted);
         line-height: 1.7;
         font-size: 15px;
     }
 
-    .search-card {
-        padding: 18px;
+    .status-summary {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 14px;
         margin-bottom: 20px;
     }
 
-    .search-form {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 12px;
-        align-items: end;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 7px;
-        color: var(--heading);
-        font-size: 13px;
-        font-weight: 800;
-    }
-
-    .form-control {
-        width: 100%;
-        min-height: 44px;
+    .summary-card {
+        padding: 16px;
+        border-radius: 20px;
         border: 1px solid var(--line);
-        border-radius: 12px;
         background: #ffffff;
-        color: var(--text);
-        padding: 10px 13px;
-        outline: none;
+        box-shadow: 0 10px 24px rgba(17, 24, 39, 0.05);
+    }
+
+    .summary-card span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        margin-bottom: 7px;
+    }
+
+    .summary-card strong {
+        display: block;
+        color: var(--heading);
+        font-size: 24px;
+        letter-spacing: -0.06em;
+    }
+
+    .filter-card {
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .filter-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 850;
         transition: 0.16s ease;
     }
 
-    .form-control:focus {
-        border-color: rgba(223, 186, 104, 0.95);
-        box-shadow: 0 0 0 4px rgba(223, 186, 104, 0.16);
+    .filter-chip:hover {
+        transform: translateY(-1px);
+        color: var(--heading);
+        box-shadow: 0 8px 18px rgba(17, 24, 39, 0.06);
+    }
+
+    .filter-chip.active {
+        background: var(--brand-soft);
+        border-color: rgba(223, 186, 104, 0.55);
+        color: var(--brand-text);
     }
 
     .order-list {
@@ -78,7 +111,7 @@
         padding: 18px;
         display: grid;
         grid-template-columns: 1fr auto;
-        gap: 16px;
+        gap: 18px;
         align-items: center;
         transition: 0.18s ease;
     }
@@ -93,7 +126,7 @@
         align-items: center;
         gap: 10px;
         flex-wrap: wrap;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
     }
 
     .order-title h2 {
@@ -133,6 +166,12 @@
         border-color: #fecaca;
     }
 
+    .status-info {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-color: #bfdbfe;
+    }
+
     .order-info {
         display: flex;
         flex-wrap: wrap;
@@ -146,8 +185,57 @@
         color: var(--heading);
     }
 
+    .order-products {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 13px;
+    }
+
+    .mini-product {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        max-width: 230px;
+        padding: 7px 9px;
+        border-radius: 999px;
+        background: #f9fafb;
+        border: 1px solid var(--line);
+        color: var(--heading);
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .mini-product-img {
+        width: 26px;
+        height: 26px;
+        border-radius: 999px;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        background: var(--brand-soft);
+        color: var(--brand-text);
+        font-size: 9px;
+        font-weight: 900;
+        flex: 0 0 auto;
+    }
+
+    .mini-product-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .mini-product span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     .order-total {
         text-align: right;
+        min-width: 190px;
     }
 
     .order-total span {
@@ -155,6 +243,7 @@
         color: var(--muted);
         font-size: 12px;
         margin-bottom: 4px;
+        font-weight: 750;
     }
 
     .order-total strong {
@@ -166,20 +255,20 @@
     }
 
     .empty-card {
-        padding: 40px 22px;
+        padding: 46px 22px;
         text-align: center;
     }
 
     .empty-icon {
-        width: 66px;
-        height: 66px;
+        width: 70px;
+        height: 70px;
         margin: 0 auto 16px;
         display: grid;
         place-items: center;
-        border-radius: 20px;
+        border-radius: 24px;
         background: var(--brand-soft);
         color: var(--brand-text);
-        font-size: 30px;
+        font-size: 32px;
     }
 
     .empty-card h2 {
@@ -190,177 +279,236 @@
     }
 
     .empty-card p {
-        margin: 9px auto 0;
-        max-width: 500px;
+        margin: 9px auto 18px;
+        max-width: 520px;
         color: var(--muted);
         line-height: 1.7;
         font-size: 14px;
     }
 
-    .tips-card {
+    .pagination-wrap {
         margin-top: 20px;
-        padding: 18px;
-        background: #ffffff;
     }
 
-    .tips-card h2 {
-        margin: 0 0 10px;
-        color: var(--heading);
-        font-size: 20px;
-        letter-spacing: -0.04em;
+    .pagination-wrap nav {
+        display: flex;
+        justify-content: center;
     }
 
-    .tips-list {
-        margin: 0;
-        padding-left: 18px;
-        color: var(--muted);
-        font-size: 14px;
-        line-height: 1.8;
+    @media (max-width: 980px) {
+        .status-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
 
     @media (max-width: 720px) {
         .order-hero,
-        .search-card,
+        .filter-card,
         .order-card {
             padding: 20px;
         }
 
-        .search-form,
+        .status-summary {
+            grid-template-columns: 1fr;
+        }
+
         .order-card {
             grid-template-columns: 1fr;
         }
 
         .order-total {
             text-align: left;
+            min-width: 0;
         }
     }
 </style>
 @endpush
 
 @section('content')
+@php
+    $statusLabels = [
+        '' => 'Semua',
+        'menunggu_pembayaran' => 'Menunggu Pembayaran',
+        'dibayar' => 'Dibayar',
+        'diproses' => 'Diproses',
+        'siap_diambil' => 'Siap Diambil',
+        'dalam_pengantaran' => 'Dalam Pengantaran',
+        'selesai' => 'Selesai',
+        'dibatalkan' => 'Dibatalkan',
+    ];
+
+    $statusClassMap = [
+        'menunggu_pembayaran' => 'status-wait',
+        'dibayar' => 'status-info',
+        'diproses' => 'status-info',
+        'siap_diambil' => 'status-info',
+        'dalam_pengantaran' => 'status-info',
+        'selesai' => 'status-success',
+        'dibatalkan' => 'status-danger',
+    ];
+@endphp
+
 <section class="page-card order-hero">
     <div class="badge">Pesanan Saya</div>
 
     <h1>
-        Cek status pesananmu <span>dengan mudah</span>
+        Pantau pesananmu <span>langsung dari akun</span>
     </h1>
 
     <p>
-        Masukkan nomor invoice, email, atau nomor WhatsApp yang kamu pakai saat checkout.
-        Setelah itu, kamu bisa melihat detail produk, pembayaran, dan cara menerima pesanan.
+        Semua pesanan yang kamu buat setelah login akan tampil otomatis di halaman ini.
+        Kamu tidak perlu mencari invoice atau memasukkan email lagi.
     </p>
 </section>
 
-<section class="page-card search-card">
-    <form action="{{ route('pembeli-web.pesanan.index') }}" method="GET" class="search-form">
-        <div class="form-group">
-            <label for="keyword">Cari pesanan</label>
-            <input
-                type="text"
-                id="keyword"
-                name="keyword"
-                class="form-control"
-                value="{{ $keyword }}"
-                placeholder="Contoh: INV-202606..., email, atau nomor WhatsApp"
-            >
-        </div>
+<section class="status-summary">
+    <div class="summary-card">
+        <span>Semua pesanan</span>
+        <strong>{{ $jumlahStatus['semua'] ?? 0 }}</strong>
+    </div>
 
-        <button type="submit" class="btn btn-primary">
-            Cek Pesanan
-        </button>
-    </form>
+    <div class="summary-card">
+        <span>Menunggu bayar</span>
+        <strong>{{ $jumlahStatus['menunggu_pembayaran'] ?? 0 }}</strong>
+    </div>
+
+    <div class="summary-card">
+        <span>Sedang diproses</span>
+        <strong>{{ $jumlahStatus['diproses'] ?? 0 }}</strong>
+    </div>
+
+    <div class="summary-card">
+        <span>Selesai</span>
+        <strong>{{ $jumlahStatus['selesai'] ?? 0 }}</strong>
+    </div>
+
+    <div class="summary-card">
+        <span>Dibatalkan</span>
+        <strong>{{ $jumlahStatus['dibatalkan'] ?? 0 }}</strong>
+    </div>
 </section>
 
-@if($keyword !== '')
-    @if($pesananList->count())
-        <section class="order-list">
-            @foreach($pesananList as $pesanan)
-                @php
-                    $status = $pesanan->status;
-                    $statusPembayaran = $pesanan->status_pembayaran;
+<section class="page-card filter-card">
+    <div class="filter-row">
+        @foreach($statusLabels as $value => $label)
+            <a
+                href="{{ $value === '' ? route('pembeli-web.pesanan.index') : route('pembeli-web.pesanan.index', ['status' => $value]) }}"
+                class="filter-chip {{ $status === $value ? 'active' : '' }}"
+            >
+                {{ $label }}
+            </a>
+        @endforeach
+    </div>
+</section>
 
-                    $statusClass = 'status-wait';
+@if($pesananList->count())
+    <section class="order-list">
+        @foreach($pesananList as $pesanan)
+            @php
+                $statusPesanan = $pesanan->status;
+                $statusPembayaran = $pesanan->status_pembayaran;
+                $statusClass = $statusClassMap[$statusPesanan] ?? 'status-wait';
 
-                    if (in_array($status, ['selesai', 'dibayar'])) {
-                        $statusClass = 'status-success';
-                    }
+                if (in_array($statusPembayaran, ['gagal', 'kedaluwarsa', 'dibatalkan'])) {
+                    $statusClass = 'status-danger';
+                }
 
-                    if (in_array($status, ['dibatalkan']) || in_array($statusPembayaran, ['gagal', 'kedaluwarsa', 'dibatalkan'])) {
-                        $statusClass = 'status-danger';
-                    }
-                @endphp
+                $produkPreview = $pesanan->item->take(3);
+                $sisaProduk = max(0, $pesanan->item->count() - 3);
+            @endphp
 
-                <article class="page-card order-card">
-                    <div>
-                        <div class="order-title">
-                            <h2>{{ $pesanan->nomor_invoice }}</h2>
-                            <span class="status-pill {{ $statusClass }}">
-                                {{ ucwords(str_replace('_', ' ', $pesanan->status)) }}
-                            </span>
-                        </div>
+            <article class="page-card order-card">
+                <div>
+                    <div class="order-title">
+                        <h2>{{ $pesanan->nomor_invoice }}</h2>
 
-                        <div class="order-info">
-                            <span>
-                                Tanggal:
-                                <strong>{{ optional($pesanan->tanggal_pesanan)->format('d M Y H:i') }}</strong>
-                            </span>
-
-                            <span>
-                                Produk:
-                                <strong>{{ $pesanan->item->sum('jumlah') }} item</strong>
-                            </span>
-
-                            <span>
-                                Pembayaran:
-                                <strong>{{ ucwords(str_replace('_', ' ', $pesanan->status_pembayaran)) }}</strong>
-                            </span>
-
-                            <span>
-                                Penerimaan:
-                                <strong>{{ $pesanan->metode_pengambilan === 'kurir_toko' ? 'Kurir toko' : 'Ambil di toko' }}</strong>
-                            </span>
-                        </div>
+                        <span class="status-pill {{ $statusClass }}">
+                            {{ $statusLabels[$pesanan->status] ?? ucwords(str_replace('_', ' ', $pesanan->status)) }}
+                        </span>
                     </div>
 
-                    <div class="order-total">
-                        <span>Total bayar</span>
-                        <strong>Rp {{ number_format($pesanan->total_bayar, 0, ',', '.') }}</strong>
+                    <div class="order-info">
+                        <span>
+                            Tanggal:
+                            <strong>{{ optional($pesanan->tanggal_pesanan)->format('d M Y H:i') }}</strong>
+                        </span>
 
-                        <a href="{{ route('pembeli-web.pesanan.show', $pesanan->nomor_invoice) }}" class="btn btn-outline">
-                            Detail Pesanan
-                        </a>
+                        <span>
+                            Produk:
+                            <strong>{{ $pesanan->item->sum('jumlah') }} item</strong>
+                        </span>
+
+                        <span>
+                            Pembayaran:
+                            <strong>{{ ucwords(str_replace('_', ' ', $pesanan->status_pembayaran)) }}</strong>
+                        </span>
+
+                        <span>
+                            Penerimaan:
+                            <strong>{{ $pesanan->metode_pengambilan === 'kurir_toko' ? 'Kurir Toko' : 'Ambil di Toko' }}</strong>
+                        </span>
                     </div>
-                </article>
-            @endforeach
-        </section>
-    @else
-        <section class="page-card empty-card">
-            <div class="empty-icon">🔎</div>
-            <h2>Pesanan tidak ditemukan</h2>
-            <p>
-                Coba cek lagi nomor invoice, email, atau nomor WhatsApp yang kamu masukkan.
-                Pastikan sama seperti data saat checkout.
-            </p>
-        </section>
-    @endif
+
+                    <div class="order-products">
+                        @foreach($produkPreview as $item)
+                            @php
+                                $produk = $item->produk;
+                                $gambar = $produk?->gambarUtama?->url_gambar;
+                            @endphp
+
+                            <div class="mini-product">
+                                <div class="mini-product-img">
+                                    @if($gambar)
+                                        <img src="{{ asset('storage/' . $gambar) }}" alt="{{ $produk?->nama ?? 'Produk' }}">
+                                    @else
+                                        T
+                                    @endif
+                                </div>
+
+                                <span>
+                                    {{ $produk?->nama ?? 'Produk' }} × {{ $item->jumlah }}
+                                </span>
+                            </div>
+                        @endforeach
+
+                        @if($sisaProduk > 0)
+                            <div class="mini-product">
+                                <div class="mini-product-img">+</div>
+                                <span>{{ $sisaProduk }} produk lain</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="order-total">
+                    <span>Total bayar</span>
+                    <strong>Rp {{ number_format($pesanan->total_bayar, 0, ',', '.') }}</strong>
+
+                    <a href="{{ route('pembeli-web.pesanan.show', $pesanan->nomor_invoice) }}" class="btn btn-outline">
+                        Detail Pesanan
+                    </a>
+                </div>
+            </article>
+        @endforeach
+    </section>
+
+    <div class="pagination-wrap">
+        {{ $pesananList->links() }}
+    </div>
 @else
     <section class="page-card empty-card">
         <div class="empty-icon">🧾</div>
-        <h2>Masukkan data pesanan dulu</h2>
+
+        <h2>Belum ada pesanan</h2>
+
         <p>
-            Kamu bisa mencari pesanan memakai nomor invoice, email, atau nomor WhatsApp.
-            Nomor invoice biasanya muncul setelah checkout berhasil.
+            Pesananmu akan muncul di sini setelah kamu melakukan checkout.
+            Yuk pilih produk tahu dulu dan lanjutkan ke keranjang.
         </p>
+
+        <a href="{{ route('pembeli-web.produk') }}" class="btn btn-primary">
+            Lihat Produk Tahu
+        </a>
     </section>
 @endif
-
-<section class="page-card tips-card">
-    <h2>Tips cek pesanan</h2>
-
-    <ul class="tips-list">
-        <li>Gunakan nomor invoice kalau ingin hasil paling tepat.</li>
-        <li>Gunakan email atau nomor WhatsApp kalau lupa nomor invoice.</li>
-        <li>Status pesanan akan berubah sesuai proses dari toko.</li>
-    </ul>
-</section>
 @endsection

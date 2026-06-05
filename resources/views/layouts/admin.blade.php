@@ -12,32 +12,22 @@
         :root {
             --brand: #dfba68;
             --brand-dark: #8a6321;
-            --brand-soft: rgba(223, 186, 104, 0.16);
-
-            --bg: #f5f6f8;
-            --panel: #ffffff;
+            --brand-soft: #fff4d6;
+            --body: #f6f7fb;
+            --card: #ffffff;
             --text: #111827;
             --muted: #6b7280;
-            --muted-2: #9ca3af;
             --border: #e5e7eb;
-
-            --green: #16a34a;
-            --green-soft: #dcfce7;
-            --blue: #2563eb;
-            --blue-soft: #dbeafe;
-            --yellow: #ca8a04;
-            --yellow-soft: #fef3c7;
-            --red: #dc2626;
-            --red-soft: #fee2e2;
-            --gray-soft: #f3f4f6;
-
-            --sidebar-width: 270px;
-            --sidebar-collapsed-width: 82px;
-            --topbar-height: 66px;
-
+            --danger: #dc2626;
+            --success: #16a34a;
+            --warning: #ca8a04;
+            --info: #2563eb;
+            --sidebar-width: 280px;
+            --sidebar-mini: 86px;
+            --topbar-height: 68px;
             --radius: 18px;
-            --shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
-            --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.05);
+            --shadow: 0 14px 36px rgba(15, 23, 42, 0.07);
+            --shadow-soft: 0 8px 22px rgba(15, 23, 42, 0.05);
         }
 
         * {
@@ -45,11 +35,11 @@
         }
 
         body {
-            margin: 0;
             min-height: 100vh;
+            margin: 0;
             background:
-                radial-gradient(circle at top left, rgba(223, 186, 104, 0.13), transparent 34%),
-                var(--bg);
+                radial-gradient(circle at top left, rgba(223, 186, 104, 0.16), transparent 32%),
+                var(--body);
             color: var(--text);
             font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
@@ -58,40 +48,40 @@
             color: inherit;
         }
 
-        .app-shell {
+        .admin-shell {
             min-height: 100vh;
             display: grid;
             grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-            transition: grid-template-columns 0.22s ease;
+            transition: grid-template-columns .22s ease;
         }
 
-        body.sidebar-collapsed .app-shell {
-            grid-template-columns: var(--sidebar-collapsed-width) minmax(0, 1fr);
+        body.sidebar-mini .admin-shell {
+            grid-template-columns: var(--sidebar-mini) minmax(0, 1fr);
         }
 
-        .app-sidebar {
+        .admin-sidebar {
             position: sticky;
             top: 0;
             height: 100vh;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(16px);
-            border-right: 1px solid var(--border);
             z-index: 1040;
             display: flex;
             flex-direction: column;
+            background: rgba(255, 255, 255, .92);
+            backdrop-filter: blur(18px);
+            border-right: 1px solid var(--border);
             overflow-y: auto;
         }
 
-        .app-sidebar::-webkit-scrollbar {
+        .admin-sidebar::-webkit-scrollbar {
             width: 5px;
         }
 
-        .app-sidebar::-webkit-scrollbar-thumb {
+        .admin-sidebar::-webkit-scrollbar-thumb {
             background: #d1d5db;
             border-radius: 999px;
         }
 
-        .brand-block {
+        .brand-area {
             min-height: var(--topbar-height);
             padding: 0 18px;
             display: flex;
@@ -100,80 +90,71 @@
             border-bottom: 1px solid var(--border);
         }
 
-        .brand-logo-btn {
-            width: 42px;
-            height: 42px;
+        .brand-button {
+            width: 44px;
+            height: 44px;
             border: 0;
-            border-radius: 15px;
+            border-radius: 16px;
             background: linear-gradient(135deg, var(--brand), #f4d894);
             color: #fff;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 10px 22px rgba(223, 186, 104, 0.32);
-            transition: 0.18s ease;
+            box-shadow: 0 12px 24px rgba(223, 186, 104, .34);
             flex-shrink: 0;
         }
 
-        .brand-logo-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 14px 26px rgba(223, 186, 104, 0.38);
-        }
-
-        .brand-title {
-            font-size: 1.16rem;
-            font-weight: 850;
-            letter-spacing: -0.04em;
+        .brand-text-title {
+            font-size: 1.15rem;
+            font-weight: 900;
+            letter-spacing: -.04em;
             line-height: 1;
         }
 
-        .brand-subtitle {
+        .brand-text-subtitle {
             margin-top: 4px;
+            font-size: .73rem;
             color: var(--muted);
-            font-size: 0.73rem;
-            font-weight: 600;
+            font-weight: 700;
         }
 
-        .sidebar-nav {
-            padding: 16px 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
+        .sidebar-menu {
             flex: 1;
+            padding: 16px 14px;
         }
 
-        .sidebar-section-title {
-            margin: 14px 10px 6px;
-            color: var(--muted-2);
-            font-size: 0.68rem;
+        .sidebar-heading {
+            margin: 16px 10px 7px;
+            color: #9ca3af;
+            font-size: .68rem;
+            font-weight: 900;
+            letter-spacing: .08em;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-weight: 800;
         }
 
         .sidebar-link,
         .sidebar-parent {
             width: 100%;
-            min-height: 44px;
+            min-height: 45px;
             padding: 10px 12px;
             border: 0;
-            border-radius: 14px;
+            border-radius: 15px;
             background: transparent;
             color: #4b5563;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 11px;
             text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 700;
+            font-size: .9rem;
+            font-weight: 800;
             line-height: 1.1;
-            transition: 0.16s ease;
+            transition: .16s ease;
             position: relative;
         }
 
         .sidebar-link:hover,
         .sidebar-parent:hover {
-            background: #f7f7f7;
+            background: #f9fafb;
             color: var(--text);
         }
 
@@ -188,8 +169,8 @@
             content: "";
             position: absolute;
             left: -14px;
-            top: 10px;
-            bottom: 10px;
+            top: 11px;
+            bottom: 11px;
             width: 4px;
             border-radius: 999px;
             background: var(--brand);
@@ -207,25 +188,26 @@
 
         .sidebar-label {
             flex: 1;
+            min-width: 0;
             text-align: left;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .sidebar-chevron {
-            color: var(--muted-2);
-            font-size: 0.76rem;
-            transition: transform 0.16s ease;
+        .sidebar-arrow {
+            color: #9ca3af;
+            font-size: .75rem;
+            transition: transform .16s ease;
         }
 
-        .sidebar-parent[aria-expanded="true"] .sidebar-chevron {
+        .sidebar-parent[aria-expanded="true"] .sidebar-arrow {
             transform: rotate(180deg);
         }
 
         .sidebar-submenu {
             position: relative;
-            margin: 3px 0 8px 24px;
+            margin: 4px 0 9px 26px;
             padding-left: 18px;
         }
 
@@ -233,8 +215,8 @@
             content: "";
             position: absolute;
             left: 5px;
-            top: 4px;
-            bottom: 6px;
+            top: 5px;
+            bottom: 5px;
             width: 1px;
             background: var(--border);
         }
@@ -242,21 +224,20 @@
         .sidebar-submenu a {
             display: block;
             padding: 8px 10px;
-            border-radius: 11px;
+            border-radius: 12px;
             color: var(--muted);
             text-decoration: none;
-            font-size: 0.84rem;
-            font-weight: 700;
-            transition: 0.16s ease;
+            font-size: .83rem;
+            font-weight: 800;
         }
 
         .sidebar-submenu a:hover {
-            background: #f7f7f7;
+            background: #f9fafb;
             color: var(--text);
         }
 
         .sidebar-submenu a.active {
-            background: rgba(223, 186, 104, 0.12);
+            background: rgba(223, 186, 104, .16);
             color: var(--brand-dark);
         }
 
@@ -265,42 +246,42 @@
             border-top: 1px solid var(--border);
         }
 
-        .mini-profile-card {
+        .mini-profile {
             padding: 12px;
-            border-radius: 16px;
-            background: #fafafa;
+            border-radius: 17px;
             border: 1px solid var(--border);
+            background: #fafafa;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .mini-avatar,
-        .user-avatar {
+        .avatar,
+        .mini-avatar {
             border-radius: 999px;
-            background: linear-gradient(135deg, var(--brand), #f0d58d);
+            background: linear-gradient(135deg, var(--brand), #f4d894);
             color: #fff;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-weight: 850;
+            font-weight: 900;
             flex-shrink: 0;
         }
 
         .mini-avatar {
-            width: 36px;
-            height: 36px;
-            font-size: 0.78rem;
-        }
-
-        .user-avatar {
             width: 38px;
             height: 38px;
-            font-size: 0.82rem;
-            box-shadow: 0 8px 18px rgba(223, 186, 104, 0.26);
+            font-size: .78rem;
         }
 
-        .app-main {
+        .avatar {
+            width: 40px;
+            height: 40px;
+            font-size: .82rem;
+            box-shadow: 0 10px 22px rgba(223, 186, 104, .28);
+        }
+
+        .admin-main {
             min-width: 0;
             min-height: 100vh;
             display: flex;
@@ -312,10 +293,10 @@
             position: sticky;
             top: 0;
             z-index: 1030;
-            background: rgba(255, 255, 255, 0.86);
-            backdrop-filter: blur(16px);
-            border-bottom: 1px solid var(--border);
             padding: 0 24px;
+            background: rgba(255, 255, 255, .86);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -323,23 +304,22 @@
         }
 
         .topbar-title {
-            font-size: 0.92rem;
-            font-weight: 850;
-            letter-spacing: -0.02em;
-            color: var(--text);
             margin: 0;
+            font-size: .95rem;
+            font-weight: 900;
+            letter-spacing: -.02em;
         }
 
         .topbar-subtitle {
-            font-size: 0.76rem;
-            font-weight: 600;
-            color: var(--muted);
             margin: 2px 0 0;
+            font-size: .76rem;
+            color: var(--muted);
+            font-weight: 700;
         }
 
-        .icon-btn {
-            width: 38px;
-            height: 38px;
+        .icon-button {
+            width: 39px;
+            height: 39px;
             border-radius: 14px;
             border: 1px solid var(--border);
             background: #fff;
@@ -347,26 +327,31 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: 0.16s ease;
+            transition: .16s ease;
         }
 
-        .icon-btn:hover {
+        .icon-button:hover {
             background: #f9fafb;
             color: var(--text);
             transform: translateY(-1px);
         }
 
-        .topbar-date {
-            padding: 9px 12px;
+        .date-pill {
+            min-height: 39px;
+            padding: 0 13px;
+            border-radius: 999px;
             border: 1px solid var(--border);
             background: #fff;
-            border-radius: 999px;
-            font-size: 0.78rem;
             color: var(--muted);
-            font-weight: 750;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .78rem;
+            font-weight: 800;
+            white-space: nowrap;
         }
 
-        .content-wrapper {
+        .content-area {
             flex: 1;
             padding: 24px;
         }
@@ -374,10 +359,10 @@
         .page-card,
         .card,
         .sc-box {
-            background: var(--panel);
+            background: var(--card);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            box-shadow: var(--shadow-sm);
+            box-shadow: var(--shadow-soft);
         }
 
         .card {
@@ -389,30 +374,30 @@
         }
 
         .hero {
-            background: linear-gradient(135deg, #ffffff, #fff8e9);
-            border: 1px solid var(--border);
-            border-radius: 22px;
+            margin-bottom: 18px;
             padding: 22px;
-            box-shadow: var(--shadow-sm);
+            border-radius: 23px;
+            border: 1px solid var(--border);
+            background: linear-gradient(135deg, #ffffff, #fff8e9);
+            box-shadow: var(--shadow-soft);
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
             gap: 16px;
-            margin-bottom: 18px;
         }
 
         .hero h1 {
-            margin: 0 0 4px;
+            margin: 0 0 5px;
             font-size: 1.42rem;
-            font-weight: 900;
-            letter-spacing: -0.04em;
+            font-weight: 950;
+            letter-spacing: -.05em;
         }
 
         .hero p {
             margin: 0;
             color: var(--muted);
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: .9rem;
+            font-weight: 650;
         }
 
         .grid {
@@ -433,8 +418,8 @@
         }
 
         .stat {
-            padding: 16px 18px;
-            min-height: 128px;
+            min-height: 126px;
+            padding: 17px 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -443,39 +428,38 @@
 
         .stat-label {
             color: var(--muted);
-            font-size: 0.78rem;
-            font-weight: 800;
+            font-size: .76rem;
+            font-weight: 900;
+            letter-spacing: .05em;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
 
         .stat-value {
-            margin-top: 7px;
+            margin-top: 8px;
             color: var(--text);
-            font-size: 1.58rem;
-            line-height: 1;
+            font-size: 1.55rem;
             font-weight: 950;
-            letter-spacing: -0.05em;
+            line-height: 1;
+            letter-spacing: -.05em;
         }
 
         .stat-note {
             display: inline-block;
             margin-top: 8px;
-            font-size: 0.74rem;
-            font-weight: 800;
+            font-size: .74rem;
+            font-weight: 850;
         }
 
         .stat-icon {
-            width: 46px;
-            height: 46px;
-            border-radius: 16px;
+            width: 48px;
+            height: 48px;
+            border-radius: 17px;
             background: var(--brand-soft);
             color: var(--brand-dark);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.86rem;
-            font-weight: 950;
+            font-size: 1.1rem;
             flex-shrink: 0;
         }
 
@@ -496,51 +480,51 @@
             flex-wrap: wrap;
         }
 
-        .field,
         .form-control,
-        .form-select {
-            border-radius: 13px;
+        .form-select,
+        .field {
+            min-height: 41px;
+            border-radius: 14px;
             border-color: var(--border);
-            min-height: 40px;
-            font-size: 0.88rem;
+            font-size: .88rem;
+            font-weight: 650;
         }
 
         .field {
             border: 1px solid var(--border);
             background: #fff;
             padding: 9px 12px;
-            outline: none;
+            outline: 0;
             color: var(--text);
-            font-weight: 650;
         }
 
-        .field:focus,
         .form-control:focus,
-        .form-select:focus {
+        .form-select:focus,
+        .field:focus {
             border-color: var(--brand);
-            box-shadow: 0 0 0 4px rgba(223, 186, 104, 0.16);
+            box-shadow: 0 0 0 4px rgba(223, 186, 104, .16);
         }
 
         .btn {
             border-radius: 13px;
-            font-weight: 800;
+            font-weight: 850;
         }
 
-        .btn-primary,
-        .btn-brand {
+        .btn-brand,
+        .btn-primary {
             background: var(--brand);
             border-color: var(--brand);
             color: #fff;
         }
 
-        .btn-primary:hover,
-        .btn-brand:hover {
-            background: #d5ac55;
-            border-color: #d5ac55;
+        .btn-brand:hover,
+        .btn-primary:hover {
+            background: #d4ab53;
+            border-color: #d4ab53;
             color: #fff;
         }
 
-        .btn-secondary {
+        .btn-dark-soft {
             background: #111827;
             border-color: #111827;
             color: #fff;
@@ -554,14 +538,14 @@
             border: 1px solid var(--border);
             background: #fff;
             color: #374151;
-            font-size: 0.78rem;
-            font-weight: 850;
-            text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
-            transition: 0.16s ease;
+            text-decoration: none;
+            font-size: .78rem;
+            font-weight: 850;
+            transition: .16s ease;
         }
 
         .small-btn:hover,
@@ -607,17 +591,17 @@
         table th {
             background: #fafafa;
             color: var(--muted);
-            font-size: 0.72rem;
-            font-weight: 900;
+            font-size: .72rem;
+            font-weight: 950;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: .06em;
             white-space: nowrap;
         }
 
         .table-wrap td,
         table td {
             color: var(--text);
-            font-size: 0.88rem;
+            font-size: .88rem;
             font-weight: 650;
         }
 
@@ -630,17 +614,17 @@
             display: block;
             margin-top: 4px;
             color: var(--muted);
-            font-size: 0.75rem;
+            font-size: .75rem;
             font-weight: 650;
         }
 
         .chip {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             padding: 6px 10px;
             border-radius: 999px;
-            font-size: 0.72rem;
+            font-size: .72rem;
             font-weight: 900;
             white-space: nowrap;
         }
@@ -655,33 +639,33 @@
 
         .c-green {
             color: #15803d;
-            background: var(--green-soft);
+            background: #dcfce7;
         }
 
         .c-blue {
             color: #1d4ed8;
-            background: var(--blue-soft);
+            background: #dbeafe;
         }
 
         .c-yellow {
             color: #92400e;
-            background: var(--yellow-soft);
+            background: #fef3c7;
         }
 
         .c-red {
             color: #b91c1c;
-            background: var(--red-soft);
+            background: #fee2e2;
         }
 
         .c-gray {
             color: #4b5563;
-            background: var(--gray-soft);
+            background: #f3f4f6;
         }
 
         .cover {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
             object-fit: cover;
             border: 1px solid var(--border);
             background: #f3f4f6;
@@ -692,11 +676,11 @@
         }
 
         .pagination .page-link {
-            border-radius: 10px;
             margin: 0 2px;
-            color: var(--brand-dark);
+            border-radius: 10px;
             border-color: var(--border);
-            font-weight: 800;
+            color: var(--brand-dark);
+            font-weight: 850;
         }
 
         .pagination .active .page-link {
@@ -706,49 +690,56 @@
         }
 
         .dropdown-menu {
-            border-radius: 17px;
+            border-radius: 18px;
             border: 1px solid var(--border);
             box-shadow: var(--shadow);
         }
 
         .dropdown-item {
-            border-radius: 10px;
-            font-weight: 700;
+            border-radius: 11px;
+            font-weight: 750;
         }
 
-        body.sidebar-collapsed .brand-info,
-        body.sidebar-collapsed .sidebar-label,
-        body.sidebar-collapsed .sidebar-chevron,
-        body.sidebar-collapsed .sidebar-submenu,
-        body.sidebar-collapsed .sidebar-section-title,
-        body.sidebar-collapsed .sidebar-footer {
+        body.sidebar-mini .brand-info,
+        body.sidebar-mini .sidebar-label,
+        body.sidebar-mini .sidebar-arrow,
+        body.sidebar-mini .sidebar-submenu,
+        body.sidebar-mini .sidebar-heading,
+        body.sidebar-mini .sidebar-footer {
             display: none !important;
         }
 
-        body.sidebar-collapsed .brand-block {
-            justify-content: center;
+        body.sidebar-mini .brand-area {
             padding: 0;
+            justify-content: center;
         }
 
-        body.sidebar-collapsed .sidebar-nav {
+        body.sidebar-mini .sidebar-menu {
             padding-left: 10px;
             padding-right: 10px;
         }
 
-        body.sidebar-collapsed .sidebar-link,
-        body.sidebar-collapsed .sidebar-parent {
-            width: 46px;
-            height: 46px;
-            min-height: 46px;
+        body.sidebar-mini .sidebar-link,
+        body.sidebar-mini .sidebar-parent {
+            width: 48px;
+            height: 48px;
+            min-height: 48px;
             padding: 0;
-            justify-content: center;
             margin-left: auto;
             margin-right: auto;
+            justify-content: center;
         }
 
-        body.sidebar-collapsed .sidebar-link.active::before,
-        body.sidebar-collapsed .sidebar-parent.active::before {
+        body.sidebar-mini .sidebar-link.active::before,
+        body.sidebar-mini .sidebar-parent.active::before {
             display: none;
+        }
+
+        .mobile-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1035;
+            background: rgba(15, 23, 42, .42);
         }
 
         @media (max-width: 1200px) {
@@ -762,21 +753,21 @@
         }
 
         @media (max-width: 900px) {
-            .app-shell,
-            body.sidebar-collapsed .app-shell {
+            .admin-shell,
+            body.sidebar-mini .admin-shell {
                 grid-template-columns: 1fr;
             }
 
-            .app-sidebar {
+            .admin-sidebar {
                 position: fixed;
                 inset: 0 auto 0 0;
                 width: var(--sidebar-width);
                 transform: translateX(-105%);
-                transition: transform 0.2s ease;
-                box-shadow: 18px 0 40px rgba(15, 23, 42, 0.13);
+                transition: transform .2s ease;
+                box-shadow: 18px 0 40px rgba(15, 23, 42, .15);
             }
 
-            .app-sidebar.open {
+            .admin-sidebar.open {
                 transform: translateX(0);
             }
 
@@ -784,40 +775,35 @@
                 padding: 0 14px;
             }
 
-            .content-wrapper {
+            .content-area {
                 padding: 16px;
-            }
-
-            body.sidebar-collapsed .brand-info,
-            body.sidebar-collapsed .sidebar-label,
-            body.sidebar-collapsed .sidebar-chevron,
-            body.sidebar-collapsed .sidebar-section-title,
-            body.sidebar-collapsed .sidebar-footer {
-                display: block !important;
-            }
-
-            body.sidebar-collapsed .brand-block {
-                justify-content: flex-start;
-                padding: 0 18px;
-            }
-
-            body.sidebar-collapsed .sidebar-link,
-            body.sidebar-collapsed .sidebar-parent {
-                width: 100%;
-                height: auto;
-                min-height: 44px;
-                padding: 10px 12px;
-                justify-content: flex-start;
-            }
-
-            body.sidebar-collapsed .sidebar-link.active::before,
-            body.sidebar-collapsed .sidebar-parent.active::before {
-                display: block;
             }
 
             .hero {
                 align-items: flex-start;
                 flex-direction: column;
+            }
+
+            body.sidebar-mini .brand-info,
+            body.sidebar-mini .sidebar-label,
+            body.sidebar-mini .sidebar-arrow,
+            body.sidebar-mini .sidebar-heading,
+            body.sidebar-mini .sidebar-footer {
+                display: block !important;
+            }
+
+            body.sidebar-mini .brand-area {
+                padding: 0 18px;
+                justify-content: flex-start;
+            }
+
+            body.sidebar-mini .sidebar-link,
+            body.sidebar-mini .sidebar-parent {
+                width: 100%;
+                height: auto;
+                min-height: 45px;
+                padding: 10px 12px;
+                justify-content: flex-start;
             }
         }
 
@@ -839,32 +825,34 @@
                 width: 100%;
             }
 
-            .topbar-title-wrap {
-                display: none;
+            .topbar-title-wrap,
+            .date-pill {
+                display: none !important;
             }
         }
     </style>
 
     @stack('styles')
 </head>
-<body>
-<div class="offcanvas-backdrop fade d-none" id="sidebarOverlay"></div>
 
-<div class="app-shell">
-    <aside class="app-sidebar" id="sidebar">
-        <div class="brand-block">
-            <button class="brand-logo-btn" id="brandToggle" type="button" title="Kecilkan sidebar">
+<body>
+<div class="mobile-overlay d-none" id="sidebarOverlay"></div>
+
+<div class="admin-shell">
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="brand-area">
+            <button class="brand-button" id="sidebarToggle" type="button" title="Kecilkan sidebar">
                 <i class="bi bi-box-seam-fill fs-5"></i>
             </button>
 
             <div class="brand-info">
-                <div class="brand-title">SiTahu</div>
-                <div class="brand-subtitle">Web Admin Toko Tahu</div>
+                <div class="brand-text-title">SiTahu</div>
+                <div class="brand-text-subtitle">Web Admin Toko Tahu</div>
             </div>
         </div>
 
-        <nav class="sidebar-nav">
-            <div class="sidebar-section-title">Utama</div>
+        <nav class="sidebar-menu">
+            <div class="sidebar-heading">Utama</div>
 
             <a href="{{ route('admin.dashboard') }}"
                class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
@@ -872,26 +860,27 @@
                 <span class="sidebar-label">Dashboard</span>
             </a>
 
-            <div class="sidebar-section-title">Manajemen Toko</div>
+            <div class="sidebar-heading">Manajemen Toko</div>
 
             <div>
                 <button type="button"
                         class="sidebar-parent {{ request()->routeIs('admin.produk.*') || request()->routeIs('admin.stok.*') ? 'active' : '' }}"
                         data-bs-toggle="collapse"
-                        data-bs-target="#menuProduk"
+                        data-bs-target="#menuProdukStok"
                         aria-expanded="{{ request()->routeIs('admin.produk.*') || request()->routeIs('admin.stok.*') ? 'true' : 'false' }}">
                     <span class="sidebar-icon"><i class="bi bi-basket2-fill"></i></span>
                     <span class="sidebar-label">Produk & Stok</span>
-                    <i class="bi bi-chevron-down sidebar-chevron"></i>
+                    <i class="bi bi-chevron-down sidebar-arrow"></i>
                 </button>
 
                 <div class="collapse {{ request()->routeIs('admin.produk.*') || request()->routeIs('admin.stok.*') ? 'show' : '' }}"
-                     id="menuProduk">
+                     id="menuProdukStok">
                     <div class="sidebar-submenu">
                         <a href="{{ route('admin.produk.index') }}"
                            class="{{ request()->routeIs('admin.produk.*') ? 'active' : '' }}">
                             Produk Tahu
                         </a>
+
                         <a href="{{ route('admin.stok.index') }}"
                            class="{{ request()->routeIs('admin.stok.*') ? 'active' : '' }}">
                             Stok Produk
@@ -908,7 +897,7 @@
                         aria-expanded="{{ request()->routeIs('admin.pesanan.*') || request()->routeIs('admin.pembayaran.*') ? 'true' : 'false' }}">
                     <span class="sidebar-icon"><i class="bi bi-receipt-cutoff"></i></span>
                     <span class="sidebar-label">Transaksi</span>
-                    <i class="bi bi-chevron-down sidebar-chevron"></i>
+                    <i class="bi bi-chevron-down sidebar-arrow"></i>
                 </button>
 
                 <div class="collapse {{ request()->routeIs('admin.pesanan.*') || request()->routeIs('admin.pembayaran.*') ? 'show' : '' }}"
@@ -918,6 +907,7 @@
                            class="{{ request()->routeIs('admin.pesanan.*') ? 'active' : '' }}">
                             Pesanan
                         </a>
+
                         <a href="{{ route('admin.pembayaran.index') }}"
                            class="{{ request()->routeIs('admin.pembayaran.*') ? 'active' : '' }}">
                             Pembayaran
@@ -934,7 +924,7 @@
                         aria-expanded="{{ request()->routeIs('admin.pengiriman.*') || request()->routeIs('admin.pembeli.*') || request()->routeIs('admin.ulasan.*') ? 'true' : 'false' }}">
                     <span class="sidebar-icon"><i class="bi bi-truck"></i></span>
                     <span class="sidebar-label">Operasional</span>
-                    <i class="bi bi-chevron-down sidebar-chevron"></i>
+                    <i class="bi bi-chevron-down sidebar-arrow"></i>
                 </button>
 
                 <div class="collapse {{ request()->routeIs('admin.pengiriman.*') || request()->routeIs('admin.pembeli.*') || request()->routeIs('admin.ulasan.*') ? 'show' : '' }}"
@@ -944,10 +934,12 @@
                            class="{{ request()->routeIs('admin.pengiriman.*') ? 'active' : '' }}">
                             Pengambilan & Pengantaran
                         </a>
+
                         <a href="{{ route('admin.pembeli.index') }}"
                            class="{{ request()->routeIs('admin.pembeli.*') ? 'active' : '' }}">
                             Pembeli
                         </a>
+
                         <a href="{{ route('admin.ulasan.index') }}"
                            class="{{ request()->routeIs('admin.ulasan.*') ? 'active' : '' }}">
                             Ulasan
@@ -956,7 +948,7 @@
                 </div>
             </div>
 
-            <div class="sidebar-section-title">Laporan & Konten</div>
+            <div class="sidebar-heading">Laporan & Konten</div>
 
             <a href="{{ route('admin.laporan.index') }}"
                class="sidebar-link {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}">
@@ -970,7 +962,7 @@
                 <span class="sidebar-label">Banner</span>
             </a>
 
-            <div class="sidebar-section-title">Sistem</div>
+            <div class="sidebar-heading">Sistem</div>
 
             <a href="{{ route('admin.pengaturan.edit') }}"
                class="sidebar-link {{ request()->routeIs('admin.pengaturan.*') ? 'active' : '' }}">
@@ -992,15 +984,16 @@
         </nav>
 
         <div class="sidebar-footer">
-            <div class="mini-profile-card">
+            <div class="mini-profile">
                 <div class="mini-avatar">
                     {{ strtoupper(substr(auth()->user()->name ?? 'AD', 0, 2)) }}
                 </div>
+
                 <div class="min-w-0">
                     <div class="fw-bold text-dark text-truncate small">
                         {{ auth()->user()->name ?? 'Admin' }}
                     </div>
-                    <div class="text-muted text-truncate" style="font-size: 0.72rem;">
+                    <div class="text-muted text-truncate" style="font-size: .72rem;">
                         {{ auth()->user()->email ?? 'admin@sitahu.com' }}
                     </div>
                 </div>
@@ -1008,35 +1001,35 @@
         </div>
     </aside>
 
-    <main class="app-main">
+    <main class="admin-main">
         <header class="topbar">
             <div class="d-flex align-items-center gap-3 min-w-0">
-                <button class="icon-btn d-lg-none" type="button" id="mobileMenuToggle" aria-label="Buka menu">
+                <button class="icon-button d-lg-none" type="button" id="mobileMenuToggle" aria-label="Buka menu">
                     <i class="bi bi-list fs-5"></i>
                 </button>
 
                 <div class="topbar-title-wrap">
                     <h6 class="topbar-title">@yield('page_title', 'Dashboard Admin')</h6>
-                    <p class="topbar-subtitle">Kelola penjualan produk tahu dari satu tempat.</p>
+                    <p class="topbar-subtitle">Kelola produk, pesanan, pembayaran, dan stok toko tahu.</p>
                 </div>
             </div>
 
             <div class="d-flex align-items-center gap-2 gap-md-3">
-                <div class="topbar-date d-none d-md-flex align-items-center gap-2">
+                <div class="date-pill">
                     <i class="bi bi-calendar3"></i>
                     {{ now()->translatedFormat('d M Y') }}
                 </div>
 
                 <div class="dropdown">
-                    <button class="icon-btn position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="icon-button position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-bell"></i>
                         <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-white rounded-circle mt-1"></span>
                     </button>
 
-                    <div class="dropdown-menu dropdown-menu-end p-0 mt-2" style="width: 310px;">
+                    <div class="dropdown-menu dropdown-menu-end p-0 mt-2" style="width: 315px;">
                         <div class="px-3 py-3 border-bottom">
-                            <div class="fw-bold">Notifikasi</div>
-                            <div class="text-muted small">Info cepat untuk admin toko</div>
+                            <div class="fw-bold">Notifikasi Admin</div>
+                            <div class="text-muted small">Shortcut pengecekan data toko</div>
                         </div>
 
                         <a href="{{ route('admin.pesanan.index') }}" class="dropdown-item p-3 text-wrap">
@@ -1046,8 +1039,8 @@
                                 </div>
                                 <div>
                                     <div class="small fw-bold text-dark">Cek pesanan terbaru</div>
-                                    <div class="text-muted" style="font-size: 0.75rem;">
-                                        Pesanan dari mobile akan muncul di halaman pesanan admin.
+                                    <div class="text-muted" style="font-size: .75rem;">
+                                        Pesanan dari pembeli akan masuk ke halaman pesanan.
                                     </div>
                                 </div>
                             </div>
@@ -1060,8 +1053,8 @@
                                 </div>
                                 <div>
                                     <div class="small fw-bold text-dark">Pantau stok produk</div>
-                                    <div class="text-muted" style="font-size: 0.75rem;">
-                                        Pastikan stok tahu tetap aman sebelum pembeli checkout.
+                                    <div class="text-muted" style="font-size: .75rem;">
+                                        Pastikan stok tahu aman sebelum pembeli checkout.
                                     </div>
                                 </div>
                             </div>
@@ -1075,12 +1068,12 @@
                             <div class="fw-bold small text-dark lh-1">
                                 {{ auth()->user()->name ?? 'Admin' }}
                             </div>
-                            <div class="text-muted mt-1" style="font-size: 0.72rem;">
+                            <div class="text-muted mt-1" style="font-size: .72rem;">
                                 {{ auth()->user()->email ?? 'admin@sitahu.com' }}
                             </div>
                         </div>
 
-                        <div class="user-avatar">
+                        <div class="avatar">
                             {{ strtoupper(substr(auth()->user()->name ?? 'AD', 0, 2)) }}
                         </div>
                     </button>
@@ -1089,7 +1082,7 @@
                         <a class="dropdown-item small py-2 d-flex align-items-center gap-2"
                            href="{{ route('admin.akun.edit') }}">
                             <i class="bi bi-person-gear text-muted"></i>
-                            Pengaturan Akun
+                            Akun Saya
                         </a>
 
                         <a class="dropdown-item small py-2 d-flex align-items-center gap-2"
@@ -1110,7 +1103,7 @@
                             <button class="dropdown-item small py-2 d-flex align-items-center gap-2 text-danger fw-bold"
                                     type="submit">
                                 <i class="bi bi-box-arrow-right"></i>
-                                Keluar
+                                Logout
                             </button>
                         </form>
                     </div>
@@ -1118,55 +1111,56 @@
             </div>
         </header>
 
-        <div class="content-wrapper">
+        <section class="content-area">
             @yield('content')
+        </section>
+    </main>
+</div>
 
-            <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1080">
-                @if(session('success'))
-                    <div class="toast align-items-center text-bg-success border-0 shadow js-auto-toast"
-                         role="alert"
-                         aria-live="assertive"
-                         aria-atomic="true">
-                        <div class="d-flex">
-                            <div class="toast-body">
-                                <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-                            </div>
-                            <button type="button"
-                                    class="btn-close btn-close-white me-2 m-auto"
-                                    data-bs-dismiss="toast"
-                                    aria-label="Tutup"></button>
-                        </div>
-                    </div>
-                @endif
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1080">
+    @if(session('success'))
+        <div class="toast align-items-center text-bg-success border-0 shadow js-auto-toast"
+             role="alert"
+             aria-live="assertive"
+             aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+                </div>
 
-                @if($errors->any())
-                    <div class="toast text-bg-danger border-0 shadow js-auto-toast"
-                         role="alert"
-                         aria-live="assertive"
-                         aria-atomic="true">
-                        <div class="d-flex">
-                            <div class="toast-body">
-                                <strong class="d-block mb-1">
-                                    <i class="bi bi-exclamation-triangle me-2"></i>Periksa input
-                                </strong>
-
-                                <ul class="mb-0 small ps-3">
-                                    @foreach($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-
-                            <button type="button"
-                                    class="btn-close btn-close-white me-2 mt-2"
-                                    data-bs-dismiss="toast"
-                                    aria-label="Tutup"></button>
-                        </div>
-                    </div>
-                @endif
+                <button type="button"
+                        class="btn-close btn-close-white me-2 m-auto"
+                        data-bs-dismiss="toast"
+                        aria-label="Tutup"></button>
             </div>
         </div>
-    </main>
+    @endif
+
+    @if($errors->any())
+        <div class="toast text-bg-danger border-0 shadow js-auto-toast"
+             role="alert"
+             aria-live="assertive"
+             aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong class="d-block mb-1">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Periksa input
+                    </strong>
+
+                    <ul class="mb-0 small ps-3">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+
+                <button type="button"
+                        class="btn-close btn-close-white me-2 mt-2"
+                        data-bs-dismiss="toast"
+                        aria-label="Tutup"></button>
+            </div>
+        </div>
+    @endif
 </div>
 
 <div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-hidden="true">
@@ -1208,19 +1202,19 @@
     const body = document.body;
     const sidebar = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
-    const brandToggle = document.getElementById('brandToggle');
+    const sidebarToggle = document.getElementById('sidebarToggle');
     const mobileMenuToggle = document.getElementById('mobileMenuToggle');
 
-    if (localStorage.getItem('sitahu-sidebar-collapsed') === '1' && window.innerWidth > 900) {
-        body.classList.add('sidebar-collapsed');
+    if (localStorage.getItem('sitahu-sidebar-mini') === '1' && window.innerWidth > 900) {
+        body.classList.add('sidebar-mini');
     }
 
-    brandToggle?.addEventListener('click', () => {
+    sidebarToggle?.addEventListener('click', () => {
         if (window.innerWidth > 900) {
-            body.classList.toggle('sidebar-collapsed');
+            body.classList.toggle('sidebar-mini');
             localStorage.setItem(
-                'sitahu-sidebar-collapsed',
-                body.classList.contains('sidebar-collapsed') ? '1' : '0'
+                'sitahu-sidebar-mini',
+                body.classList.contains('sidebar-mini') ? '1' : '0'
             );
         }
     });
@@ -1228,30 +1222,27 @@
     mobileMenuToggle?.addEventListener('click', () => {
         sidebar?.classList.add('open');
         sidebarOverlay?.classList.remove('d-none');
-        sidebarOverlay?.classList.add('show');
     });
 
     sidebarOverlay?.addEventListener('click', () => {
         sidebar?.classList.remove('open');
         sidebarOverlay?.classList.add('d-none');
-        sidebarOverlay?.classList.remove('show');
     });
 
-    document.querySelectorAll('.app-sidebar a').forEach((link) => {
+    document.querySelectorAll('.admin-sidebar a').forEach((link) => {
         link.addEventListener('click', () => {
             if (window.innerWidth <= 900) {
                 sidebar?.classList.remove('open');
                 sidebarOverlay?.classList.add('d-none');
-                sidebarOverlay?.classList.remove('show');
             }
         });
     });
 
-    document.querySelectorAll('.app-sidebar [data-bs-toggle="collapse"]').forEach((button) => {
+    document.querySelectorAll('.admin-sidebar [data-bs-toggle="collapse"]').forEach((button) => {
         button.addEventListener('click', () => {
-            if (body.classList.contains('sidebar-collapsed') && window.innerWidth > 900) {
-                body.classList.remove('sidebar-collapsed');
-                localStorage.setItem('sitahu-sidebar-collapsed', '0');
+            if (body.classList.contains('sidebar-mini') && window.innerWidth > 900) {
+                body.classList.remove('sidebar-mini');
+                localStorage.setItem('sitahu-sidebar-mini', '0');
             }
         });
     });
@@ -1261,6 +1252,7 @@
 
         const submitForm = () => {
             window.clearTimeout(timer);
+
             timer = window.setTimeout(() => {
                 if (typeof form.requestSubmit === 'function') {
                     form.requestSubmit();

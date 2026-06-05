@@ -5,63 +5,67 @@
 @push('styles')
 <style>
     .cart-hero {
-        padding: 28px;
-        margin-bottom: 22px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        padding: 24px;
+        margin-bottom: 20px;
+        display: grid;
+        grid-template-columns: 1fr 230px;
         gap: 18px;
+        align-items: center;
         background:
-            radial-gradient(circle at top right, rgba(223, 186, 104, 0.25), transparent 32%),
+            radial-gradient(circle at top right, rgba(223, 186, 104, 0.24), transparent 34%),
             linear-gradient(135deg, #ffffff 0%, #fff8e8 100%);
     }
 
     .cart-hero h1 {
-        margin: 12px 0 0;
+        margin: 10px 0 0;
         color: var(--heading);
-        font-size: clamp(30px, 4.5vw, 48px);
-        line-height: 1;
-        letter-spacing: -0.075em;
+        font-size: clamp(28px, 3.8vw, 42px);
+        line-height: 1.05;
+        letter-spacing: -0.065em;
     }
 
     .cart-hero h1 span {
-        color: var(--brand-text);
+        color: var(--brand-dark);
     }
 
     .cart-hero p {
-        margin: 12px 0 0;
+        margin: 10px 0 0;
         max-width: 650px;
         color: var(--muted);
-        line-height: 1.7;
-        font-size: 15px;
+        line-height: 1.65;
+        font-size: 14px;
     }
 
     .cart-summary-mini {
-        min-width: 220px;
-        padding: 18px;
+        padding: 17px;
         border-radius: 18px;
-        background: rgba(255, 255, 255, 0.78);
+        background: rgba(255, 255, 255, 0.82);
         border: 1px solid var(--line);
+        box-shadow: var(--shadow-soft);
     }
 
     .cart-summary-mini strong {
         display: block;
         color: var(--heading);
-        font-size: 26px;
-        letter-spacing: -0.05em;
+        font-size: 28px;
+        line-height: 1;
+        letter-spacing: -0.06em;
     }
 
     .cart-summary-mini span {
+        display: block;
+        margin-top: 6px;
         color: var(--muted);
         font-size: 13px;
+        font-weight: 750;
     }
 
     .alert {
         margin-bottom: 16px;
         padding: 13px 15px;
-        border-radius: 14px;
+        border-radius: 16px;
         font-size: 14px;
-        font-weight: 700;
+        font-weight: 800;
         border: 1px solid transparent;
     }
 
@@ -79,7 +83,7 @@
 
     .cart-layout {
         display: grid;
-        grid-template-columns: 1fr 360px;
+        grid-template-columns: minmax(0, 1fr) 350px;
         gap: 20px;
         align-items: start;
     }
@@ -90,16 +94,22 @@
     }
 
     .cart-item {
-        padding: 16px;
+        padding: 14px;
         display: grid;
-        grid-template-columns: 112px 1fr auto;
+        grid-template-columns: 104px minmax(0, 1fr) 170px;
         gap: 16px;
         align-items: center;
+        transition: 0.16s ease;
+    }
+
+    .cart-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px rgba(17, 24, 39, 0.09);
     }
 
     .cart-img {
-        width: 112px;
-        height: 112px;
+        width: 104px;
+        height: 104px;
         border-radius: 18px;
         overflow: hidden;
         background:
@@ -108,9 +118,9 @@
         border: 1px solid var(--line);
         display: grid;
         place-items: center;
-        color: var(--brand-text);
-        font-size: 11px;
-        font-weight: 900;
+        color: var(--brand-dark);
+        font-size: 10px;
+        font-weight: 950;
         letter-spacing: 0.05em;
     }
 
@@ -137,67 +147,80 @@
 
     .cart-price {
         margin-top: 10px;
-        color: var(--brand-text);
+        color: var(--brand-dark);
         font-size: 17px;
-        font-weight: 900;
+        font-weight: 950;
+    }
+
+    .cart-control {
+        display: grid;
+        justify-items: end;
+        gap: 10px;
     }
 
     .qty-box {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         gap: 8px;
-        justify-content: flex-end;
-        margin-bottom: 12px;
+        padding: 6px;
+        border-radius: 16px;
+        background: #f9fafb;
+        border: 1px solid var(--line);
     }
 
     .qty-button {
-        width: 36px;
-        height: 36px;
+        width: 34px;
+        height: 34px;
         border-radius: 12px;
         border: 1px solid var(--line);
         background: #ffffff;
         color: var(--heading);
-        font-weight: 900;
+        font-size: 18px;
+        line-height: 1;
+        font-weight: 950;
         cursor: pointer;
+        display: inline-grid;
+        place-items: center;
         transition: 0.16s ease;
     }
 
     .qty-button:hover {
         background: var(--brand-soft);
-        color: var(--brand-text);
+        color: var(--brand-dark);
+        border-color: rgba(223, 186, 104, 0.55);
     }
 
     .qty-button:disabled {
         opacity: 0.55;
         cursor: not-allowed;
+        transform: none;
     }
 
     .qty-value {
         min-width: 38px;
-        height: 36px;
+        height: 34px;
         border-radius: 12px;
         display: grid;
         place-items: center;
-        background: #f9fafb;
+        background: #ffffff;
         border: 1px solid var(--line);
         color: var(--heading);
-        font-weight: 900;
+        font-weight: 950;
     }
 
     .item-subtotal {
-        text-align: right;
         color: var(--heading);
         font-size: 15px;
-        font-weight: 900;
-        margin-bottom: 10px;
+        font-weight: 950;
+        text-align: right;
     }
 
     .remove-button {
         border: 0;
         background: transparent;
         color: #b91c1c;
-        font-size: 13px;
-        font-weight: 800;
+        font-size: 12.5px;
+        font-weight: 900;
         cursor: pointer;
         padding: 0;
     }
@@ -209,7 +232,7 @@
     .summary-card {
         padding: 20px;
         position: sticky;
-        top: 96px;
+        top: 94px;
     }
 
     .summary-card h2 {
@@ -231,6 +254,7 @@
 
     .summary-row strong {
         color: var(--heading);
+        text-align: right;
     }
 
     .summary-total {
@@ -239,12 +263,13 @@
         gap: 12px;
         padding: 16px 0 18px;
         color: var(--heading);
-        font-weight: 900;
+        font-weight: 950;
         font-size: 18px;
     }
 
     .summary-total span:last-child {
-        color: var(--brand-text);
+        color: var(--brand-dark);
+        text-align: right;
     }
 
     .summary-actions {
@@ -252,10 +277,14 @@
         gap: 10px;
     }
 
+    .summary-actions .btn {
+        width: 100%;
+    }
+
     .summary-note {
         margin-top: 14px;
         padding: 13px;
-        border-radius: 14px;
+        border-radius: 16px;
         background: #f9fafb;
         border: 1px solid var(--line);
         color: var(--muted);
@@ -274,9 +303,9 @@
         margin: 0 auto 16px;
         display: grid;
         place-items: center;
-        border-radius: 20px;
+        border-radius: 22px;
         background: var(--brand-soft);
-        color: var(--brand-text);
+        color: var(--brand-dark);
         font-size: 30px;
     }
 
@@ -307,10 +336,9 @@
         display: none !important;
     }
 
-    @media (max-width: 960px) {
+    @media (max-width: 980px) {
         .cart-hero {
-            align-items: flex-start;
-            flex-direction: column;
+            grid-template-columns: 1fr;
         }
 
         .cart-summary-mini {
@@ -326,12 +354,33 @@
         }
     }
 
-    @media (max-width: 650px) {
+    @media (max-width: 720px) {
         .cart-hero,
         .summary-card {
-            padding: 20px;
+            padding: 18px;
         }
 
+        .cart-item {
+            grid-template-columns: 92px minmax(0, 1fr);
+            align-items: start;
+        }
+
+        .cart-img {
+            width: 92px;
+            height: 92px;
+        }
+
+        .cart-control {
+            grid-column: 1 / -1;
+            justify-items: start;
+        }
+
+        .item-subtotal {
+            text-align: left;
+        }
+    }
+
+    @media (max-width: 520px) {
         .cart-item {
             grid-template-columns: 1fr;
         }
@@ -341,10 +390,9 @@
             height: 210px;
         }
 
-        .qty-box,
-        .item-subtotal {
-            justify-content: flex-start;
-            text-align: left;
+        .qty-box {
+            width: 100%;
+            justify-content: space-between;
         }
     }
 </style>
@@ -360,8 +408,8 @@
         </h1>
 
         <p>
-            Cek lagi jumlah produk sebelum lanjut. Pastikan tahu favoritmu sudah sesuai
-            untuk lauk keluarga, camilan, atau stok praktis di rumah.
+            Cek ulang produk dan jumlah pesanan sebelum lanjut checkout.
+            Total akhir akan dihitung lagi sesuai metode penerimaan pesanan.
         </p>
     </div>
 
@@ -405,6 +453,7 @@
 
                     <div class="cart-info">
                         <h2>{{ $produk->nama }}</h2>
+
                         <p>
                             {{ $produk->satuan ?: 'Satuan produk' }}
                             @if($produk->isi_per_satuan)
@@ -418,24 +467,30 @@
                         </div>
                     </div>
 
-                    <div>
+                    <div class="cart-control">
                         <div class="qty-box">
                             <button
                                 type="button"
                                 class="qty-button js-cart-update"
                                 data-url="{{ route('pembeli-web.keranjang.update', $produk) }}"
                                 data-action="kurang"
+                                aria-label="Kurangi jumlah"
+                                title="Kurangi jumlah"
                             >
-
+                                −
                             </button>
 
-                            <div class="qty-value" id="qty-{{ $produk->id }}">{{ $item['jumlah'] }}</div>
+                            <div class="qty-value" id="qty-{{ $produk->id }}">
+                                {{ $item['jumlah'] }}
+                            </div>
 
                             <button
                                 type="button"
                                 class="qty-button js-cart-update"
                                 data-url="{{ route('pembeli-web.keranjang.update', $produk) }}"
                                 data-action="tambah"
+                                aria-label="Tambah jumlah"
+                                title="Tambah jumlah"
                             >
                                 +
                             </button>
@@ -461,7 +516,7 @@
         <aside class="page-card summary-card">
             <h2>Ringkasan belanja</h2>
 
-            <div style="margin-top: 12px;">
+            <div style="margin-top:12px;">
                 <div class="summary-row">
                     <span>Total item</span>
                     <strong id="summaryTotalItem">{{ $totalItem }} produk</strong>
@@ -496,14 +551,13 @@
                     type="button"
                     class="btn btn-outline js-cart-clear"
                     data-url="{{ route('pembeli-web.keranjang.clear') }}"
-                    style="width: 100%;"
                 >
                     Kosongkan Keranjang
                 </button>
             </div>
 
             <div class="summary-note">
-                Total akhir akan menyesuaikan pilihan pengambilan atau pengantaran saat checkout.
+                Total akhir akan menyesuaikan pilihan ambil di toko atau kurir toko saat checkout.
             </div>
         </aside>
     </div>
@@ -515,8 +569,7 @@
     <h2>Keranjangmu masih kosong</h2>
 
     <p>
-        Yuk pilih produk tahu favoritmu dulu. Ada banyak pilihan tahu segar
-        yang cocok untuk lauk harian atau camilan keluarga.
+        Yuk pilih produk tahu favoritmu dulu. Produk yang kamu tambahkan akan muncul di sini.
     </p>
 
     <div class="empty-actions">
@@ -654,32 +707,37 @@
 
             if (data) {
                 updateCartView(data);
+                showCartAlert('Jumlah produk diperbarui.', 'success');
             }
         });
     });
 
     document.querySelectorAll('.js-cart-delete').forEach(button => {
         button.addEventListener('click', async function () {
-            const url = this.dataset.url;
+            const yakin = confirm('Hapus produk ini dari keranjang?');
+            if (!yakin) return;
 
+            const url = this.dataset.url;
             const data = await sendCartRequest(url, 'DELETE');
 
             if (data) {
                 updateCartView(data);
-                showCartAlert(data.message, 'success');
+                showCartAlert(data.message || 'Produk dihapus dari keranjang.', 'success');
             }
         });
     });
 
     document.querySelectorAll('.js-cart-clear').forEach(button => {
         button.addEventListener('click', async function () {
-            const url = this.dataset.url;
+            const yakin = confirm('Kosongkan semua isi keranjang?');
+            if (!yakin) return;
 
+            const url = this.dataset.url;
             const data = await sendCartRequest(url, 'DELETE');
 
             if (data) {
                 updateCartView(data);
-                showCartAlert(data.message, 'success');
+                showCartAlert(data.message || 'Keranjang dikosongkan.', 'success');
             }
         });
     });

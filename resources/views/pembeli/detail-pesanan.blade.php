@@ -74,6 +74,28 @@
         letter-spacing: -0.035em;
     }
 
+    .alert-box {
+        margin-bottom: 18px;
+        padding: 14px 16px;
+        border-radius: 17px;
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.55;
+        border: 1px solid var(--line);
+    }
+
+    .alert-success {
+        background: #ecfdf5;
+        color: #15803d;
+        border-color: #bbf7d0;
+    }
+
+    .alert-error {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-color: #fecaca;
+    }
+
     .detail-layout {
         display: grid;
         grid-template-columns: 1fr 370px;
@@ -251,9 +273,72 @@
         margin-top: 16px;
     }
 
+    .action-note {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+    }
+
+    .danger-button {
+        width: 100%;
+        min-height: 46px;
+        border: 1px solid #fecaca;
+        border-radius: 999px;
+        background: #fef2f2;
+        color: #b91c1c;
+        font-weight: 900;
+        cursor: pointer;
+        transition: 0.16s ease;
+    }
+
+    .danger-button:hover {
+        transform: translateY(-1px);
+        background: #fee2e2;
+    }
+
+    .success-button {
+        width: 100%;
+        min-height: 46px;
+        border: 1px solid #bbf7d0;
+        border-radius: 999px;
+        background: #ecfdf5;
+        color: #15803d;
+        font-weight: 900;
+        cursor: pointer;
+        transition: 0.16s ease;
+    }
+
+    .success-button:hover {
+        transform: translateY(-1px);
+        background: #dcfce7;
+    }
+
     .info-grid {
         display: grid;
         gap: 12px;
+    }
+
+    .next-action-box {
+        padding: 16px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+        margin-bottom: 16px;
+    }
+
+    .next-action-box h3 {
+        margin: 0 0 6px;
+        color: var(--heading);
+        font-size: 15px;
+        letter-spacing: -0.03em;
+    }
+
+    .next-action-box p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
     }
 
     @media (max-width: 940px) {
@@ -299,12 +384,18 @@
     $statusPesanan = ucwords(str_replace('_', ' ', $pesanan->status));
     $statusPembayaran = ucwords(str_replace('_', ' ', $pesanan->status_pembayaran));
     $metodePenerimaan = $pesanan->metode_pengambilan === 'kurir_toko' ? 'Kurir toko' : 'Ambil di toko';
+
     $metodePembayaran = '-';
     if ($pesanan->pembayaran) {
         $metodePembayaran = $pesanan->pembayaran->metode_pembayaran === 'tunai'
             ? 'Tunai'
             : 'QRIS';
     }
+
+    $bolehBatalkan = $pesanan->status === 'menunggu_pembayaran'
+        && $pesanan->status_pembayaran !== 'dibayar';
+
+    $bolehKonfirmasiDiterima = in_array($pesanan->status, ['siap_diambil', 'dalam_pengantaran'], true);
 @endphp
 
 <div class="breadcrumb">
@@ -315,17 +406,29 @@
     <span>{{ $pesanan->nomor_invoice }}</span>
 </div>
 
+@if(session('success'))
+    <div class="alert-box alert-success">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert-box alert-error">
+        {{ session('error') }}
+    </div>
+@endif
+
 <section class="page-card detail-hero">
     <div>
         <div class="badge">Detail Pesanan</div>
 
         <h1>
-            Pesananmu sedang <span>kami proses</span>
+            Pesananmu sedang <span>{{ strtolower($statusPesanan) }}</span>
         </h1>
 
         <p>
             Di halaman ini kamu bisa melihat produk yang dipesan, status pembayaran,
-            dan informasi pengambilan atau pengantaran.
+            informasi pengambilan atau pengantaran, serta mengonfirmasi pesanan saat sudah diterima.
         </p>
     </div>
 
@@ -389,8 +492,26 @@
                             </p>
                         </div>
 
+                        @php
+                            $ulasanProduk = $pesanan->ulasan
+                                ? $pesanan->ulasan->firstWhere('produk_id', $item->produk_id)
+                                : null;
+                        @endphp
+
                         <div class="product-subtotal">
                             Rp {{ number_format($item->subtotal, 0, ',', '.') }}
+
+                            @if($pesanan->status === 'selesai')
+                                <div style="margin-top: 10px;">
+                                    <a
+                                        href="{{ route('pembeli-web.ulasan.create', [$pesanan->nomor_invoice, $item->produk_id]) }}"
+                                        class="btn btn-outline"
+                                        style="min-height: 36px; padding: 8px 12px; font-size: 12px;"
+                                    >
+                                        {{ $ulasanProduk ? 'Edit Ulasan' : 'Beri Ulasan' }}
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 @endforeach
@@ -433,6 +554,38 @@
     </div>
 
     <aside class="page-card side-card">
+        @if($bolehBatalkan)
+            <div class="next-action-box">
+                <h3>Pesanan masih bisa dibatalkan</h3>
+                <p>
+                    Pesanan ini belum dibayar dan belum diproses toko, jadi kamu masih bisa membatalkannya.
+                    Stok produk akan otomatis dikembalikan.
+                </p>
+            </div>
+        @elseif($bolehKonfirmasiDiterima)
+            <div class="next-action-box">
+                <h3>Pesanan sudah bisa dikonfirmasi</h3>
+                <p>
+                    Jika produk sudah kamu terima atau sudah kamu ambil di toko, klik tombol konfirmasi diterima.
+                    Setelah itu status pesanan menjadi selesai.
+                </p>
+            </div>
+        @elseif($pesanan->status === 'selesai')
+            <div class="next-action-box">
+                <h3>Pesanan selesai</h3>
+                <p>
+                    Pesanan ini sudah selesai. Setelah ini, fitur berikutnya adalah memberi ulasan produk.
+                </p>
+            </div>
+        @elseif($pesanan->status === 'dibatalkan')
+            <div class="next-action-box">
+                <h3>Pesanan dibatalkan</h3>
+                <p>
+                    Pesanan ini sudah dibatalkan dan tidak dapat diproses kembali.
+                </p>
+            </div>
+        @endif
+
         <h2>Ringkasan bayar</h2>
 
         <div>
@@ -473,13 +626,48 @@
         </div>
 
         <div class="action-list">
-            <a href="{{ route('pembeli-web.pesanan.index', ['keyword' => $pesanan->nomor_invoice]) }}" class="btn btn-outline">
-                Kembali ke Pencarian
+            @if($bolehBatalkan)
+                <form
+                    method="POST"
+                    action="{{ route('pembeli-web.pesanan.cancel', $pesanan->nomor_invoice) }}"
+                    onsubmit="return confirm('Yakin ingin membatalkan pesanan ini? Stok produk akan dikembalikan.');"
+                >
+                    @csrf
+                    @method('PATCH')
+
+                    <button type="submit" class="danger-button">
+                        Batalkan Pesanan
+                    </button>
+                </form>
+            @endif
+
+            @if($bolehKonfirmasiDiterima)
+                <form
+                    method="POST"
+                    action="{{ route('pembeli-web.pesanan.confirm-received', $pesanan->nomor_invoice) }}"
+                    onsubmit="return confirm('Pastikan pesanan sudah kamu terima. Lanjut konfirmasi pesanan diterima?');"
+                >
+                    @csrf
+                    @method('PATCH')
+
+                    <button type="submit" class="success-button">
+                        Konfirmasi Pesanan Diterima
+                    </button>
+                </form>
+            @endif
+
+            <a href="{{ route('pembeli-web.pesanan.index') }}" class="btn btn-outline">
+                Kembali ke Pesanan Saya
             </a>
 
             <a href="{{ route('pembeli-web.produk') }}" class="btn btn-primary">
                 Belanja Lagi
             </a>
+        </div>
+
+        <div class="action-note">
+            Tombol batalkan hanya muncul saat pesanan belum dibayar dan belum diproses.
+            Tombol konfirmasi diterima muncul setelah admin menandai pesanan siap diambil atau dalam pengantaran.
         </div>
     </aside>
 </section>

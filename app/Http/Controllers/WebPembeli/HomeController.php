@@ -3,48 +3,56 @@
 namespace App\Http\Controllers\WebPembeli;
 
 use App\Http\Controllers\Controller;
+use App\Models\Banner;
 use App\Models\PengaturanToko;
+use App\Models\Pesanan;
 use App\Models\Produk;
-use App\Models\Ulasan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class HomeController extends Controller
 {
     public function home(): View
     {
-        $pengaturan = PengaturanToko::query()->first();
+        $pengaturan = PengaturanToko::utama();
 
-        if (! $pengaturan) {
-            $pengaturan = new PengaturanToko([
-                'nama' => 'SiTahu',
-                'telepon' => '',
-                'alamat' => 'Alamat toko belum diatur.',
-                'jam_buka' => null,
-                'jam_tutup' => null,
-                'tentang' => 'Toko tahu rumahan yang menyediakan berbagai pilihan tahu segar untuk kebutuhan harian.',
-                'area_pengiriman' => 'Area pengiriman akan diinformasikan saat pemesanan.',
-            ]);
-        }
-
-        $produkTerbaru = Produk::query()
-            ->with('gambarUtama')
+        $banner = Banner::query()
             ->where('aktif', true)
             ->latest()
-            ->take(4)
+            ->take(5)
+            ->get();
+
+        $produkTerbaru = Produk::query()
+            ->with(['gambarUtama'])
+            ->withAvg(['ulasan as rata_rating' => function ($query) {
+                $query->where('ditampilkan', true);
+            }], 'rating')
+            ->withCount(['ulasan as jumlah_ulasan' => function ($query) {
+                $query->where('ditampilkan', true);
+            }])
+            ->where('aktif', true)
+            ->latest()
+            ->take(8)
             ->get();
 
         $produkTerlaris = Produk::query()
-            ->with('gambarUtama')
-            ->withSum('itemPesanan as total_terjual', 'jumlah')
+            ->with(['gambarUtama'])
+            ->withAvg(['ulasan as rata_rating' => function ($query) {
+                $query->where('ditampilkan', true);
+            }], 'rating')
+            ->withCount(['ulasan as jumlah_ulasan' => function ($query) {
+                $query->where('ditampilkan', true);
+            }])
             ->where('aktif', true)
+            ->withSum('itemPesanan as total_terjual', 'jumlah')
             ->orderByDesc('total_terjual')
-            ->take(3)
-            ->get()
-            ->filter(fn ($produk) => (int) ($produk->total_terjual ?? 0) > 0);
+            ->take(8)
+            ->get();
 
         return view('pembeli.home', compact(
             'pengaturan',
+            'banner',
             'produkTerbaru',
             'produkTerlaris'
         ));
@@ -52,48 +60,71 @@ class HomeController extends Controller
 
     public function produk(Request $request): View
     {
-        $search = trim((string) $request->query('search'));
+        $pengaturan = PengaturanToko::utama();
+
+        $search = trim((string) $request->query('search', ''));
         $sort = $request->query('sort', 'terbaru');
         $stok = $request->query('stok', 'semua');
 
-        $produkQuery = Produk::query()
-            ->with('gambarUtama')
-            ->where('aktif', true);
-
-        if ($search !== '') {
-            $produkQuery->where(function ($query) use ($search) {
-                $query->where('nama', 'like', '%' . $search . '%')
-                    ->orWhere('deskripsi', 'like', '%' . $search . '%')
-                    ->orWhere('satuan', 'like', '%' . $search . '%');
-            });
+        if (! in_array($sort, ['terbaru', 'termurah', 'termahal', 'rating'], true)) {
+            $sort = 'terbaru';
         }
 
-        if ($stok === 'tersedia') {
-            $produkQuery->where('stok', '>', 0);
+        if (! in_array($stok, ['semua', 'tersedia', 'habis'], true)) {
+            $stok = 'semua';
         }
 
-        if ($stok === 'habis') {
-            $produkQuery->where('stok', '<=', 0);
-        }
-
-        if ($sort === 'termurah') {
-            $produkQuery->orderBy('harga', 'asc');
-        } elseif ($sort === 'termahal') {
-            $produkQuery->orderBy('harga', 'desc');
-        } elseif ($sort === 'stok_banyak') {
-            $produkQuery->orderBy('stok', 'desc');
-        } elseif ($sort === 'nama') {
-            $produkQuery->orderBy('nama', 'asc');
-        } else {
-            $produkQuery->latest();
-        }
-
-        $produkList = $produkQuery
+        $produkList = Produk::query()
+            ->with(['gambarUtama'])
+            ->withAvg(['ulasan as rata_rating' => function ($query) {
+                $query->where('ditampilkan', true);
+            }], 'rating')
+            ->withCount(['ulasan as jumlah_ulasan' => function ($query) {
+                $query->where('ditampilkan', true);
+            }])
+            ->where('aktif', true)
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nama', 'like', '%' . $search . '%')
+                        ->orWhere('deskripsi', 'like', '%' . $search . '%')
+                        ->orWhere('satuan', 'like', '%' . $search . '%');
+                });
+            })
+            ->when($stok === 'tersedia', function ($query) {
+                $query->where('stok', '>', 0);
+            })
+            ->when($stok === 'habis', function ($query) {
+                $query->where('stok', '<=', 0);
+            })
+            ->when($sort === 'termurah', function ($query) {
+                $query->orderBy('harga');
+            })
+            ->when($sort === 'termahal', function ($query) {
+                $query->orderByDesc('harga');
+            })
+            ->when($sort === 'rating', function ($query) {
+                $query->orderByDesc('rata_rating');
+            })
+            ->when($sort === 'terbaru', function ($query) {
+                $query->latest();
+            })
             ->paginate(12)
             ->withQueryString();
 
+        /*
+        |--------------------------------------------------------------------------
+        | Catatan:
+        |--------------------------------------------------------------------------
+        | View produk.blade.php kamu memakai $produkList.
+        | Tapi beberapa kode lama mungkin masih memakai $produk.
+        | Jadi dua-duanya dikirim biar aman.
+        */
+        $produk = $produkList;
+
         return view('pembeli.produk', compact(
+            'pengaturan',
             'produkList',
+            'produk',
             'search',
             'sort',
             'stok'
@@ -102,71 +133,68 @@ class HomeController extends Controller
 
     public function detailProduk(Produk $produk): View
     {
-        if (! $produk->aktif) {
-            abort(404);
-        }
+        abort_unless($produk->aktif, 404);
 
-        $produk->load(['gambar', 'gambarUtama']);
+        $produk->load([
+            'gambar',
+            'gambarUtama',
+            'ulasan.user',
+        ]);
 
-        $pengaturan = PengaturanToko::query()->first();
-
-        if (! $pengaturan) {
-            $pengaturan = new PengaturanToko([
-                'nama' => 'SiTahu',
-                'telepon' => '',
-                'alamat' => 'Alamat toko belum diatur.',
-                'tentang' => 'Toko tahu rumahan yang menyediakan berbagai pilihan tahu segar untuk kebutuhan harian.',
-            ]);
-        }
-
-        $ulasan = Ulasan::query()
+        $ulasan = $produk->ulasan()
             ->with('user')
-            ->where('produk_id', $produk->id)
             ->where('ditampilkan', true)
             ->latest()
-            ->take(6)
             ->get();
 
-        $rataRating = $ulasan->count()
-            ? round($ulasan->avg('rating'), 1)
-            : null;
-
-        $produkLain = Produk::query()
-            ->with('gambarUtama')
-            ->where('aktif', true)
-            ->where('id', '!=', $produk->id)
-            ->latest()
-            ->take(4)
-            ->get();
+        $rataRating = round((float) $ulasan->avg('rating'), 1);
+        $jumlahUlasan = $ulasan->count();
 
         return view('pembeli.detail-produk', compact(
             'produk',
-            'pengaturan',
             'ulasan',
             'rataRating',
-            'produkLain'
+            'jumlahUlasan'
         ));
     }
 
     public function profil(): View
     {
-        $pengaturan = PengaturanToko::query()->first();
+        $pengaturan = PengaturanToko::utama();
+        $user = Auth::user();
 
-        if (! $pengaturan) {
-            $pengaturan = new PengaturanToko([
-                'nama' => 'SiTahu',
-                'telepon' => '',
-                'email' => '',
-                'alamat' => 'Alamat toko belum diatur.',
-                'jam_buka' => null,
-                'jam_tutup' => null,
-                'tentang' => 'Toko tahu rumahan yang menyediakan berbagai pilihan tahu segar untuk kebutuhan harian.',
-                'area_pengiriman' => 'Area pengiriman akan diinformasikan saat pemesanan.',
-                'info_pembayaran' => 'Pembayaran dapat dilakukan melalui QRIS atau tunai.',
-            ]);
-        }
+        $pesananQuery = Pesanan::query()
+            ->where('user_id', $user->id);
 
-        return view('pembeli.profil', compact('pengaturan'));
+        $statProfil = [
+            'total_pesanan' => (clone $pesananQuery)->count(),
+
+            'pesanan_aktif' => (clone $pesananQuery)
+                ->whereNotIn('status', ['selesai', 'dibatalkan'])
+                ->count(),
+
+            'pesanan_selesai' => (clone $pesananQuery)
+                ->where('status', 'selesai')
+                ->count(),
+
+            'total_belanja' => (clone $pesananQuery)
+                ->where('status_pembayaran', 'dibayar')
+                ->sum('total_bayar'),
+        ];
+
+        $pesananTerbaru = Pesanan::query()
+            ->with(['item.produk', 'pembayaran', 'pengiriman'])
+            ->where('user_id', $user->id)
+            ->latest('tanggal_pesanan')
+            ->take(4)
+            ->get();
+
+        return view('pembeli.profil', compact(
+            'pengaturan',
+            'user',
+            'statProfil',
+            'pesananTerbaru'
+        ));
     }
 
     public function comingSoon(): View

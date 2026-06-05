@@ -21,7 +21,7 @@
     }
 
     .checkout-hero h1 span {
-        color: var(--brand-text);
+        color: var(--brand-dark);
     }
 
     .checkout-hero p {
@@ -175,6 +175,81 @@
         border: 1px solid var(--line);
     }
 
+    .saved-address-list {
+        display: grid;
+        gap: 10px;
+    }
+
+    .saved-address-card {
+        position: relative;
+        display: block;
+        padding: 14px 14px 14px 44px;
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+        cursor: pointer;
+        transition: 0.16s ease;
+    }
+
+    .saved-address-card:hover {
+        border-color: rgba(223, 186, 104, 0.72);
+        box-shadow: var(--shadow-soft);
+    }
+
+    .saved-address-card input {
+        position: absolute;
+        left: 15px;
+        top: 19px;
+        width: 17px;
+        height: 17px;
+        accent-color: #c89335;
+    }
+
+    .saved-address-card:has(input:checked) {
+        background: var(--brand-soft);
+        border-color: rgba(223, 186, 104, 0.95);
+        box-shadow: 0 0 0 4px rgba(223, 186, 104, 0.12);
+    }
+
+    .saved-address-card strong {
+        display: block;
+        color: var(--heading);
+        font-size: 14px;
+        font-weight: 950;
+    }
+
+    .saved-address-card span {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 12.5px;
+        line-height: 1.55;
+    }
+
+    .address-mini-badge {
+        display: inline-flex;
+        width: fit-content;
+        margin-top: 8px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: #ffffff;
+        color: var(--brand-dark);
+        border: 1px solid rgba(223, 186, 104, 0.45);
+        font-size: 11.5px;
+        font-weight: 900;
+    }
+
+    .empty-address-warning {
+        padding: 14px;
+        border-radius: 16px;
+        background: #fff8e8;
+        border: 1px solid rgba(223, 186, 104, 0.5);
+        color: var(--brand-dark);
+        font-size: 13.5px;
+        line-height: 1.65;
+        font-weight: 750;
+    }
+
     .payment-list {
         display: grid;
         gap: 12px;
@@ -211,13 +286,13 @@
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background: var(--brand-text);
+        background: var(--brand-dark);
         transform: scale(0);
         transition: 0.16s ease;
     }
 
     .payment-option input[type="radio"]:checked {
-        border-color: var(--brand-text);
+        border-color: var(--brand-dark);
         background: var(--brand-soft);
     }
 
@@ -226,7 +301,7 @@
     }
 
     .payment-option:hover {
-        color: var(--brand-text);
+        color: var(--brand-dark);
     }
 
     .checkbox-row {
@@ -269,7 +344,7 @@
         border: 1px solid var(--line);
         display: grid;
         place-items: center;
-        color: var(--brand-text);
+        color: var(--brand-dark);
         font-size: 10px;
         font-weight: 900;
     }
@@ -319,7 +394,7 @@
     }
 
     .summary-total span:last-child {
-        color: var(--brand-text);
+        color: var(--brand-dark);
         text-align: right;
     }
 
@@ -371,18 +446,20 @@
     $biayaKurir = (float) ($pengaturan->biaya_minimum_pengiriman ?? 0);
     $totalAmbil = $subtotal;
     $totalKurir = $subtotal + $biayaKurir;
+
+    $oldAlamatId = old('alamat_id', $alamatUtama?->id);
 @endphp
 
 <section class="page-card checkout-hero">
     <div class="badge">Checkout Pesanan</div>
 
     <h1>
-        Tinggal lengkapi data, <span>pesanan siap dibuat</span>
+        Tinggal pilih alamat, <span>pesanan siap dibuat</span>
     </h1>
 
     <p>
-        Isi data pemesan dan pilih cara menerima pesanan. Pastikan jumlah produk sudah sesuai
-        sebelum pesanan dikirim ke toko.
+        Data akun sudah otomatis terisi. Kalau memilih kurir toko, gunakan alamat yang sudah tersimpan
+        dari menu Alamat Saya.
     </p>
 </section>
 
@@ -414,7 +491,7 @@
                             id="nama"
                             name="nama"
                             class="form-control"
-                            value="{{ old('nama') }}"
+                            value="{{ old('nama', $user?->name) }}"
                             placeholder="Masukkan nama lengkap"
                         >
                         @error('nama') <div class="error-text">{{ $message }}</div> @enderror
@@ -427,7 +504,7 @@
                             id="telepon"
                             name="telepon"
                             class="form-control"
-                            value="{{ old('telepon') }}"
+                            value="{{ old('telepon', $user?->telepon) }}"
                             placeholder="Contoh: 081234567890"
                         >
                         @error('telepon') <div class="error-text">{{ $message }}</div> @enderror
@@ -440,7 +517,7 @@
                             id="email"
                             name="email"
                             class="form-control"
-                            value="{{ old('email') }}"
+                            value="{{ old('email', $user?->email) }}"
                             placeholder="Contoh: nama@email.com"
                         >
                         @error('email') <div class="error-text">{{ $message }}</div> @enderror
@@ -476,47 +553,53 @@
                 </div>
 
                 <div class="address-box" id="alamatKurirBox">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="nama_penerima">Nama penerima</label>
-                            <input
-                                type="text"
-                                id="nama_penerima"
-                                name="nama_penerima"
-                                class="form-control"
-                                value="{{ old('nama_penerima') }}"
-                                placeholder="Nama penerima"
-                            >
-                            @error('nama_penerima') <div class="error-text">{{ $message }}</div> @enderror
-                        </div>
+                    <h2 style="font-size:18px;margin-bottom:10px;">Pilih alamat pengiriman</h2>
 
-                        <div class="form-group">
-                            <label for="telepon_penerima">Telepon penerima</label>
-                            <input
-                                type="text"
-                                id="telepon_penerima"
-                                name="telepon_penerima"
-                                class="form-control"
-                                value="{{ old('telepon_penerima') }}"
-                                placeholder="Nomor penerima"
-                            >
-                            @error('telepon_penerima') <div class="error-text">{{ $message }}</div> @enderror
-                        </div>
+                    @if($alamatPembeli->count())
+                        <div class="saved-address-list">
+                            @foreach($alamatPembeli as $alamat)
+                                <label class="saved-address-card">
+                                    <input
+                                        type="radio"
+                                        name="alamat_id"
+                                        value="{{ $alamat->id }}"
+                                        {{ (string) $oldAlamatId === (string) $alamat->id ? 'checked' : '' }}
+                                    >
 
-                        <div class="form-group" style="grid-column: 1 / -1;">
-                            <label for="alamat_lengkap">Alamat lengkap</label>
-                            <textarea
-                                id="alamat_lengkap"
-                                name="alamat_lengkap"
-                                class="form-control"
-                                placeholder="Tulis alamat lengkap, patokan rumah, RT/RW, dan area pengantaran"
-                            >{{ old('alamat_lengkap') }}</textarea>
-                            @error('alamat_lengkap') <div class="error-text">{{ $message }}</div> @enderror
-                        </div>
+                                    <strong>
+                                        {{ $alamat->nama_penerima }}
+                                        @if($alamat->utama)
+                                            <span class="address-mini-badge">Utama</span>
+                                        @endif
+                                    </strong>
 
-                        <input type="hidden" name="latitude" value="{{ old('latitude') }}">
-                        <input type="hidden" name="longitude" value="{{ old('longitude') }}">
-                    </div>
+                                    <span>
+                                        {{ $alamat->telepon }}<br>
+                                        {{ $alamat->alamat_lengkap }}
+                                    </span>
+
+                                    @if($alamat->latitude && $alamat->longitude)
+                                        <span>
+                                            Koordinat: {{ $alamat->latitude }}, {{ $alamat->longitude }}
+                                        </span>
+                                    @endif
+                                </label>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="empty-address-warning">
+                            Kamu belum punya alamat tersimpan. Tambahkan alamat dulu supaya bisa memilih
+                            metode kurir toko.
+
+                            <div style="margin-top:12px;">
+                                <a href="{{ route('pembeli-web.alamat.create') }}" class="btn btn-primary">
+                                    Tambah Alamat
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+
+                    @error('alamat_id') <div class="error-text">{{ $message }}</div> @enderror
                 </div>
             </div>
 
@@ -558,7 +641,7 @@
                             id="catatan"
                             name="catatan"
                             class="form-control"
-                            placeholder="Contoh: tahu jangan terlalu matang, hubungi dulu sebelum antar, dan lain-lain"
+                            placeholder="Contoh: hubungi dulu sebelum antar, jangan terlalu siang, dan lain-lain"
                         >{{ old('catatan') }}</textarea>
                         @error('catatan') <div class="error-text">{{ $message }}</div> @enderror
                     </div>
@@ -628,7 +711,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%;">
+            <button type="submit" class="btn btn-primary" style="width: 100%;" id="submitCheckoutBtn">
                 Buat Pesanan
             </button>
 
@@ -637,7 +720,8 @@
             </a>
 
             <div class="help-box">
-                Setelah pesanan dibuat, kamu akan mendapat nomor invoice. Untuk QRIS, ikuti informasi pembayaran yang muncul. Untuk tunai, pembayaran dilakukan saat pesanan diambil atau diterima.
+                Untuk QRIS, informasi pembayaran muncul setelah invoice dibuat.
+                Untuk tunai, pembayaran dilakukan saat pesanan diambil atau diterima.
             </div>
         </aside>
     </section>
@@ -649,10 +733,12 @@
     const biayaKurir = {{ $biayaKurir }};
     const totalAmbil = {{ $totalAmbil }};
     const totalKurir = {{ $totalKurir }};
+    const punyaAlamat = {{ $alamatPembeli->count() ? 'true' : 'false' }};
 
     const alamatKurirBox = document.getElementById('alamatKurirBox');
     const biayaPengirimanText = document.getElementById('biayaPengirimanText');
     const totalBayarText = document.getElementById('totalBayarText');
+    const submitCheckoutBtn = document.getElementById('submitCheckoutBtn');
 
     function rupiah(value) {
         return new Intl.NumberFormat('id-ID', {
@@ -669,10 +755,24 @@
             alamatKurirBox.style.display = 'block';
             biayaPengirimanText.textContent = rupiah(biayaKurir);
             totalBayarText.textContent = rupiah(totalKurir);
+
+            if (!punyaAlamat) {
+                submitCheckoutBtn.disabled = true;
+                submitCheckoutBtn.classList.add('btn-disabled');
+                submitCheckoutBtn.textContent = 'Tambahkan Alamat Dulu';
+            } else {
+                submitCheckoutBtn.disabled = false;
+                submitCheckoutBtn.classList.remove('btn-disabled');
+                submitCheckoutBtn.textContent = 'Buat Pesanan';
+            }
         } else {
             alamatKurirBox.style.display = 'none';
             biayaPengirimanText.textContent = rupiah(0);
             totalBayarText.textContent = rupiah(totalAmbil);
+
+            submitCheckoutBtn.disabled = false;
+            submitCheckoutBtn.classList.remove('btn-disabled');
+            submitCheckoutBtn.textContent = 'Buat Pesanan';
         }
     }
 

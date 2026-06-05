@@ -3,94 +3,223 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ItemPesanan;
 use App\Models\Pembayaran;
 use App\Models\Pesanan;
 use App\Models\Produk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Response;
-use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\View\View;
 
 class LaporanController extends Controller
 {
     public function index(Request $request): View
     {
-        $tanggalMulai = $request->date('tanggal_mulai') ?? Carbon::now()->startOfMonth();
-        $tanggalSelesai = $request->date('tanggal_selesai') ?? Carbon::now();
-        $jenis = $request->input('jenis', 'penjualan');
+        $tanggalMulai = $request->input('tanggal_mulai')
+            ? Carbon::parse($request->input('tanggal_mulai'))->startOfDay()
+            : now()->startOfMonth();
 
-        $pesananQuery = Pesanan::with('user')
-            ->whereBetween('tanggal_pesanan', [$tanggalMulai->startOfDay(), $tanggalSelesai->endOfDay()]);
+        $tanggalSelesai = $request->input('tanggal_selesai')
+            ? Carbon::parse($request->input('tanggal_selesai'))->endOfDay()
+            : now()->endOfDay();
 
-        if ($request->filled('q')) {
-            $search = $request->q;
-            $pesananQuery->where(function ($query) use ($search) {
-                $query->where('nomor_invoice', 'like', '%' . $search . '%')
-                    ->orWhereHas('user', function ($userQuery) use ($search) {
-                        $userQuery->where('name', 'like', '%' . $search . '%')
-                            ->orWhere('email', 'like', '%' . $search . '%');
+        if ($tanggalMulai->greaterThan($tanggalSelesai)) {
+            [$tanggalMulai, $tanggalSelesai] = [$tanggalSelesai->copy()->startOfDay(), $tanggalMulai->copy()->endOfDay()];
+        }
+
+        $pesananQuery = Pesanan::query()
+            ->with(['user', 'pembayaran', 'pengiriman', 'item.produk'])
+            ->whereBetween('tanggal_pesanan', [$tanggalMulai, $tanggalSelesai]);
+
+        $pembayaranDibayarQuery = Pembayaran::query()
+            ->where('status', 'dibayar')
+            ->whereBetween('created_at', [$tanggalMulai, $tanggalSelesai]);
+
+        $pesanan = (clone $pesananQuery)
+            ->latest('tanggal_pesanan')
+            ->paginate(12)
+            ->withQueryString();
+
+        $totalPesanan = (clone $pesananQuery)->count();
+
+        $pesananSelesai = (clone $pesananQuery)
+            ->where('status', 'selesai')
+            ->count();
+
+        $pesananDibatalkan = (clone $pesananQuery)
+            ->where('status', 'dibatalkan')
+            ->count();
+
+        $totalPendapatan = (clone $pembayaranDibayarQuery)
+            ->sum('jumlah');
+
+        $totalProdukTerjual = ItemPesanan::query()
+            ->whereHas('pesanan', function ($query) use ($tanggalMulai, $tanggalSelesai) {
+                $query->whereBetween('tanggal_pesanan', [$tanggalMulai, $tanggalSelesai])
+                    ->whereNotIn('status', ['dibatalkan']);
+            })
+            ->sum('jumlah');
+
+        $produkTerlaris = Produk::query()
+            ->withSum([
+                'itemPesanan as total_terjual' => function ($query) use ($tanggalMulai, $tanggalSelesai) {
+                    $query->whereHas('pesanan', function ($pesananQuery) use ($tanggalMulai, $tanggalSelesai) {
+                        $pesananQuery->whereBetween('tanggal_pesanan', [$tanggalMulai, $tanggalSelesai])
+                            ->whereNotIn('status', ['dibatalkan']);
                     });
-            });
-        }
-
-        if ($request->filled('status')) {
-            $pesananQuery->where('status', $request->status);
-        }
-
-        $pesanan = $pesananQuery->latest('tanggal_pesanan')->paginate(10)->withQueryString();
-
-        $ringkasan = [
-            'total_penjualan' => Pembayaran::where('status', 'dibayar')
-                ->whereBetween('created_at', [$tanggalMulai->startOfDay(), $tanggalSelesai->endOfDay()])
-                ->sum('jumlah'),
-            'total_pesanan' => (clone $pesananQuery)->count(),
-            'pesanan_selesai' => (clone $pesananQuery)->where('status', 'selesai')->count(),
-            'pesanan_dibatalkan' => (clone $pesananQuery)->where('status', 'dibatalkan')->count(),
-        ];
-
-        $produkTerlaris = Produk::withSum(['itemPesanan as total_terjual' => function ($query) use ($tanggalMulai, $tanggalSelesai) {
-                $query->whereHas('pesanan', fn ($q) => $q->whereBetween('tanggal_pesanan', [$tanggalMulai->startOfDay(), $tanggalSelesai->endOfDay()]));
-            }], 'jumlah')
+                },
+            ], 'jumlah')
+            ->withSum([
+                'itemPesanan as total_pendapatan_produk' => function ($query) use ($tanggalMulai, $tanggalSelesai) {
+                    $query->whereHas('pesanan', function ($pesananQuery) use ($tanggalMulai, $tanggalSelesai) {
+                        $pesananQuery->whereBetween('tanggal_pesanan', [$tanggalMulai, $tanggalSelesai])
+                            ->whereNotIn('status', ['dibatalkan']);
+                    });
+                },
+            ], 'subtotal')
             ->orderByDesc('total_terjual')
-            ->limit(5)
+            ->limit(8)
             ->get();
 
-        return view('admin.laporan.index', compact('jenis', 'tanggalMulai', 'tanggalSelesai', 'pesanan', 'ringkasan', 'produkTerlaris'));
+        $statusPesanan = (clone $pesananQuery)
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $statusPembayaran = Pembayaran::query()
+            ->whereBetween('created_at', [$tanggalMulai, $tanggalSelesai])
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $stokMenipis = Produk::query()
+            ->where('stok', '>', 0)
+            ->whereColumn('stok', '<=', 'min_stok')
+            ->count();
+
+        $stokHabis = Produk::query()
+            ->where('stok', '<=', 0)
+            ->count();
+
+        $produkStokPerhatian = Produk::query()
+            ->where(function ($query) {
+                $query->where('stok', '<=', 0)
+                    ->orWhere(function ($subQuery) {
+                        $subQuery->where('stok', '>', 0)
+                            ->whereColumn('stok', '<=', 'min_stok');
+                    });
+            })
+            ->orderBy('stok')
+            ->limit(8)
+            ->get();
+
+        $laporanHarian = collect();
+
+        $cursor = $tanggalMulai->copy()->startOfDay();
+
+        while ($cursor->lessThanOrEqualTo($tanggalSelesai)) {
+            $tanggal = $cursor->copy();
+
+            $laporanHarian->push([
+                'tanggal' => $tanggal->format('d/m/Y'),
+                'pesanan' => Pesanan::query()
+                    ->whereDate('tanggal_pesanan', $tanggal)
+                    ->count(),
+                'pendapatan' => Pembayaran::query()
+                    ->where('status', 'dibayar')
+                    ->whereDate('created_at', $tanggal)
+                    ->sum('jumlah'),
+            ]);
+
+            $cursor->addDay();
+        }
+
+        $stats = [
+            'total_pendapatan' => $totalPendapatan,
+            'total_pesanan' => $totalPesanan,
+            'pesanan_selesai' => $pesananSelesai,
+            'pesanan_dibatalkan' => $pesananDibatalkan,
+            'total_produk_terjual' => $totalProdukTerjual,
+            'stok_menipis' => $stokMenipis,
+            'stok_habis' => $stokHabis,
+        ];
+
+        return view('admin.laporan.index', compact(
+            'tanggalMulai',
+            'tanggalSelesai',
+            'pesanan',
+            'produkTerlaris',
+            'statusPesanan',
+            'statusPembayaran',
+            'produkStokPerhatian',
+            'laporanHarian',
+            'stats'
+        ));
     }
 
     public function exportCsv(Request $request): StreamedResponse
     {
-        $tanggalMulai = $request->date('tanggal_mulai') ?? Carbon::now()->startOfMonth();
-        $tanggalSelesai = $request->date('tanggal_selesai') ?? Carbon::now();
+        $tanggalMulai = $request->input('tanggal_mulai')
+            ? Carbon::parse($request->input('tanggal_mulai'))->startOfDay()
+            : now()->startOfMonth();
 
-        $filename = 'laporan-penjualan-' . now()->format('Ymd-His') . '.csv';
+        $tanggalSelesai = $request->input('tanggal_selesai')
+            ? Carbon::parse($request->input('tanggal_selesai'))->endOfDay()
+            : now()->endOfDay();
 
-        $callback = function () use ($tanggalMulai, $tanggalSelesai) {
+        if ($tanggalMulai->greaterThan($tanggalSelesai)) {
+            [$tanggalMulai, $tanggalSelesai] = [$tanggalSelesai->copy()->startOfDay(), $tanggalMulai->copy()->endOfDay()];
+        }
+
+        $namaFile = 'laporan-si-tahu-' . $tanggalMulai->format('Ymd') . '-' . $tanggalSelesai->format('Ymd') . '.csv';
+
+        $pesanan = Pesanan::query()
+            ->with(['user', 'pembayaran', 'pengiriman', 'item.produk'])
+            ->whereBetween('tanggal_pesanan', [$tanggalMulai, $tanggalSelesai])
+            ->latest('tanggal_pesanan')
+            ->get();
+
+        return response()->streamDownload(function () use ($pesanan) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Invoice', 'Pembeli', 'Tanggal', 'Status', 'Status Pembayaran', 'Total Bayar']);
 
-            Pesanan::with('user')
-                ->whereBetween('tanggal_pesanan', [$tanggalMulai->startOfDay(), $tanggalSelesai->endOfDay()])
-                ->orderBy('tanggal_pesanan')
-                ->chunk(200, function ($orders) use ($handle) {
-                    foreach ($orders as $order) {
-                        fputcsv($handle, [
-                            $order->nomor_invoice,
-                            $order->user?->name,
-                            optional($order->tanggal_pesanan)->format('Y-m-d H:i:s'),
-                            $order->status,
-                            $order->status_pembayaran,
-                            $order->total_bayar,
-                        ]);
-                    }
-                });
+            fputcsv($handle, [
+                'Nomor Invoice',
+                'Tanggal Pesanan',
+                'Nama Pembeli',
+                'Email Pembeli',
+                'Telepon',
+                'Metode Pengambilan',
+                'Status Pesanan',
+                'Status Pembayaran',
+                'Metode Pembayaran',
+                'Jumlah Item',
+                'Subtotal Produk',
+                'Biaya Pengiriman',
+                'Total Bayar',
+            ]);
+
+            foreach ($pesanan as $order) {
+                fputcsv($handle, [
+                    $order->nomor_invoice,
+                    optional($order->tanggal_pesanan)->format('d/m/Y H:i'),
+                    $order->user?->name ?? '-',
+                    $order->user?->email ?? '-',
+                    $order->user?->telepon ?? '-',
+                    $order->metode_pengambilan,
+                    $order->status,
+                    $order->status_pembayaran,
+                    $order->pembayaran?->metode_pembayaran ?? '-',
+                    $order->item->sum('jumlah'),
+                    $order->subtotal_produk,
+                    $order->biaya_pengiriman,
+                    $order->total_bayar,
+                ]);
+            }
 
             fclose($handle);
-        };
-
-        return Response::streamDownload($callback, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
+        }, $namaFile, [
+            'Content-Type' => 'text/csv',
         ]);
     }
 }

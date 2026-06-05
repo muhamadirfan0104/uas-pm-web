@@ -9,14 +9,25 @@ class PengaturanToko extends Model
     protected $table = 'pengaturan_toko';
 
     protected $fillable = [
-        'nama', 'logo_url', 'alamat', 'telepon', 'email', 'jam_buka', 'jam_tutup',
-        'latitude_toko', 'longitude_toko', 'tarif_per_km', 'biaya_minimum_pengiriman',
-        'radius_maksimal_km', 'area_pengiriman', 'info_pembayaran', 'tentang',
+        'nama',
+        'logo_url',
+        'alamat',
+        'telepon',
+        'email',
+        'jam_buka',
+        'latitude_toko',
+        'longitude_toko',
+        'tarif_per_km',
+        'biaya_minimum_pengiriman',
+        'radius_maksimal_km',
+        'area_pengiriman',
+        'info_pembayaran',
+        'tentang',
     ];
 
     protected $casts = [
-        'latitude_toko' => 'decimal:7',
-        'longitude_toko' => 'decimal:7',
+        'latitude_toko' => 'decimal:8',
+        'longitude_toko' => 'decimal:8',
         'tarif_per_km' => 'decimal:2',
         'biaya_minimum_pengiriman' => 'decimal:2',
         'radius_maksimal_km' => 'decimal:2',
@@ -24,10 +35,23 @@ class PengaturanToko extends Model
 
     public static function utama(): self
     {
-        return self::query()->firstOrCreate(['id' => 1], [
-            'nama' => 'TahuKu',
-            'email' => 'admin@tahuku.test',
-            'telepon' => '081234567890',
-        ]);
+        return static::query()->firstOrCreate(
+            [],
+            [
+                'nama' => 'SiTahu',
+                'alamat' => 'Kediri',
+                'telepon' => '081234567890',
+                'email' => 'sitahu@example.com',
+                'jam_buka' => '08.00 - 17.00 WIB',
+                'latitude_toko' => null,
+                'longitude_toko' => null,
+                'tarif_per_km' => 3000,
+                'biaya_minimum_pengiriman' => 5000,
+                'radius_maksimal_km' => 10,
+                'area_pengiriman' => 'Area sekitar toko',
+                'info_pembayaran' => 'Pembayaran dapat dilakukan melalui tunai atau QRIS.',
+                'tentang' => 'SiTahu menyediakan produk tahu segar untuk pembeli.',
+            ]
+        );
     }
 }

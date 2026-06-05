@@ -10,13 +10,11 @@ use App\Models\Pengiriman;
 use App\Models\Pesanan;
 use App\Models\Produk;
 use App\Models\RiwayatStok;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -33,12 +31,24 @@ class CheckoutController extends Controller
         }
 
         $pengaturan = PengaturanToko::utama();
+        $user = Auth::user();
+
+        $alamatPembeli = Alamat::query()
+            ->where('user_id', $user->id)
+            ->orderByDesc('utama')
+            ->latest()
+            ->get();
+
+        $alamatUtama = $alamatPembeli->firstWhere('utama', true) ?? $alamatPembeli->first();
 
         return view('pembeli.checkout', [
             'items' => $dataKeranjang['items'],
             'totalItem' => $dataKeranjang['totalItem'],
             'subtotal' => $dataKeranjang['totalBelanja'],
             'pengaturan' => $pengaturan,
+            'user' => $user,
+            'alamatPembeli' => $alamatPembeli,
+            'alamatUtama' => $alamatUtama,
         ]);
     }
 
@@ -54,53 +64,42 @@ class CheckoutController extends Controller
 
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore(Auth::id())],
             'telepon' => ['required', 'string', 'max:30'],
 
             'metode_pengambilan' => ['required', Rule::in(['ambil_toko', 'kurir_toko'])],
             'metode_pembayaran' => ['required', Rule::in(['qris', 'tunai'])],
 
-            'nama_penerima' => ['nullable', 'string', 'max:255'],
-            'telepon_penerima' => ['nullable', 'string', 'max:30'],
-            'alamat_lengkap' => ['nullable', 'string'],
-            'latitude' => ['nullable', 'numeric'],
-            'longitude' => ['nullable', 'numeric'],
+            'alamat_id' => ['nullable', 'integer', 'exists:alamat,id'],
 
             'catatan' => ['nullable', 'string', 'max:500'],
             'setuju' => ['accepted'],
         ], [
             'setuju.accepted' => 'Kamu perlu menyetujui pesanan sebelum checkout.',
+            'alamat_id.exists' => 'Alamat yang dipilih tidak valid.',
         ]);
 
         if ($data['metode_pengambilan'] === 'kurir_toko') {
             $request->validate([
-                'nama_penerima' => ['required', 'string', 'max:255'],
-                'telepon_penerima' => ['required', 'string', 'max:30'],
-                'alamat_lengkap' => ['required', 'string'],
+                'alamat_id' => ['required', 'integer', 'exists:alamat,id'],
             ], [
-                'nama_penerima.required' => 'Nama penerima wajib diisi untuk kurir toko.',
-                'telepon_penerima.required' => 'Telepon penerima wajib diisi untuk kurir toko.',
-                'alamat_lengkap.required' => 'Alamat lengkap wajib diisi untuk kurir toko.',
+                'alamat_id.required' => 'Pilih alamat pengiriman terlebih dahulu untuk kurir toko.',
+                'alamat_id.exists' => 'Alamat yang dipilih tidak valid.',
             ]);
         }
 
         try {
             $pesanan = DB::transaction(function () use ($data, $dataKeranjang) {
                 $pengaturan = PengaturanToko::utama();
+                $user = Auth::user();
 
-                $user = User::query()->firstOrCreate(
-                    ['email' => $data['email']],
-                    [
-                        'name' => $data['nama'],
-                        'telepon' => $data['telepon'],
-                        'password' => Hash::make(Str::random(12)),
-                        'role' => 'pembeli',
-                        'aktif' => true,
-                    ]
-                );
+                if (! $user || $user->role !== 'pembeli') {
+                    throw new \RuntimeException('Silakan login sebagai pembeli dulu.');
+                }
 
                 $user->update([
                     'name' => $data['nama'],
+                    'email' => $data['email'],
                     'telepon' => $data['telepon'],
                     'role' => $user->role ?: 'pembeli',
                     'aktif' => $user->aktif ?? true,
@@ -109,15 +108,14 @@ class CheckoutController extends Controller
                 $alamat = null;
 
                 if ($data['metode_pengambilan'] === 'kurir_toko') {
-                    $alamat = Alamat::create([
-                        'user_id' => $user->id,
-                        'nama_penerima' => $data['nama_penerima'],
-                        'telepon' => $data['telepon_penerima'],
-                        'alamat_lengkap' => $data['alamat_lengkap'],
-                        'latitude' => $data['latitude'] ?? null,
-                        'longitude' => $data['longitude'] ?? null,
-                        'utama' => true,
-                    ]);
+                    $alamat = Alamat::query()
+                        ->where('user_id', $user->id)
+                        ->where('id', $data['alamat_id'])
+                        ->first();
+
+                    if (! $alamat) {
+                        throw new \RuntimeException('Alamat pengiriman tidak ditemukan.');
+                    }
                 }
 
                 $items = [];
@@ -139,6 +137,7 @@ class CheckoutController extends Controller
 
                     $harga = (float) $produk->harga;
                     $rowSubtotal = $harga * $jumlah;
+
                     $subtotal += $rowSubtotal;
 
                     $items[] = [
@@ -219,7 +218,13 @@ class CheckoutController extends Controller
                     'biaya' => $biayaPengiriman,
                 ]);
 
-                return $pesanan->load(['item.produk', 'pembayaran', 'pengiriman', 'alamatPengiriman', 'user']);
+                return $pesanan->load([
+                    'item.produk',
+                    'pembayaran',
+                    'pengiriman',
+                    'alamatPengiriman',
+                    'user',
+                ]);
             });
 
             session()->forget('keranjang_web');
@@ -236,7 +241,13 @@ class CheckoutController extends Controller
 
     public function success(Pesanan $pesanan): View
     {
-        $pesanan->load(['item.produk.gambarUtama', 'pembayaran', 'pengiriman', 'alamatPengiriman', 'user']);
+        $pesanan->load([
+            'item.produk.gambarUtama',
+            'pembayaran',
+            'pengiriman',
+            'alamatPengiriman',
+            'user',
+        ]);
 
         return view('pembeli.checkout-sukses', compact('pesanan'));
     }

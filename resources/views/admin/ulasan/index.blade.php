@@ -11,7 +11,7 @@
         background: #fff;
         margin-bottom: 1.5rem;
         overflow: hidden;
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow-soft);
     }
 
     .review-metric {
@@ -141,6 +141,13 @@
         line-height: 1.5;
     }
 
+    .review-media-stack {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
     .review-photo {
         width: 58px;
         height: 58px;
@@ -154,7 +161,23 @@
 
     .review-photo:hover {
         transform: scale(1.04);
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow-soft);
+    }
+
+    .review-video-thumb {
+        width: 86px;
+        height: 58px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        background: #111827;
+        object-fit: cover;
+        cursor: pointer;
+        transition: 0.16s ease;
+    }
+
+    .review-video-thumb:hover {
+        transform: scale(1.04);
+        box-shadow: var(--shadow-soft);
     }
 
     .review-photo-empty {
@@ -168,6 +191,21 @@
         align-items: center;
         justify-content: center;
         font-size: 1.15rem;
+    }
+
+    .modal-review-photo {
+        width: 100%;
+        max-height: 72vh;
+        object-fit: contain;
+        border-radius: 18px;
+        background: #f9fafb;
+    }
+
+    .modal-review-video {
+        width: 100%;
+        max-height: 72vh;
+        border-radius: 18px;
+        background: #000;
     }
 
     .empty-review {
@@ -188,17 +226,13 @@
         font-size: 1.45rem;
     }
 
-    .modal-review-photo {
-        width: 100%;
-        max-height: 72vh;
-        object-fit: contain;
-        border-radius: 18px;
-        background: #f9fafb;
-    }
-
     @media (max-width: 640px) {
         .review-comment {
             max-width: 220px;
+        }
+
+        .review-video-thumb {
+            width: 70px;
         }
     }
 </style>
@@ -206,7 +240,10 @@
 <div class="hero">
     <div>
         <h1>Ulasan</h1>
-        <p>Moderasi ulasan produk tahu dari pembeli. Foto ulasan berasal dari kamera/galeri aplikasi Android.</p>
+        <p>
+            Moderasi ulasan produk tahu dari pembeli. Admin bisa melihat rating,
+            komentar, foto ulasan, dan video ulasan dari pembeli.
+        </p>
     </div>
 
     <a href="{{ route('admin.produk.index') }}" class="btn btn-light border fw-bold px-3">
@@ -254,13 +291,13 @@
 
     <div class="review-metric">
         <div>
-            <div class="review-metric-label">Disembunyikan</div>
-            <div class="review-metric-value">{{ $stats['disembunyikan'] ?? 0 }}</div>
-            <span class="review-metric-note text-warning">Moderasi admin</span>
+            <div class="review-metric-label">Ulasan Video</div>
+            <div class="review-metric-value">{{ $stats['video'] ?? 0 }}</div>
+            <span class="review-metric-note text-danger">Review produk</span>
         </div>
 
-        <div class="review-metric-icon bg-warning-subtle text-warning-emphasis">
-            <i class="bi bi-eye-slash-fill"></i>
+        <div class="review-metric-icon bg-danger-subtle text-danger-emphasis">
+            <i class="bi bi-play-btn-fill"></i>
         </div>
     </div>
 </div>
@@ -272,15 +309,18 @@
                 <div class="col-12 col-lg">
                     <div class="review-search">
                         <i class="bi bi-search text-muted"></i>
-                        <input name="q"
-                               value="{{ request('q') }}"
-                               placeholder="Cari produk, pembeli, atau komentar ulasan...">
+                        <input
+                            name="q"
+                            value="{{ request('q') }}"
+                            placeholder="Cari produk, pembeli, atau komentar ulasan..."
+                        >
                     </div>
                 </div>
 
                 <div class="col-12 col-md-5 col-lg-3">
                     <select class="form-select" name="rating">
                         <option value="">Semua rating</option>
+
                         @for($i = 5; $i >= 1; $i--)
                             <option value="{{ $i }}" @selected(request('rating') == $i)>
                                 {{ $i }} Bintang
@@ -318,7 +358,7 @@
                 <th>Pembeli</th>
                 <th>Rating</th>
                 <th>Komentar</th>
-                <th>Foto</th>
+                <th>Media</th>
                 <th>Status</th>
                 <th class="text-end">Aksi</th>
             </tr>
@@ -378,17 +418,34 @@
                     </td>
 
                     <td>
-                        @if($review->foto_ulasan)
-                            <img class="review-photo"
-                                 src="{{ asset('storage/' . $review->foto_ulasan) }}"
-                                 alt="Foto ulasan"
-                                 data-bs-toggle="modal"
-                                 data-bs-target="#modalFotoUlasan{{ $review->id }}">
-                        @else
-                            <div class="review-photo-empty" title="Tidak ada foto">
-                                <i class="bi bi-image"></i>
-                            </div>
-                        @endif
+                        <div class="review-media-stack">
+                            @if($review->foto_ulasan)
+                                <img
+                                    class="review-photo"
+                                    src="{{ asset('storage/' . $review->foto_ulasan) }}"
+                                    alt="Foto ulasan"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalFotoUlasan{{ $review->id }}"
+                                >
+                            @endif
+
+                            @if($review->video_ulasan)
+                                <video
+                                    class="review-video-thumb"
+                                    muted
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalVideoUlasan{{ $review->id }}"
+                                >
+                                    <source src="{{ asset('storage/' . $review->video_ulasan) }}">
+                                </video>
+                            @endif
+
+                            @if(! $review->foto_ulasan && ! $review->video_ulasan)
+                                <div class="review-photo-empty" title="Tidak ada media">
+                                    <i class="bi bi-image"></i>
+                                </div>
+                            @endif
+                        </div>
                     </td>
 
                     <td>
@@ -399,12 +456,14 @@
 
                     <td class="text-end">
                         <div class="actions justify-content-end">
-                            <form class="inline-form"
-                                  method="POST"
-                                  action="{{ route('admin.ulasan.toggle', $review) }}"
-                                  data-confirm-title="Ubah Status Ulasan"
-                                  data-confirm-message="Yakin ingin mengubah status tampilan ulasan ini?"
-                                  data-confirm-button="Ubah Status">
+                            <form
+                                class="inline-form"
+                                method="POST"
+                                action="{{ route('admin.ulasan.toggle', $review) }}"
+                                data-confirm-title="Ubah Status Ulasan"
+                                data-confirm-message="Yakin ingin mengubah status tampilan ulasan ini?"
+                                data-confirm-button="Ubah Status"
+                            >
                                 @csrf
                                 @method('PATCH')
 
@@ -419,12 +478,14 @@
                                 </button>
                             </form>
 
-                            <form class="inline-form"
-                                  method="POST"
-                                  action="{{ route('admin.ulasan.destroy', $review) }}"
-                                  data-confirm-title="Hapus Ulasan"
-                                  data-confirm-message="Yakin ingin menghapus ulasan ini secara permanen?"
-                                  data-confirm-button="Hapus">
+                            <form
+                                class="inline-form"
+                                method="POST"
+                                action="{{ route('admin.ulasan.destroy', $review) }}"
+                                data-confirm-title="Hapus Ulasan"
+                                data-confirm-message="Yakin ingin menghapus ulasan ini secara permanen? Foto dan video ulasan juga akan ikut dihapus."
+                                data-confirm-button="Hapus"
+                            >
                                 @csrf
                                 @method('DELETE')
 
@@ -445,7 +506,7 @@
                             </div>
                             <strong class="d-block text-dark mb-1">Belum ada ulasan</strong>
                             <span class="text-muted small">
-                                Ulasan akan muncul setelah pembeli menyelesaikan pesanan dan memberi rating dari aplikasi Android.
+                                Ulasan akan muncul setelah pembeli menyelesaikan pesanan dan memberi rating.
                             </span>
                         </div>
                     </td>
@@ -479,9 +540,37 @@
                     </div>
 
                     <div class="modal-body pt-0">
-                        <img class="modal-review-photo"
-                             src="{{ asset('storage/' . $review->foto_ulasan) }}"
-                             alt="Foto ulasan">
+                        <img
+                            class="modal-review-photo"
+                            src="{{ asset('storage/' . $review->foto_ulasan) }}"
+                            alt="Foto ulasan"
+                        >
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if($review->video_ulasan)
+        <div class="modal fade" id="modalVideoUlasan{{ $review->id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                    <div class="modal-header border-0">
+                        <div>
+                            <h5 class="modal-title fw-bold">Video Ulasan</h5>
+                            <div class="text-muted small">
+                                {{ $review->produk?->nama ?? '-' }} · {{ $review->user?->name ?? 'Pembeli' }}
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                    </div>
+
+                    <div class="modal-body pt-0">
+                        <video class="modal-review-video" controls>
+                            <source src="{{ asset('storage/' . $review->video_ulasan) }}">
+                            Browser kamu belum mendukung video.
+                        </video>
                     </div>
                 </div>
             </div>

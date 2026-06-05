@@ -39,7 +39,7 @@ class User extends Authenticatable
 
     public function alamat()
     {
-        return $this->hasMany(Alamat::class);
+        return $this->hasMany(Alamat::class, 'user_id');
     }
 
     public function pesanan()

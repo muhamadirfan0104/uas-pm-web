@@ -12,12 +12,17 @@ class PesananController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Pesanan::with(['user', 'pembayaran', 'item.produk'])->latest('tanggal_pesanan');
+        $query = Pesanan::with(['user', 'pembayaran', 'item.produk'])
+            ->latest('tanggal_pesanan');
 
         if ($request->filled('q')) {
             $query->where(function ($q) use ($request) {
                 $q->where('nomor_invoice', 'like', '%' . $request->q . '%')
-                    ->orWhereHas('user', fn ($user) => $user->where('name', 'like', '%' . $request->q . '%'));
+                    ->orWhereHas('user', function ($user) use ($request) {
+                        $user->where('name', 'like', '%' . $request->q . '%')
+                            ->orWhere('email', 'like', '%' . $request->q . '%')
+                            ->orWhere('telepon', 'like', '%' . $request->q . '%');
+                    });
             });
         }
 
@@ -40,9 +45,29 @@ class PesananController extends Controller
 
     public function show(Pesanan $pesanan): View
     {
-        $pesanan->load(['user', 'alamatPengiriman', 'item.produk', 'pembayaran', 'pengiriman']);
+        $pesanan->load([
+            'user',
+            'alamatPengiriman',
+            'item.produk',
+            'pembayaran',
+            'pengiriman',
+            'ulasan',
+        ]);
 
         return view('admin.pesanan.show', compact('pesanan'));
+    }
+
+    public function invoice(Pesanan $pesanan): View
+    {
+        $pesanan->load([
+            'user',
+            'alamatPengiriman',
+            'item.produk',
+            'pembayaran',
+            'pengiriman',
+        ]);
+
+        return view('admin.pesanan.invoice', compact('pesanan'));
     }
 
     public function updateStatus(Request $request, Pesanan $pesanan): RedirectResponse
@@ -56,19 +81,30 @@ class PesananController extends Controller
 
         if (isset($data['status_pembayaran'])) {
             $pesanan->status_pembayaran = $data['status_pembayaran'];
-            $pesanan->pembayaran?->update(['status' => $data['status_pembayaran']]);
+
+            if ($pesanan->pembayaran) {
+                $pesanan->pembayaran->update([
+                    'status' => $data['status_pembayaran'],
+                    'dibayar_pada' => $data['status_pembayaran'] === 'dibayar'
+                        ? now()
+                        : $pesanan->pembayaran->dibayar_pada,
+                ]);
+            }
         }
 
         $pesanan->save();
 
         if ($pesanan->pengiriman) {
-            $pengirimanStatus = match ($pesanan->status) {
+            $statusPengiriman = match ($pesanan->status) {
                 'siap_diambil' => 'siap_diambil',
                 'dalam_pengantaran' => 'dalam_pengantaran',
                 'selesai' => 'selesai',
                 default => $pesanan->pengiriman->status_pengiriman,
             };
-            $pesanan->pengiriman->update(['status_pengiriman' => $pengirimanStatus]);
+
+            $pesanan->pengiriman->update([
+                'status_pengiriman' => $statusPengiriman,
+            ]);
         }
 
         return back()->with('success', 'Status pesanan berhasil diperbarui.');

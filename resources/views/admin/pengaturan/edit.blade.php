@@ -5,644 +5,610 @@
 
 @section('content')
 <style>
-    .setting-layout {
+    .setting-hero {
         display: grid;
-        grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+        grid-template-columns: minmax(0, 1fr) 260px;
         gap: 18px;
-        align-items: start;
-    }
-
-    .setting-card {
-        background: #fff;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 24px;
+        border-radius: 24px;
         border: 1px solid var(--border);
-        border-radius: 18px;
-        box-shadow: var(--shadow-sm);
-        overflow: hidden;
+        background:
+            radial-gradient(circle at top right, rgba(223, 186, 104, .24), transparent 35%),
+            linear-gradient(135deg, #ffffff, #fff8e8);
+        box-shadow: var(--shadow-soft);
     }
 
-    .setting-card-head {
-        padding: 18px;
-        border-bottom: 1px solid var(--border);
-        background: #fff;
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 14px;
-    }
-
-    .setting-card-title {
+    .setting-hero h1 {
         margin: 0;
         color: var(--text);
-        font-size: 1rem;
-        font-weight: 900;
-        letter-spacing: -0.03em;
+        font-size: clamp(1.55rem, 3vw, 2.25rem);
+        font-weight: 950;
+        letter-spacing: -.065em;
+        line-height: 1.05;
     }
 
-    .setting-card-desc {
-        margin: 4px 0 0;
+    .setting-hero p {
+        max-width: 760px;
+        margin: 10px 0 0;
         color: var(--muted);
-        font-size: 0.82rem;
+        font-size: .93rem;
+        font-weight: 650;
+        line-height: 1.6;
+    }
+
+    .setting-logo-preview {
+        padding: 16px;
+        border-radius: 22px;
+        border: 1px solid rgba(223, 186, 104, .34);
+        background: rgba(255,255,255,.82);
+        text-align: center;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .logo-box {
+        width: 82px;
+        height: 82px;
+        margin: 0 auto 10px;
+        border-radius: 24px;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background: linear-gradient(135deg, var(--brand), #c89335);
+        color: #fff;
+        font-size: 1.55rem;
+        font-weight: 950;
+        letter-spacing: -.06em;
+    }
+
+    .logo-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .setting-box {
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        background: #fff;
+        box-shadow: var(--shadow-soft);
+        overflow: hidden;
+        margin-bottom: 18px;
+    }
+
+    .setting-box-head {
+        padding: 18px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .setting-box-head h2 {
+        margin: 0;
+        color: var(--text);
+        font-size: 1.04rem;
+        font-weight: 950;
+        letter-spacing: -.035em;
+    }
+
+    .setting-box-head p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: .82rem;
+        font-weight: 650;
+        line-height: 1.5;
+    }
+
+    .setting-box-body {
+        padding: 18px;
+    }
+
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .form-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .form-group {
+        display: grid;
+        gap: 7px;
+    }
+
+    .form-group label {
+        color: var(--text);
+        font-size: .82rem;
+        font-weight: 900;
+    }
+
+    .form-note {
+        color: var(--muted);
+        font-size: .76rem;
         font-weight: 650;
         line-height: 1.45;
     }
 
-    .setting-card-body {
-        padding: 18px;
-    }
-
-    .store-preview {
-        position: sticky;
-        top: calc(var(--topbar-height) + 24px);
-    }
-
-    .preview-cover {
-        position: relative;
-        overflow: hidden;
-        border-radius: 22px;
-        border: 1px solid var(--border);
-        background:
-            radial-gradient(circle at top right, rgba(223, 186, 104, 0.24), transparent 36%),
-            linear-gradient(135deg, #ffffff, #fff8e8);
-        box-shadow: var(--shadow-sm);
-        padding: 22px;
-    }
-
-    .preview-logo {
-        width: 96px;
-        height: 96px;
-        border-radius: 26px;
-        background: #fff;
-        border: 1px solid rgba(223, 186, 104, 0.28);
-        box-shadow: 0 14px 28px rgba(223, 186, 104, 0.18);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        margin-bottom: 16px;
-    }
-
-    .preview-logo img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        padding: 8px;
-    }
-
-    .preview-logo i {
-        color: var(--brand-dark);
-        font-size: 2.1rem;
-    }
-
-    .preview-title {
-        margin: 0;
-        color: var(--text);
-        font-size: 1.35rem;
-        font-weight: 950;
-        letter-spacing: -0.05em;
-    }
-
-    .preview-desc {
-        margin: 8px 0 0;
-        color: var(--muted);
-        font-size: 0.88rem;
-        font-weight: 650;
-        line-height: 1.55;
-    }
-
-    .preview-info-list {
-        display: grid;
-        gap: 10px;
-        margin-top: 18px;
-    }
-
-    .preview-info {
-        display: flex;
-        gap: 10px;
-        align-items: flex-start;
-        padding: 12px;
-        border-radius: 16px;
-        background: rgba(255,255,255,0.76);
-        border: 1px solid rgba(229,231,235,0.9);
-    }
-
-    .preview-info-icon {
-        width: 34px;
-        height: 34px;
-        border-radius: 13px;
-        background: var(--brand-soft);
-        color: var(--brand-dark);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .preview-info-label {
-        color: var(--muted);
-        font-size: 0.72rem;
-        font-weight: 850;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .preview-info-value {
-        margin-top: 2px;
-        color: var(--text);
-        font-size: 0.84rem;
-        font-weight: 750;
-        line-height: 1.4;
-    }
-
-    .setting-section {
-        padding: 18px;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .setting-section:last-child {
-        border-bottom: 0;
-    }
-
-    .section-title {
-        margin-bottom: 14px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .section-title-icon {
-        width: 38px;
-        height: 38px;
+    .form-control,
+    .form-select {
+        min-height: 44px;
         border-radius: 14px;
-        background: var(--brand-soft);
-        color: var(--brand-dark);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
+        border: 1px solid var(--border);
+        background-color: #fff;
+        font-size: .88rem;
+        font-weight: 650;
     }
 
-    .section-title h3 {
-        margin: 0;
+    textarea.form-control {
+        min-height: 110px;
+        resize: vertical;
+        line-height: 1.6;
+    }
+
+    .setting-summary {
+        display: grid;
+        gap: 12px;
+    }
+
+    .summary-row {
+        padding: 13px 14px;
+        border-radius: 16px;
+        background: #fafafa;
+        border: 1px solid #f1f2f4;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .summary-row span {
+        color: var(--muted);
+        font-size: .8rem;
+        font-weight: 850;
+    }
+
+    .summary-row strong {
         color: var(--text);
-        font-size: 0.98rem;
-        font-weight: 900;
-        letter-spacing: -0.03em;
+        font-size: .86rem;
+        font-weight: 950;
+        text-align: right;
     }
 
-    .section-title p {
-        margin: 3px 0 0;
-        color: var(--muted);
-        font-size: 0.78rem;
-        font-weight: 650;
-    }
-
-    .form-label-modern {
-        display: block;
-        margin-bottom: 7px;
-        color: #374151;
-        font-size: 0.78rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .form-help {
-        margin-top: 6px;
-        color: var(--muted);
-        font-size: 0.74rem;
-        font-weight: 650;
-        line-height: 1.4;
-    }
-
-    .input-icon-group {
-        position: relative;
-    }
-
-    .input-icon-group i {
-        position: absolute;
-        top: 50%;
-        left: 13px;
-        transform: translateY(-50%);
-        color: var(--muted);
-        pointer-events: none;
-    }
-
-    .input-icon-group .form-control {
-        padding-left: 40px;
-    }
-
-    .logo-upload {
-        position: relative;
-        border: 2px dashed #d1d5db;
+    .map-helper {
+        padding: 14px;
         border-radius: 18px;
         background: #f9fafb;
-        padding: 22px;
-        text-align: center;
-        transition: 0.16s ease;
-        min-height: 148px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .logo-upload:hover {
-        border-color: var(--brand);
-        background: rgba(223, 186, 104, 0.06);
-    }
-
-    .logo-upload input[type="file"] {
-        position: absolute;
-        inset: 0;
-        opacity: 0;
-        cursor: pointer;
-    }
-
-    .upload-icon {
-        width: 52px;
-        height: 52px;
-        margin: 0 auto 10px;
-        border-radius: 18px;
-        background: #fff;
-        color: var(--brand-dark);
         border: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.35rem;
+        color: var(--muted);
+        font-size: .82rem;
+        font-weight: 650;
+        line-height: 1.6;
     }
 
-    .setting-footer {
+    .setting-actions {
         position: sticky;
         bottom: 0;
         z-index: 5;
         padding: 14px 18px;
-        background: rgba(255,255,255,0.88);
-        backdrop-filter: blur(14px);
         border-top: 1px solid var(--border);
+        background: rgba(255,255,255,.92);
+        backdrop-filter: blur(12px);
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
+        justify-content: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
     }
 
-    .coordinate-box {
-        padding: 13px;
+    .alert-setting {
+        margin-bottom: 16px;
+        padding: 13px 15px;
         border-radius: 16px;
-        background: #f9fafb;
-        border: 1px solid var(--border);
+        font-size: .88rem;
+        font-weight: 800;
+        border: 1px solid transparent;
     }
 
-    @media (max-width: 1100px) {
-        .setting-layout {
+    .alert-success-setting {
+        background: #ecfdf5;
+        color: #15803d;
+        border-color: #bbf7d0;
+    }
+
+    .alert-error-setting {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-color: #fecaca;
+    }
+
+    @media (max-width: 1000px) {
+        .setting-hero {
             grid-template-columns: 1fr;
         }
 
-        .store-preview {
-            position: static;
+        .form-grid-3 {
+            grid-template-columns: 1fr;
         }
     }
 
-    @media (max-width: 640px) {
-        .setting-footer {
-            flex-direction: column;
-            align-items: stretch;
+    @media (max-width: 760px) {
+        .setting-hero,
+        .setting-box-body {
+            padding: 18px;
         }
 
-        .setting-footer .btn {
+        .form-grid-2 {
+            grid-template-columns: 1fr;
+        }
+
+        .setting-actions {
+            justify-content: stretch;
+        }
+
+        .setting-actions .btn {
             width: 100%;
         }
     }
 </style>
 
-<div class="hero">
+@php
+    $initial = strtoupper(substr($pengaturan->nama ?? 'ST', 0, 2));
+
+    $mapsLink = null;
+
+    if ($pengaturan->latitude_toko && $pengaturan->longitude_toko) {
+        $mapsLink = 'https://www.google.com/maps?q=' . $pengaturan->latitude_toko . ',' . $pengaturan->longitude_toko;
+    }
+@endphp
+
+<section class="setting-hero">
     <div>
-        <h1>Pengaturan Toko</h1>
-        <p>Atur identitas toko, alamat, jam operasional, pengiriman, dan informasi pembayaran untuk aplikasi SiTahu.</p>
+        <div class="badge bg-warning-subtle text-warning-emphasis mb-3">
+            <i class="bi bi-shop me-1"></i>
+            Pengaturan Toko
+        </div>
+
+        <h1>Atur identitas toko dan aturan pengiriman SiTahu.</h1>
+
+        <p>
+            Data ini akan dipakai di halaman pembeli, checkout, invoice, pengiriman kurir toko,
+            dan informasi pembayaran. Jadi bagian ini wajib rapi supaya alur admin dan pembeli nyambung.
+        </p>
     </div>
 
-    <a href="{{ route('admin.dashboard') }}" class="btn btn-light border fw-bold px-3">
-        <i class="bi bi-grid-1x2 me-1 text-muted"></i>
-        Dashboard
-    </a>
-</div>
+    <div class="setting-logo-preview">
+        <div class="logo-box">
+            @if($pengaturan->logo_url)
+                <img src="{{ asset('storage/' . $pengaturan->logo_url) }}" alt="{{ $pengaturan->nama }}">
+            @else
+                {{ $initial }}
+            @endif
+        </div>
 
-<form id="formPengaturan" method="POST" action="{{ route('admin.pengaturan.update') }}" enctype="multipart/form-data">
+        <strong class="d-block text-dark">
+            {{ $pengaturan->nama ?? 'SiTahu' }}
+        </strong>
+
+        <span class="text-muted small fw-semibold">
+            {{ $pengaturan->jam_buka ?? 'Jam buka belum diatur' }}
+        </span>
+    </div>
+</section>
+
+@if(session('success'))
+    <div class="alert-setting alert-success-setting">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if($errors->any())
+    <div class="alert-setting alert-error-setting">
+        {{ $errors->first() }}
+    </div>
+@endif
+
+<form action="{{ route('admin.pengaturan.update') }}" method="POST" enctype="multipart/form-data">
     @csrf
     @method('PUT')
 
-    <div class="setting-layout">
-        <aside class="store-preview">
-            <div class="preview-cover">
-                <div class="preview-logo">
-                    @if($pengaturan->logo_url)
-                        <img src="{{ asset('storage/' . $pengaturan->logo_url) }}" alt="Logo Toko">
-                    @else
-                        <i class="bi bi-shop-window"></i>
-                    @endif
-                </div>
-
-                <h2 class="preview-title">
-                    {{ old('nama', $pengaturan->nama) ?: 'Nama Toko' }}
-                </h2>
-
-                <p class="preview-desc">
-                    {{ old('tentang', $pengaturan->tentang) ?: 'Deskripsi toko akan tampil di sini. Isi bagian tentang toko agar pembeli tahu profil UMKM tahu kamu.' }}
-                </p>
-
-                <div class="preview-info-list">
-                    <div class="preview-info">
-                        <div class="preview-info-icon">
-                            <i class="bi bi-whatsapp"></i>
-                        </div>
-                        <div>
-                            <div class="preview-info-label">WhatsApp</div>
-                            <div class="preview-info-value">
-                                {{ old('telepon', $pengaturan->telepon) ?: '-' }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="preview-info">
-                        <div class="preview-info-icon">
-                            <i class="bi bi-clock"></i>
-                        </div>
-                        <div>
-                            <div class="preview-info-label">Jam Operasional</div>
-                            <div class="preview-info-value">
-                                {{ old('jam_buka', $pengaturan->jam_buka) ?: '--:--' }}
-                                -
-                                {{ old('jam_tutup', $pengaturan->jam_tutup) ?: '--:--' }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="preview-info">
-                        <div class="preview-info-icon">
-                            <i class="bi bi-geo-alt"></i>
-                        </div>
-                        <div>
-                            <div class="preview-info-label">Alamat</div>
-                            <div class="preview-info-value">
-                                {{ old('alamat', $pengaturan->alamat) ?: 'Alamat toko belum diisi.' }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="preview-info">
-                        <div class="preview-info-icon">
-                            <i class="bi bi-truck"></i>
-                        </div>
-                        <div>
-                            <div class="preview-info-label">Area Pengiriman</div>
-                            <div class="preview-info-value">
-                                {{ old('area_pengiriman', $pengaturan->area_pengiriman) ?: 'Belum diatur.' }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <main class="setting-card">
-            <div class="setting-card-head">
-                <div>
-                    <h2 class="setting-card-title">Form Pengaturan Toko</h2>
-                    <p class="setting-card-desc">
-                        Data ini aman untuk web admin dan mobile pembeli. Tidak mengubah alur database atau logic backend.
-                    </p>
-                </div>
-            </div>
-
-            <div class="setting-section">
-                <div class="section-title">
-                    <div class="section-title-icon">
-                        <i class="bi bi-shop-window"></i>
-                    </div>
+    <div class="grid g2">
+        <div>
+            <section class="setting-box">
+                <div class="setting-box-head">
                     <div>
-                        <h3>Identitas Toko</h3>
-                        <p>Nama, logo, kontak, dan deskripsi singkat toko.</p>
+                        <h2>Identitas Toko</h2>
+                        <p>Informasi dasar yang ditampilkan ke pembeli.</p>
                     </div>
                 </div>
 
-                <div class="row g-3">
-                    <div class="col-12">
-                        <label class="form-label-modern">Logo Toko</label>
+                <div class="setting-box-body">
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label for="nama">Nama Toko</label>
+                            <input
+                                type="text"
+                                name="nama"
+                                id="nama"
+                                class="form-control"
+                                value="{{ old('nama', $pengaturan->nama) }}"
+                                placeholder="Contoh: SiTahu Kediri"
+                                required
+                            >
+                        </div>
 
-                        <div class="logo-upload">
-                            <input type="file" name="logo" accept="image/*">
-
-                            <div>
-                                <div class="upload-icon">
-                                    <i class="bi bi-cloud-upload"></i>
-                                </div>
-                                <div class="fw-bold text-dark">Klik untuk pilih logo</div>
-                                <div class="text-muted small fw-semibold mt-1">
-                                    Format JPG/PNG, maksimal 2MB. Logo lama tetap dipakai kalau tidak upload baru.
-                                </div>
+                        <div class="form-group">
+                            <label for="logo_url">Logo Toko</label>
+                            <input
+                                type="file"
+                                name="logo_url"
+                                id="logo_url"
+                                class="form-control"
+                                accept="image/*"
+                            >
+                            <div class="form-note">
+                                Format jpg, jpeg, png, webp. Maksimal 4 MB.
                             </div>
                         </div>
-                    </div>
 
-                    <div class="col-12">
-                        <label class="form-label-modern">Nama Toko</label>
-                        <input class="form-control"
-                               name="nama"
-                               value="{{ old('nama', $pengaturan->nama) }}"
-                               placeholder="Contoh: SiTahu Kediri">
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label-modern">WhatsApp / Telepon</label>
-                        <div class="input-icon-group">
-                            <i class="bi bi-whatsapp"></i>
-                            <input class="form-control"
-                                   name="telepon"
-                                   value="{{ old('telepon', $pengaturan->telepon) }}"
-                                   placeholder="081234567890">
+                        <div class="form-group">
+                            <label for="telepon">Nomor WhatsApp / Telepon</label>
+                            <input
+                                type="text"
+                                name="telepon"
+                                id="telepon"
+                                class="form-control"
+                                value="{{ old('telepon', $pengaturan->telepon) }}"
+                                placeholder="Contoh: 081234567890"
+                            >
                         </div>
-                    </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label-modern">Email Toko</label>
-                        <div class="input-icon-group">
-                            <i class="bi bi-envelope"></i>
-                            <input class="form-control"
-                                   type="email"
-                                   name="email"
-                                   value="{{ old('email', $pengaturan->email) }}"
-                                   placeholder="toko@email.com">
+                        <div class="form-group">
+                            <label for="email">Email Toko</label>
+                            <input
+                                type="email"
+                                name="email"
+                                id="email"
+                                class="form-control"
+                                value="{{ old('email', $pengaturan->email) }}"
+                                placeholder="Contoh: sitahu@gmail.com"
+                            >
                         </div>
-                    </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label-modern">Jam Buka</label>
-                        <div class="input-icon-group">
-                            <i class="bi bi-clock"></i>
-                            <input class="form-control"
-                                   name="jam_buka"
-                                   value="{{ old('jam_buka', $pengaturan->jam_buka) }}"
-                                   placeholder="07.00">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="jam_buka">Jam Operasional</label>
+                            <input
+                                type="text"
+                                name="jam_buka"
+                                id="jam_buka"
+                                class="form-control"
+                                value="{{ old('jam_buka', $pengaturan->jam_buka) }}"
+                                placeholder="Contoh: Senin - Sabtu, 08.00 - 17.00 WIB"
+                            >
                         </div>
-                    </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label-modern">Jam Tutup</label>
-                        <div class="input-icon-group">
-                            <i class="bi bi-clock-history"></i>
-                            <input class="form-control"
-                                   name="jam_tutup"
-                                   value="{{ old('jam_tutup', $pengaturan->jam_tutup) }}"
-                                   placeholder="17.00">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="alamat">Alamat Toko</label>
+                            <textarea
+                                name="alamat"
+                                id="alamat"
+                                class="form-control"
+                                placeholder="Masukkan alamat lengkap toko"
+                                required
+                            >{{ old('alamat', $pengaturan->alamat) }}</textarea>
                         </div>
-                    </div>
 
-                    <div class="col-12">
-                        <label class="form-label-modern">Tentang Toko</label>
-                        <textarea class="form-control"
-                                  rows="4"
-                                  name="tentang"
-                                  placeholder="Ceritakan singkat tentang toko tahu kamu...">{{ old('tentang', $pengaturan->tentang) }}</textarea>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="tentang">Tentang Toko</label>
+                            <textarea
+                                name="tentang"
+                                id="tentang"
+                                class="form-control"
+                                placeholder="Deskripsi singkat tentang toko dan produk tahu"
+                            >{{ old('tentang', $pengaturan->tentang) }}</textarea>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="setting-section">
-                <div class="section-title">
-                    <div class="section-title-icon">
-                        <i class="bi bi-geo-alt"></i>
-                    </div>
+            <section class="setting-box">
+                <div class="setting-box-head">
                     <div>
-                        <h3>Alamat & Titik Lokasi</h3>
-                        <p>Dipakai untuk info toko dan perhitungan pengiriman kurir toko.</p>
+                        <h2>Lokasi Toko</h2>
+                        <p>Koordinat dipakai untuk maps dan perhitungan jarak pengiriman.</p>
                     </div>
                 </div>
 
-                <div class="row g-3">
-                    <div class="col-12">
-                        <label class="form-label-modern">Alamat Toko</label>
-                        <textarea class="form-control"
-                                  rows="3"
-                                  name="alamat"
-                                  placeholder="Masukkan alamat lengkap toko...">{{ old('alamat', $pengaturan->alamat) }}</textarea>
+                <div class="setting-box-body">
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label for="latitude_toko">Latitude Toko</label>
+                            <input
+                                type="text"
+                                name="latitude_toko"
+                                id="latitude_toko"
+                                class="form-control"
+                                value="{{ old('latitude_toko', $pengaturan->latitude_toko) }}"
+                                placeholder="Contoh: -7.8166"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="longitude_toko">Longitude Toko</label>
+                            <input
+                                type="text"
+                                name="longitude_toko"
+                                id="longitude_toko"
+                                class="form-control"
+                                value="{{ old('longitude_toko', $pengaturan->longitude_toko) }}"
+                                placeholder="Contoh: 112.0119"
+                            >
+                        </div>
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label-modern">Latitude Toko</label>
-                        <input class="form-control"
-                               name="latitude_toko"
-                               value="{{ old('latitude_toko', $pengaturan->latitude_toko) }}"
-                               placeholder="-7.8160000">
-                        <div class="form-help">Isi titik latitude dari maps/OpenStreetMap.</div>
-                    </div>
+                    <div class="map-helper mt-3">
+                        <strong class="text-dark d-block mb-1">Cara cepat ambil koordinat:</strong>
+                        Buka Google Maps, klik kanan titik lokasi toko, lalu salin angka latitude dan longitude.
+                        Masukkan latitude di kolom kiri, longitude di kolom kanan.
 
-                    <div class="col-md-6">
-                        <label class="form-label-modern">Longitude Toko</label>
-                        <input class="form-control"
-                               name="longitude_toko"
-                               value="{{ old('longitude_toko', $pengaturan->longitude_toko) }}"
-                               placeholder="112.0110000">
-                        <div class="form-help">Isi titik longitude dari maps/OpenStreetMap.</div>
-                    </div>
-
-                    <div class="col-12">
-                        <div class="coordinate-box">
-                            <div class="fw-bold text-dark mb-1">
-                                <i class="bi bi-info-circle text-warning me-1"></i>
-                                Catatan titik toko
+                        @if($mapsLink)
+                            <div class="mt-3">
+                                <a href="{{ $mapsLink }}" target="_blank" class="small-btn">
+                                    <i class="bi bi-map"></i>
+                                    Buka Lokasi Toko
+                                </a>
                             </div>
-                            <div class="text-muted small fw-semibold">
-                                Untuk sekarang cukup input manual latitude dan longitude. Nanti di mobile, alamat pembeli yang pakai GPS/OpenStreetMap akan dibandingkan dengan titik toko ini.
-                            </div>
-                        </div>
+                        @endif
                     </div>
                 </div>
-            </div>
+            </section>
+        </div>
 
-            <div class="setting-section">
-                <div class="section-title">
-                    <div class="section-title-icon">
-                        <i class="bi bi-truck"></i>
-                    </div>
+        <div>
+            <section class="setting-box">
+                <div class="setting-box-head">
                     <div>
-                        <h3>Aturan Pengiriman</h3>
-                        <p>Dipakai saat pembeli memilih metode Kurir Toko.</p>
+                        <h2>Aturan Pengiriman</h2>
+                        <p>Dipakai saat pembeli memilih kurir toko.</p>
                     </div>
                 </div>
 
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label-modern">Tarif per KM</label>
-                        <div class="input-icon-group">
-                            <i class="bi bi-cash"></i>
-                            <input class="form-control"
-                                   name="tarif_per_km"
-                                   value="{{ old('tarif_per_km', $pengaturan->tarif_per_km) }}"
-                                   placeholder="2000">
+                <div class="setting-box-body">
+                    <div class="form-grid-3">
+                        <div class="form-group">
+                            <label for="tarif_per_km">Tarif per KM</label>
+                            <input
+                                type="number"
+                                name="tarif_per_km"
+                                id="tarif_per_km"
+                                class="form-control"
+                                value="{{ old('tarif_per_km', $pengaturan->tarif_per_km) }}"
+                                min="0"
+                                step="100"
+                                placeholder="3000"
+                            >
+                            <div class="form-note">Contoh: 3000</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="biaya_minimum_pengiriman">Biaya Minimum</label>
+                            <input
+                                type="number"
+                                name="biaya_minimum_pengiriman"
+                                id="biaya_minimum_pengiriman"
+                                class="form-control"
+                                value="{{ old('biaya_minimum_pengiriman', $pengaturan->biaya_minimum_pengiriman) }}"
+                                min="0"
+                                step="100"
+                                placeholder="5000"
+                            >
+                            <div class="form-note">Contoh: 5000</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="radius_maksimal_km">Radius Maksimal</label>
+                            <input
+                                type="number"
+                                name="radius_maksimal_km"
+                                id="radius_maksimal_km"
+                                class="form-control"
+                                value="{{ old('radius_maksimal_km', $pengaturan->radius_maksimal_km) }}"
+                                min="0"
+                                step="0.1"
+                                placeholder="10"
+                            >
+                            <div class="form-note">Dalam kilometer.</div>
                         </div>
                     </div>
 
-                    <div class="col-md-4">
-                        <label class="form-label-modern">Biaya Minimum</label>
-                        <div class="input-icon-group">
-                            <i class="bi bi-cash-stack"></i>
-                            <input class="form-control"
-                                   name="biaya_minimum_pengiriman"
-                                   value="{{ old('biaya_minimum_pengiriman', $pengaturan->biaya_minimum_pengiriman) }}"
-                                   placeholder="5000">
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label-modern">Radius Maksimal KM</label>
-                        <div class="input-icon-group">
-                            <i class="bi bi-signpost-split"></i>
-                            <input class="form-control"
-                                   name="radius_maksimal_km"
-                                   value="{{ old('radius_maksimal_km', $pengaturan->radius_maksimal_km) }}"
-                                   placeholder="10">
-                        </div>
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label-modern">Area Pengiriman</label>
-                        <input class="form-control"
-                               name="area_pengiriman"
-                               value="{{ old('area_pengiriman', $pengaturan->area_pengiriman) }}"
-                               placeholder="Contoh: Kota Kediri dan sekitarnya">
+                    <div class="form-group mt-3">
+                        <label for="area_pengiriman">Area Pengiriman</label>
+                        <textarea
+                            name="area_pengiriman"
+                            id="area_pengiriman"
+                            class="form-control"
+                            placeholder="Contoh: Area Kota Kediri dan sekitarnya"
+                        >{{ old('area_pengiriman', $pengaturan->area_pengiriman) }}</textarea>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="setting-section">
-                <div class="section-title">
-                    <div class="section-title-icon">
-                        <i class="bi bi-credit-card-2-front"></i>
-                    </div>
+            <section class="setting-box">
+                <div class="setting-box-head">
                     <div>
-                        <h3>Informasi Pembayaran</h3>
-                        <p>Informasi ini bisa ditampilkan di checkout atau profil toko mobile.</p>
+                        <h2>Informasi Pembayaran</h2>
+                        <p>Informasi ini membantu pembeli memahami metode pembayaran.</p>
                     </div>
                 </div>
 
-                <label class="form-label-modern">Info Pembayaran</label>
-                <textarea class="form-control"
-                          rows="4"
-                          name="info_pembayaran"
-                          placeholder="Contoh: Pembayaran tersedia melalui QRIS. Pesanan diproses setelah pembayaran berhasil.">{{ old('info_pembayaran', $pengaturan->info_pembayaran) }}</textarea>
-            </div>
+                <div class="setting-box-body">
+                    <div class="form-group">
+                        <label for="info_pembayaran">Info Pembayaran</label>
+                        <textarea
+                            name="info_pembayaran"
+                            id="info_pembayaran"
+                            class="form-control"
+                            placeholder="Contoh: Pembayaran bisa melalui tunai saat ambil toko atau QRIS."
+                        >{{ old('info_pembayaran', $pengaturan->info_pembayaran) }}</textarea>
+                    </div>
+                </div>
+            </section>
 
-            <div class="setting-footer">
-                <div class="text-muted small fw-semibold">
-                    <i class="bi bi-shield-check text-success me-1"></i>
-                    Perubahan hanya menyimpan data pengaturan toko.
+            <section class="setting-box">
+                <div class="setting-box-head">
+                    <div>
+                        <h2>Ringkasan Saat Ini</h2>
+                        <p>Preview aturan toko yang sedang aktif.</p>
+                    </div>
                 </div>
 
-                <button class="btn btn-brand fw-bold px-4" type="submit">
-                    <i class="bi bi-save me-1"></i>
-                    Simpan Pengaturan
-                </button>
-            </div>
-        </main>
+                <div class="setting-box-body">
+                    <div class="setting-summary">
+                        <div class="summary-row">
+                            <span>Tarif / KM</span>
+                            <strong>Rp {{ number_format((float) $pengaturan->tarif_per_km, 0, ',', '.') }}</strong>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Biaya Minimum</span>
+                            <strong>Rp {{ number_format((float) $pengaturan->biaya_minimum_pengiriman, 0, ',', '.') }}</strong>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Radius Maksimal</span>
+                            <strong>{{ number_format((float) $pengaturan->radius_maksimal_km, 1, ',', '.') }} km</strong>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Koordinat Toko</span>
+                            <strong>
+                                @if($pengaturan->latitude_toko && $pengaturan->longitude_toko)
+                                    {{ $pengaturan->latitude_toko }}, {{ $pengaturan->longitude_toko }}
+                                @else
+                                    Belum diatur
+                                @endif
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div class="setting-actions">
+        <a href="{{ route('admin.dashboard') }}" class="btn btn-light border fw-bold px-3">
+            <i class="bi bi-arrow-left me-1 text-muted"></i>
+            Kembali
+        </a>
+
+        <button type="submit" class="btn btn-brand px-4">
+            <i class="bi bi-save me-1"></i>
+            Simpan Pengaturan
+        </button>
     </div>
 </form>
 @endsection

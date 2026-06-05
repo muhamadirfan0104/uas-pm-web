@@ -42,4 +42,8 @@ class Produk extends Model
     {
         return $this->hasMany(RiwayatStok::class, 'produk_id')->latest();
     }
+    public function ulasan()
+    {
+        return $this->hasMany(Ulasan::class, 'produk_id');
+    }
 }

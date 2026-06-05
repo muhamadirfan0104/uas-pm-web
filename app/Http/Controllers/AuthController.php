@@ -24,59 +24,76 @@ class AuthController extends Controller
             return $this->redirectByRole(Auth::user()->role);
         }
 
-        $credentials = $request->validate([
+        $data = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+        ], [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'password.required' => 'Password wajib diisi.',
         ]);
 
         $remember = $request->boolean('remember');
 
-        if (! Auth::attempt($credentials, $remember)) {
+        if (! Auth::attempt($data, $remember)) {
             return back()
-                ->withErrors(['email' => 'Email atau password tidak sesuai.'])
+                ->withErrors([
+                    'email' => 'Email atau password tidak sesuai.',
+                ])
                 ->onlyInput('email');
         }
 
         $request->session()->regenerate();
-        $role = Auth::user()->role;
 
-        if (! Auth::user()->aktif) {
+        $user = Auth::user();
+
+        if (! $user->aktif) {
             Auth::logout();
+
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
             return back()
-                ->withErrors(['email' => 'Akun ini sedang dinonaktifkan.'])
+                ->withErrors([
+                    'email' => 'Akun sedang dinonaktifkan.',
+                ])
                 ->onlyInput('email');
         }
 
-        if (! in_array($role, ['admin', 'kasir'], true)) {
+        if ($user->role === 'pembeli') {
             Auth::logout();
+
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
             return back()
-                ->withErrors(['email' => 'Akun ini bukan admin/kasir. Silakan login dari aplikasi pembeli.'])
+                ->withErrors([
+                    'email' => 'Akun pembeli tidak dapat login melalui halaman admin. Silakan gunakan login pembeli.',
+                ])
                 ->onlyInput('email');
         }
 
-        return $this->redirectByRole($role);
+        return $this->redirectByRole($user->role);
     }
 
     public function logout(Request $request): RedirectResponse
     {
         Auth::logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login')->with('success', 'Berhasil logout.');
+        return redirect()
+            ->route('login')
+            ->with('success', 'Berhasil logout.');
     }
 
-    private function redirectByRole(string $role): RedirectResponse
+    private function redirectByRole(?string $role): RedirectResponse
     {
         return match ($role) {
             'admin' => redirect()->route('admin.dashboard'),
             'kasir' => redirect()->route('kasir.dashboard'),
+            'pembeli' => redirect()->route('pembeli-web.home'),
             default => redirect()->route('login'),
         };
     }

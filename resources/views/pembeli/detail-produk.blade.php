@@ -315,6 +315,20 @@
         height: 100%;
         object-fit: cover;
     }
+    .review-video {
+    margin-top: 12px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    }
+
+    .review-video video {
+        width: 100%;
+        max-height: 220px;
+        display: block;
+        background: #000;
+    }
 
     .empty-review {
         padding: 18px;
@@ -625,6 +639,7 @@
                     <article class="review-card">
                         <div class="review-top">
                             <strong>{{ $item->user?->name ?? $item->user?->nama ?? 'Pelanggan SiTahu' }}</strong>
+
                             <span class="stars">
                                 @for($i = 1; $i <= 5; $i++)
                                     {{ $i <= (int) $item->rating ? '★' : '☆' }}
@@ -639,6 +654,15 @@
                         @if($item->foto_ulasan)
                             <div class="review-photo">
                                 <img src="{{ asset('storage/' . $item->foto_ulasan) }}" alt="Foto ulasan">
+                            </div>
+                        @endif
+
+                        @if($item->video_ulasan)
+                            <div class="review-video">
+                                <video controls>
+                                    <source src="{{ asset('storage/' . $item->video_ulasan) }}">
+                                    Browser kamu belum mendukung video.
+                                </video>
                             </div>
                         @endif
                     </article>

@@ -8,13 +8,29 @@ class Ulasan extends Model
 {
     protected $table = 'ulasan';
 
-    protected $fillable = ['pesanan_id', 'produk_id', 'user_id', 'rating', 'komentar', 'foto_ulasan', 'ditampilkan'];
+    protected $fillable = [
+        'pesanan_id',
+        'produk_id',
+        'user_id',
+        'rating',
+        'komentar',
+        'foto_ulasan',
+        'video_ulasan',
+        'ditampilkan',
+    ];
 
-    protected $casts = ['ditampilkan' => 'boolean'];
+    protected $casts = [
+        'ditampilkan' => 'boolean',
+    ];
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function pengguna()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function produk()
