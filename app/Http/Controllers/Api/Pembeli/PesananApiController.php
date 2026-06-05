@@ -26,14 +26,25 @@ class PesananApiController extends Controller
             ->latest('tanggal_pesanan')
             ->paginate(10);
 
-        return response()->json(['success' => true, 'data' => $orders]);
+        return response()->json([
+            'success' => true,
+            'data' => $orders,
+        ]);
     }
 
     public function show(Request $request, Pesanan $pesanan): JsonResponse
     {
         abort_unless($pesanan->user_id === $request->user()->id, 403);
 
-        return response()->json(['success' => true, 'data' => $pesanan->load(['item.produk', 'pembayaran', 'pengiriman', 'alamatPengiriman'])]);
+        return response()->json([
+            'success' => true,
+            'data' => $pesanan->load([
+                'item.produk',
+                'pembayaran',
+                'pengiriman',
+                'alamatPengiriman',
+            ]),
+        ]);
     }
 
     public function store(Request $request): JsonResponse
@@ -44,7 +55,7 @@ class PesananApiController extends Controller
             'items.*.jumlah' => ['required', 'integer', 'min:1'],
             'metode_pengambilan' => ['required', Rule::in(['ambil_toko', 'kurir_toko'])],
             'alamat_pengiriman_id' => ['nullable', 'exists:alamat,id'],
-            'metode_pembayaran' => ['required', Rule::in(['qris', 'va', 'ewallet'])],
+            'metode_pembayaran' => ['required', Rule::in(['tunai', 'qris'])],
         ]);
 
         $user = $request->user();
@@ -52,7 +63,8 @@ class PesananApiController extends Controller
         $alamat = null;
 
         if ($data['metode_pengambilan'] === 'kurir_toko') {
-            $alamat = Alamat::where('user_id', $user->id)->findOrFail($data['alamat_pengiriman_id'] ?? 0);
+            $alamat = Alamat::where('user_id', $user->id)
+                ->findOrFail($data['alamat_pengiriman_id'] ?? 0);
         }
 
         $result = DB::transaction(function () use ($data, $user, $store, $alamat) {
@@ -60,18 +72,31 @@ class PesananApiController extends Controller
             $items = [];
 
             foreach ($data['items'] as $row) {
-                $produk = Produk::where('aktif', true)->lockForUpdate()->findOrFail($row['produk_id']);
+                $produk = Produk::where('aktif', true)
+                    ->lockForUpdate()
+                    ->findOrFail($row['produk_id']);
 
                 if ($produk->stok < $row['jumlah']) {
                     abort(422, 'Stok '.$produk->nama.' tidak mencukupi.');
                 }
 
-                $rowSubtotal = (float) $produk->harga * (int) $row['jumlah'];
+                $jumlah = (int) $row['jumlah'];
+                $rowSubtotal = (float) $produk->harga * $jumlah;
+
                 $subtotal += $rowSubtotal;
-                $items[] = compact('produk', 'row', 'rowSubtotal');
+
+                $items[] = [
+                    'produk' => $produk,
+                    'row' => $row,
+                    'jumlah' => $jumlah,
+                    'rowSubtotal' => $rowSubtotal,
+                ];
             }
 
-            $ongkir = $data['metode_pengambilan'] === 'kurir_toko' ? (float) ($store->biaya_minimum_pengiriman ?? 0) : 0;
+            $ongkir = $data['metode_pengambilan'] === 'kurir_toko'
+                ? (float) ($store->biaya_minimum_pengiriman ?? 0)
+                : 0;
+
             $total = $subtotal + $ongkir;
 
             $pesanan = Pesanan::create([
@@ -90,20 +115,33 @@ class PesananApiController extends Controller
             foreach ($items as $item) {
                 $pesanan->item()->create([
                     'produk_id' => $item['produk']->id,
-                    'jumlah' => $item['row']['jumlah'],
+                    'jumlah' => $item['jumlah'],
                     'harga_satuan' => $item['produk']->harga,
                     'subtotal' => $item['rowSubtotal'],
                 ]);
+
+                // Kurangi stok produk setelah pesanan berhasil dibuat.
+                $item['produk']->decrement('stok', $item['jumlah']);
+
+                // Catat riwayat stok keluar.
+                RiwayatStok::create([
+                    'produk_id' => $item['produk']->id,
+                    'perubahan' => -$item['jumlah'],
+                    'tipe' => 'kurang',
+                    'catatan' => 'Stok berkurang karena pesanan '.$pesanan->nomor_invoice,
+                ]);
             }
 
-            $pembayaran = Pembayaran::create([
+            Pembayaran::create([
                 'pesanan_id' => $pesanan->id,
                 'metode_pembayaran' => $data['metode_pembayaran'],
                 'referensi_pembayaran' => 'PAY-'.strtoupper($data['metode_pembayaran']).'-'.now()->format('His').$pesanan->id,
                 'jumlah' => $total,
                 'status' => 'menunggu_pembayaran',
                 'tautan_pembayaran' => url('/api/payments/'.$pesanan->id),
-                'qr_code' => $data['metode_pembayaran'] === 'qris' ? 'QR-'.$pesanan->nomor_invoice : null,
+                'qr_code' => $data['metode_pembayaran'] === 'qris'
+                    ? 'QR-'.$pesanan->nomor_invoice
+                    : null,
             ]);
 
             Pengiriman::create([
@@ -119,7 +157,11 @@ class PesananApiController extends Controller
             return $pesanan->load(['item.produk', 'pembayaran', 'pengiriman']);
         });
 
-        return response()->json(['success' => true, 'message' => 'Pesanan berhasil dibuat.', 'data' => $result], 201);
+        return response()->json([
+            'success' => true,
+            'message' => 'Pesanan berhasil dibuat.',
+            'data' => $result,
+        ], 201);
     }
 
     public function checkoutFromCart(Request $request): JsonResponse
@@ -127,8 +169,8 @@ class PesananApiController extends Controller
         $data = $request->validate([
             'metode_pengambilan' => ['required', Rule::in(['ambil_toko', 'kurir_toko'])],
             'alamat_pengiriman_id' => ['nullable', 'exists:alamat,id'],
-            'metode_pembayaran' => ['required', Rule::in(['qris', 'va', 'ewallet'])],
-            'setuju_pesanan' => ['required', 'accepted'],
+            'metode_pembayaran' => ['required', Rule::in(['tunai', 'qris'])],
+            'setuju_pesanan' => ['nullable'],
         ]);
 
         $user = $request->user();
@@ -172,12 +214,14 @@ class PesananApiController extends Controller
                     abort(422, 'Stok '.$produk->nama.' tidak mencukupi.');
                 }
 
-                $rowSubtotal = (float) $produk->harga * (int) $itemKeranjang->jumlah;
+                $jumlah = (int) $itemKeranjang->jumlah;
+                $rowSubtotal = (float) $produk->harga * $jumlah;
+
                 $subtotal += $rowSubtotal;
 
                 $checkoutItems[] = [
                     'produk' => $produk,
-                    'jumlah' => (int) $itemKeranjang->jumlah,
+                    'jumlah' => $jumlah,
                     'harga_satuan' => (float) $produk->harga,
                     'subtotal' => $rowSubtotal,
                 ];
@@ -230,8 +274,10 @@ class PesananApiController extends Controller
                     'subtotal' => $checkoutItem['subtotal'],
                 ]);
 
+                // Kurangi stok produk.
                 $checkoutItem['produk']->decrement('stok', $checkoutItem['jumlah']);
 
+                // Simpan riwayat stok keluar.
                 RiwayatStok::create([
                     'produk_id' => $checkoutItem['produk']->id,
                     'perubahan' => -$checkoutItem['jumlah'],
@@ -247,7 +293,9 @@ class PesananApiController extends Controller
                 'jumlah' => $total,
                 'status' => 'menunggu_pembayaran',
                 'tautan_pembayaran' => url('/api/payments/'.$pesanan->id),
-                'qr_code' => $data['metode_pembayaran'] === 'qris' ? 'QR-'.$pesanan->nomor_invoice : null,
+                'qr_code' => $data['metode_pembayaran'] === 'qris'
+                    ? 'QR-'.$pesanan->nomor_invoice
+                    : null,
             ]);
 
             Pengiriman::create([
@@ -264,7 +312,12 @@ class PesananApiController extends Controller
 
             $keranjang->item()->delete();
 
-            return $pesanan->load(['item.produk.gambarUtama', 'pembayaran', 'pengiriman', 'alamatPengiriman']);
+            return $pesanan->load([
+                'item.produk.gambarUtama',
+                'pembayaran',
+                'pengiriman',
+                'alamatPengiriman',
+            ]);
         });
 
         return response()->json([
@@ -297,20 +350,65 @@ class PesananApiController extends Controller
     public function cancel(Request $request, Pesanan $pesanan): JsonResponse
     {
         abort_unless($pesanan->user_id === $request->user()->id, 403);
-        abort_if($pesanan->status_pembayaran === 'dibayar', 422, 'Pesanan yang sudah dibayar tidak bisa dibatalkan dari aplikasi pembeli.');
+        abort_if(
+            $pesanan->status_pembayaran === 'dibayar',
+            422,
+            'Pesanan yang sudah dibayar tidak bisa dibatalkan dari aplikasi pembeli.'
+        );
 
-        $pesanan->update(['status' => 'dibatalkan', 'status_pembayaran' => 'dibatalkan']);
-        $pesanan->pembayaran?->update(['status' => 'dibatalkan']);
+        DB::transaction(function () use ($pesanan) {
+            if ($pesanan->status !== 'dibatalkan') {
+                foreach ($pesanan->item as $item) {
+                    $produk = Produk::lockForUpdate()->find($item->produk_id);
 
-        return response()->json(['success' => true, 'message' => 'Pesanan berhasil dibatalkan.']);
+                    if ($produk) {
+                        $produk->increment('stok', $item->jumlah);
+
+                        RiwayatStok::create([
+                            'produk_id' => $produk->id,
+                            'perubahan' => $item->jumlah,
+                            'tipe' => 'tambah',
+                            'catatan' => 'Stok dikembalikan karena pesanan dibatalkan '.$pesanan->nomor_invoice,
+                        ]);
+                    }
+                }
+            }
+
+            $pesanan->update([
+                'status' => 'dibatalkan',
+                'status_pembayaran' => 'dibatalkan',
+            ]);
+
+            $pesanan->pembayaran?->update([
+                'status' => 'dibatalkan',
+            ]);
+
+            $pesanan->pengiriman?->update([
+                'status_pengiriman' => 'dibatalkan',
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pesanan berhasil dibatalkan.',
+        ]);
     }
 
     public function confirmReceived(Request $request, Pesanan $pesanan): JsonResponse
     {
         abort_unless($pesanan->user_id === $request->user()->id, 403);
-        $pesanan->update(['status' => 'selesai']);
-        $pesanan->pengiriman?->update(['status_pengiriman' => 'selesai']);
 
-        return response()->json(['success' => true, 'message' => 'Pesanan diterima.']);
+        $pesanan->update([
+            'status' => 'selesai',
+        ]);
+
+        $pesanan->pengiriman?->update([
+            'status_pengiriman' => 'selesai',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pesanan diterima.',
+        ]);
     }
 }
