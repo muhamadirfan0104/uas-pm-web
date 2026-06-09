@@ -177,13 +177,17 @@ class PesananController extends Controller
     public function updateStatus(Request $request, Pesanan $pesanan): RedirectResponse
     {
         $data = $request->validate([
-            'status' => ['required', 'in:menunggu_pembayaran,menunggu_verifikasi,menunggu_konfirmasi,dibayar,diproses,disiapkan,siap_diambil,dalam_pengantaran,selesai,dibatalkan'],
+            'status' => ['required', 'in:menunggu_pembayaran,menunggu_verifikasi,menunggu_konfirmasi,diproses,disiapkan,siap_diambil,dalam_pengantaran,selesai,dibatalkan'],
             'status_pembayaran' => ['nullable', 'in:menunggu_pembayaran,menunggu_verifikasi,dibayar,ditolak,gagal,kedaluwarsa,dibatalkan'],
         ]);
 
         try {
             DB::transaction(function () use ($pesanan, $data) {
-                $pesanan->loadMissing(['pembayaran', 'pengiriman', 'item.produk']);
+                $pesanan->loadMissing([
+                    'pembayaran',
+                    'pengiriman',
+                    'item.produk',
+                ]);
 
                 $statusBaru = $data['status'];
                 $statusLama = $pesanan->status;
@@ -224,10 +228,18 @@ class PesananController extends Controller
 
                 if ($pesanan->pembayaran) {
                     $paymentStatus = $pesanan->status_pembayaran;
+
                     $pesanan->pembayaran->update([
                         'status' => $paymentStatus,
-                        'dibayar_pada' => $paymentStatus === 'dibayar' ? now() : $pesanan->pembayaran->dibayar_pada,
-                        'diverifikasi_pada' => $paymentStatus === 'dibayar' ? now() : $pesanan->pembayaran->diverifikasi_pada,
+                        'dibayar_pada' => $paymentStatus === 'dibayar'
+                            ? now()
+                            : $pesanan->pembayaran->dibayar_pada,
+                        'diverifikasi_pada' => $paymentStatus === 'dibayar'
+                            ? now()
+                            : $pesanan->pembayaran->diverifikasi_pada,
+                        'catatan_admin' => ($paymentStatus === 'dibayar' && $metodeBayar === 'cod')
+                            ? ($pesanan->pembayaran->catatan_admin ?: 'Pembayaran COD dikonfirmasi saat pesanan selesai.')
+                            : $pesanan->pembayaran->catatan_admin,
                     ]);
                 }
 
@@ -249,6 +261,6 @@ class PesananController extends Controller
             return back()->with('error', $e->getMessage() ?: 'Status pesanan gagal diperbarui.');
         }
 
-        return back()->with('success', 'Status pesanan berhasil mengikuti alur operasional.');
+        return back()->with('success', 'Status pesanan berhasil diperbarui sesuai alur.');
     }
 }

@@ -182,18 +182,35 @@ class PesananController extends Controller
         }
 
         DB::transaction(function () use ($pesanan) {
+            $pesanan->loadMissing(['pembayaran', 'pengiriman']);
+
+            $isCod = $pesanan->pembayaran?->metode_pembayaran === 'cod';
+
             $pesanan->update([
                 'status' => 'selesai',
+                'status_pembayaran' => $isCod
+                    ? 'dibayar'
+                    : $pesanan->status_pembayaran,
             ]);
 
             $pesanan->pengiriman?->update([
                 'status_pengiriman' => 'selesai',
             ]);
+
+            if ($isCod && $pesanan->pembayaran) {
+                $pesanan->pembayaran->update([
+                    'status' => 'dibayar',
+                    'dibayar_pada' => now(),
+                    'diverifikasi_pada' => now(),
+                    'catatan_admin' => $pesanan->pembayaran->catatan_admin
+                        ?: 'Pembayaran COD dikonfirmasi saat pembeli menerima pesanan.',
+                ]);
+            }
         });
 
         return redirect()
             ->route('pembeli-web.pesanan.show', $pesanan->nomor_invoice)
-            ->with('success', 'Pesanan berhasil dikonfirmasi diterima.');
+            ->with('success', 'Pesanan berhasil dikonfirmasi diterima. Pembayaran COD otomatis menjadi dibayar.');
     }
 
     private function ambilPesananLogin(string $nomor_invoice): Pesanan

@@ -34,6 +34,7 @@
             --radius: 22px;
             --shadow: 0 18px 45px rgba(16, 24, 40, .10);
             --shadow-soft: 0 10px 28px rgba(16, 24, 40, .07);
+            --ease-smooth: cubic-bezier(.4, 0, .2, 1);
         }
 
         * { box-sizing: border-box; }
@@ -58,10 +59,12 @@
             min-height: 100vh;
             display: grid;
             grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-            transition: grid-template-columns .22s ease;
+            transition: grid-template-columns .34s var(--ease-smooth);
         }
 
-        body.sidebar-mini .admin-shell { grid-template-columns: var(--sidebar-mini) minmax(0, 1fr); }
+        body.sidebar-mini .admin-shell {
+            grid-template-columns: var(--sidebar-mini) minmax(0, 1fr);
+        }
 
         .admin-sidebar {
             position: sticky;
@@ -74,6 +77,11 @@
             background: rgba(255,255,255,.86);
             backdrop-filter: blur(22px);
             overflow-y: auto;
+            overflow-x: visible;
+            transition:
+                width .34s var(--ease-smooth),
+                background .22s ease,
+                border-color .22s ease;
         }
 
         .admin-sidebar::-webkit-scrollbar { width: 5px; }
@@ -86,6 +94,10 @@
             align-items: center;
             gap: 12px;
             border-bottom: 1px solid var(--border);
+            transition:
+                padding .34s var(--ease-smooth),
+                gap .34s var(--ease-smooth),
+                justify-content .34s var(--ease-smooth);
         }
 
         .brand-button {
@@ -100,6 +112,28 @@
             justify-content: center;
             box-shadow: 0 18px 38px rgba(200,147,53,.24);
             flex-shrink: 0;
+            transition:
+                width .28s var(--ease-smooth),
+                height .28s var(--ease-smooth),
+                border-radius .28s var(--ease-smooth),
+                transform .18s ease;
+        }
+
+        .brand-button:hover {
+            transform: translateY(-1px);
+        }
+
+        .brand-info {
+            min-width: 0;
+            max-width: 180px;
+            opacity: 1;
+            transform: translateX(0);
+            overflow: hidden;
+            white-space: nowrap;
+            transition:
+                opacity .18s ease,
+                transform .22s var(--ease-smooth),
+                max-width .30s var(--ease-smooth);
         }
 
         .brand-text-title {
@@ -120,10 +154,14 @@
         .sidebar-menu {
             flex: 1;
             padding: 16px 12px 18px;
+            transition:
+                padding .34s var(--ease-smooth),
+                gap .34s var(--ease-smooth);
         }
 
         .sidebar-section {
             margin-bottom: 15px;
+            transition: margin .28s var(--ease-smooth);
         }
 
         .sidebar-heading {
@@ -133,6 +171,15 @@
             font-weight: 950;
             letter-spacing: .08em;
             text-transform: uppercase;
+            opacity: 1;
+            transform: translateX(0);
+            max-height: 22px;
+            overflow: hidden;
+            transition:
+                opacity .18s ease,
+                transform .22s var(--ease-smooth),
+                max-height .30s var(--ease-smooth),
+                margin .30s var(--ease-smooth);
         }
 
         .sidebar-link,
@@ -152,7 +199,19 @@
             font-size: .88rem;
             font-weight: 900;
             line-height: 1.1;
-            transition: .18s ease;
+            transition:
+                width .34s var(--ease-smooth),
+                height .34s var(--ease-smooth),
+                min-height .34s var(--ease-smooth),
+                padding .34s var(--ease-smooth),
+                margin .34s var(--ease-smooth),
+                gap .34s var(--ease-smooth),
+                border-radius .34s var(--ease-smooth),
+                background .18s ease,
+                color .18s ease,
+                border-color .18s ease,
+                box-shadow .18s ease,
+                transform .18s ease;
         }
 
         .sidebar-link:hover,
@@ -182,6 +241,9 @@
             width: 4px;
             border-radius: 999px;
             background: var(--brand);
+            transition:
+                opacity .18s ease,
+                transform .18s ease;
         }
 
         .sidebar-icon {
@@ -193,6 +255,12 @@
             justify-content: center;
             font-size: 1.02rem;
             flex-shrink: 0;
+            transition:
+                width .28s var(--ease-smooth),
+                height .28s var(--ease-smooth),
+                border-radius .28s var(--ease-smooth),
+                margin .28s var(--ease-smooth),
+                background .18s ease;
         }
 
         .sidebar-link.active .sidebar-icon,
@@ -203,10 +271,18 @@
         .sidebar-label {
             flex: 1;
             min-width: 0;
+            max-width: 170px;
             text-align: left;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            opacity: 1;
+            transform: translateX(0);
+            transition:
+                opacity .18s ease,
+                transform .22s var(--ease-smooth),
+                max-width .32s var(--ease-smooth),
+                flex-basis .32s var(--ease-smooth);
         }
 
         .sidebar-badge {
@@ -222,6 +298,13 @@
             font-size: .68rem;
             font-weight: 950;
             border: 1px solid #fecdd3;
+            opacity: 1;
+            max-width: 44px;
+            overflow: hidden;
+            transition:
+                opacity .18s ease,
+                max-width .30s var(--ease-smooth),
+                padding .30s var(--ease-smooth);
         }
 
         .sidebar-note {
@@ -233,6 +316,70 @@
             color: var(--brand-dark);
             font-size: .75rem;
             font-weight: 850;
+            opacity: 1;
+            transform: translateY(0);
+            max-height: 120px;
+            overflow: hidden;
+            transition:
+                opacity .18s ease,
+                transform .24s var(--ease-smooth),
+                max-height .34s var(--ease-smooth),
+                padding .34s var(--ease-smooth),
+                margin .34s var(--ease-smooth),
+                border-width .34s var(--ease-smooth);
+        }
+
+        .sidebar-collapse-btn {
+            width: calc(100% - 12px);
+            min-height: 42px;
+            margin: 12px 6px 0;
+            padding: 0 13px;
+            border-radius: 15px;
+            border: 1px solid #f1d49c;
+            background: #ffffff;
+            color: var(--brand-dark);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: .78rem;
+            font-weight: 950;
+            box-shadow: 0 10px 22px rgba(16, 24, 40, .06);
+            transition:
+                width .34s var(--ease-smooth),
+                height .34s var(--ease-smooth),
+                min-height .34s var(--ease-smooth),
+                padding .34s var(--ease-smooth),
+                margin .34s var(--ease-smooth),
+                gap .34s var(--ease-smooth),
+                border-radius .34s var(--ease-smooth),
+                background .18s ease,
+                color .18s ease,
+                box-shadow .18s ease,
+                transform .18s ease;
+        }
+
+        .sidebar-collapse-btn:hover {
+            background: var(--brand-soft);
+            color: var(--brand-dark);
+            transform: translateY(-1px);
+        }
+
+        .sidebar-collapse-btn i {
+            font-size: .9rem;
+            transition: transform .28s var(--ease-smooth);
+        }
+
+        .sidebar-collapse-text {
+            white-space: nowrap;
+            max-width: 140px;
+            opacity: 1;
+            transform: translateX(0);
+            overflow: hidden;
+            transition:
+                opacity .18s ease,
+                transform .22s var(--ease-smooth),
+                max-width .32s var(--ease-smooth);
         }
 
         .admin-main {
@@ -631,6 +778,7 @@
             color: var(--brand-dark);
             font-weight: 850;
         }
+
         .pagination .active .page-link {
             background: var(--brand);
             border-color: var(--brand);
@@ -646,16 +794,37 @@
         .dropdown-item { border-radius: 12px; font-weight: 800; }
         .dropdown-item:active { background: var(--brand); color: #fff; }
 
-        body.sidebar-mini .brand-info,
-        body.sidebar-mini .sidebar-label,
-        body.sidebar-mini .sidebar-heading,
-        body.sidebar-mini .sidebar-badge,
-        body.sidebar-mini .sidebar-note {
-            display: none !important;
+        body.sidebar-mini .brand-area {
+            padding: 0;
+            justify-content: center;
+            gap: 0;
         }
 
-        body.sidebar-mini .brand-area { padding: 0; justify-content: center; }
-        body.sidebar-mini .sidebar-menu { padding-left: 10px; padding-right: 10px; }
+        body.sidebar-mini .brand-info {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-8px);
+            max-width: 0;
+        }
+
+        body.sidebar-mini .sidebar-menu {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        body.sidebar-mini .sidebar-heading {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-8px);
+            max-height: 0;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        body.sidebar-mini .sidebar-section {
+            margin-bottom: 8px;
+        }
+
         body.sidebar-mini .sidebar-link,
         body.sidebar-mini .sidebar-parent {
             width: 48px;
@@ -665,9 +834,88 @@
             margin-left: auto;
             margin-right: auto;
             justify-content: center;
+            gap: 0;
         }
+
         body.sidebar-mini .sidebar-link.active::before,
-        body.sidebar-mini .sidebar-parent.active::before { display: none; }
+        body.sidebar-mini .sidebar-parent.active::before {
+            opacity: 0;
+            transform: scaleY(.4);
+        }
+
+        body.sidebar-mini .sidebar-icon {
+            margin: 0;
+        }
+
+        body.sidebar-mini .sidebar-label {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-8px);
+            max-width: 0;
+            flex: 0 0 0;
+        }
+
+        body.sidebar-mini .sidebar-badge {
+            opacity: 0;
+            pointer-events: none;
+            max-width: 0;
+            padding-left: 0;
+            padding-right: 0;
+            border-width: 0;
+        }
+
+        body.sidebar-mini .sidebar-note {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(8px);
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-top: 0;
+            border-width: 0;
+        }
+
+        body.sidebar-mini .sidebar-collapse-btn {
+            width: 48px;
+            height: 48px;
+            min-height: 48px;
+            padding: 0;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 16px;
+            gap: 0;
+        }
+
+        body.sidebar-mini .sidebar-collapse-btn i {
+            transform: rotate(180deg);
+        }
+
+        body.sidebar-mini .sidebar-collapse-text {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-8px);
+            max-width: 0;
+        }
+
+        body.sidebar-mini .sidebar-link:hover::after,
+        body.sidebar-mini .sidebar-parent:hover::after {
+            content: attr(data-title);
+            position: absolute;
+            left: 60px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1080;
+            min-width: max-content;
+            max-width: 240px;
+            padding: 8px 11px;
+            border-radius: 12px;
+            background: #111827;
+            color: #ffffff;
+            font-size: .75rem;
+            font-weight: 850;
+            white-space: nowrap;
+            box-shadow: 0 12px 26px rgba(15, 23, 42, .22);
+        }
 
         .mobile-overlay {
             position: fixed;
@@ -688,6 +936,7 @@
             border-radius: 18px;
             box-shadow: var(--shadow-soft);
         }
+
         .sitahu-page-info {
             display: inline-flex;
             align-items: center;
@@ -696,7 +945,9 @@
             font-size: .82rem;
             font-weight: 800;
         }
+
         .sitahu-page-info strong { color: var(--text); font-weight: 900; }
+
         .sitahu-page-list {
             display: flex;
             align-items: center;
@@ -707,6 +958,7 @@
             padding: 0;
             margin: 0;
         }
+
         .sitahu-page-link {
             min-width: 38px;
             height: 38px;
@@ -723,24 +975,28 @@
             font-weight: 900;
             transition: .18s ease;
         }
+
         .sitahu-page-link:hover {
             color: var(--brand-dark);
             border-color: rgba(223,186,104,.55);
             background: var(--brand-soft);
             transform: translateY(-1px);
         }
+
         .sitahu-page-item.active .sitahu-page-link {
             color: #fff;
             border-color: transparent;
             background: linear-gradient(135deg, var(--brand), var(--brand-dark));
             box-shadow: 0 10px 22px rgba(223,186,104,.28);
         }
+
         .sitahu-page-item.disabled .sitahu-page-link {
             color: #9ca3af;
             background: #f9fafb;
             cursor: not-allowed;
             transform: none;
         }
+
         .sitahu-page-link.dots {
             border-color: transparent;
             background: transparent;
@@ -748,23 +1004,150 @@
             padding: 0 4px;
         }
 
-
-
         .modal-dialog-scrollable .modal-content {
             max-height: calc(100vh - 2rem);
         }
+
         .modal-dialog-scrollable .modal-body {
             overflow-y: auto;
         }
+
         .modal-xl.modal-dialog-scrollable .modal-body,
         .modal-lg.modal-dialog-scrollable .modal-body {
             max-height: calc(100vh - 13rem);
         }
+
         #globalConfirmModal .modal-content {
             max-height: calc(100vh - 2rem);
         }
+
         #globalConfirmModal .modal-body {
             overflow-y: auto;
+        }
+
+        @media (max-width: 1320px) and (min-width: 901px) {
+            body:not(.sidebar-lock-open) .admin-shell {
+                grid-template-columns: var(--sidebar-mini) minmax(0, 1fr);
+            }
+
+            body:not(.sidebar-lock-open) .brand-area {
+                padding: 0;
+                justify-content: center;
+                gap: 0;
+            }
+
+            body:not(.sidebar-lock-open) .brand-info {
+                opacity: 0;
+                pointer-events: none;
+                transform: translateX(-8px);
+                max-width: 0;
+            }
+
+            body:not(.sidebar-lock-open) .sidebar-menu {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            body:not(.sidebar-lock-open) .sidebar-heading {
+                opacity: 0;
+                pointer-events: none;
+                transform: translateX(-8px);
+                max-height: 0;
+                margin-top: 0;
+                margin-bottom: 0;
+            }
+
+            body:not(.sidebar-lock-open) .sidebar-section {
+                margin-bottom: 8px;
+            }
+
+            body:not(.sidebar-lock-open) .sidebar-link,
+            body:not(.sidebar-lock-open) .sidebar-parent {
+                width: 48px;
+                height: 48px;
+                min-height: 48px;
+                padding: 0;
+                margin-left: auto;
+                margin-right: auto;
+                justify-content: center;
+                gap: 0;
+            }
+
+            body:not(.sidebar-lock-open) .sidebar-link.active::before,
+            body:not(.sidebar-lock-open) .sidebar-parent.active::before {
+                opacity: 0;
+                transform: scaleY(.4);
+            }
+
+            body:not(.sidebar-lock-open) .sidebar-label {
+                opacity: 0;
+                pointer-events: none;
+                transform: translateX(-8px);
+                max-width: 0;
+                flex: 0 0 0;
+            }
+
+            body:not(.sidebar-lock-open) .sidebar-badge {
+                opacity: 0;
+                pointer-events: none;
+                max-width: 0;
+                padding-left: 0;
+                padding-right: 0;
+                border-width: 0;
+            }
+
+            body:not(.sidebar-lock-open) .sidebar-note {
+                opacity: 0;
+                pointer-events: none;
+                transform: translateY(8px);
+                max-height: 0;
+                padding-top: 0;
+                padding-bottom: 0;
+                margin-top: 0;
+                border-width: 0;
+            }
+
+            body:not(.sidebar-lock-open) .sidebar-collapse-btn {
+                width: 48px;
+                height: 48px;
+                min-height: 48px;
+                padding: 0;
+                margin-left: auto;
+                margin-right: auto;
+                border-radius: 16px;
+                gap: 0;
+            }
+
+            body:not(.sidebar-lock-open) .sidebar-collapse-btn i {
+                transform: rotate(180deg);
+            }
+
+            body:not(.sidebar-lock-open) .sidebar-collapse-text {
+                opacity: 0;
+                pointer-events: none;
+                transform: translateX(-8px);
+                max-width: 0;
+            }
+
+            body:not(.sidebar-lock-open) .sidebar-link:hover::after,
+            body:not(.sidebar-lock-open) .sidebar-parent:hover::after {
+                content: attr(data-title);
+                position: absolute;
+                left: 60px;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 1080;
+                min-width: max-content;
+                max-width: 240px;
+                padding: 8px 11px;
+                border-radius: 12px;
+                background: #111827;
+                color: #ffffff;
+                font-size: .75rem;
+                font-weight: 850;
+                white-space: nowrap;
+                box-shadow: 0 12px 26px rgba(15, 23, 42, .22);
+            }
         }
 
         @media (max-width: 1200px) {
@@ -777,6 +1160,10 @@
             .admin-shell,
             body.sidebar-mini .admin-shell { grid-template-columns: 1fr; }
 
+            .sidebar-collapse-btn {
+                display: none !important;
+            }
+
             .admin-sidebar {
                 position: fixed;
                 inset: 0 auto 0 0;
@@ -785,7 +1172,11 @@
                 transition: transform .2s ease;
                 box-shadow: 18px 0 40px rgba(15, 23, 42, .15);
             }
-            .admin-sidebar.open { transform: translateX(0); }
+
+            .admin-sidebar.open {
+                transform: translateX(0);
+            }
+
             .topbar { padding: 0 14px; }
             .content-area { padding: 16px; }
             .hero { align-items: flex-start; flex-direction: column; }
@@ -794,8 +1185,31 @@
             body.sidebar-mini .sidebar-label,
             body.sidebar-mini .sidebar-heading,
             body.sidebar-mini .sidebar-badge,
-            body.sidebar-mini .sidebar-note { display: block !important; }
-            body.sidebar-mini .brand-area { padding: 0 18px; justify-content: flex-start; }
+            body.sidebar-mini .sidebar-note,
+            body.sidebar-mini .sidebar-collapse-text {
+                opacity: 1;
+                pointer-events: auto;
+                transform: none;
+                max-width: none;
+                width: auto;
+                max-height: none;
+                overflow: visible;
+            }
+
+            body.sidebar-mini .brand-area {
+                padding: 0 18px;
+                justify-content: flex-start;
+                gap: 12px;
+            }
+
+            body.sidebar-mini .sidebar-menu {
+                padding: 16px 12px 18px;
+            }
+
+            body.sidebar-mini .sidebar-heading {
+                margin: 13px 10px 8px;
+            }
+
             body.sidebar-mini .sidebar-link,
             body.sidebar-mini .sidebar-parent {
                 width: 100%;
@@ -803,6 +1217,16 @@
                 min-height: 46px;
                 padding: 10px 12px;
                 justify-content: flex-start;
+                gap: 11px;
+            }
+
+            body.sidebar-mini .sidebar-label {
+                flex: 1;
+            }
+
+            body.sidebar-mini .sidebar-link:hover::after,
+            body.sidebar-mini .sidebar-parent:hover::after {
+                display: none;
             }
         }
 
@@ -841,6 +1265,7 @@
                 <div class="sidebar-heading">Kontrol</div>
 
                 <a href="{{ route('admin.dashboard') }}"
+                   data-title="Dashboard"
                    class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                     <span class="sidebar-icon"><i class="bi bi-grid-1x2-fill"></i></span>
                     <span class="sidebar-label">Dashboard</span>
@@ -851,24 +1276,28 @@
                 <div class="sidebar-heading">Operasional Harian</div>
 
                 <a href="{{ route('admin.pembayaran.index') }}"
+                   data-title="Pembayaran"
                    class="sidebar-link {{ request()->routeIs('admin.pembayaran.*') ? 'active' : '' }}">
                     <span class="sidebar-icon"><i class="bi bi-credit-card-2-front-fill"></i></span>
                     <span class="sidebar-label">Pembayaran</span>
                 </a>
 
                 <a href="{{ route('admin.pesanan.index') }}"
+                   data-title="Pesanan"
                    class="sidebar-link {{ request()->routeIs('admin.pesanan.*') ? 'active' : '' }}">
                     <span class="sidebar-icon"><i class="bi bi-receipt-cutoff"></i></span>
                     <span class="sidebar-label">Pesanan</span>
                 </a>
 
                 <a href="{{ route('admin.pengiriman.index') }}"
+                   data-title="Pengambilan & Kirim"
                    class="sidebar-link {{ request()->routeIs('admin.pengiriman.*') ? 'active' : '' }}">
                     <span class="sidebar-icon"><i class="bi bi-truck"></i></span>
                     <span class="sidebar-label">Pengambilan & Kirim</span>
                 </a>
 
                 <a href="{{ route('admin.semua-pesanan.index') }}"
+                   data-title="Semua Pesanan"
                    class="sidebar-link {{ request()->routeIs('admin.semua-pesanan.*') ? 'active' : '' }}">
                     <span class="sidebar-icon"><i class="bi bi-journal-text"></i></span>
                     <span class="sidebar-label">Semua Pesanan</span>
@@ -879,18 +1308,21 @@
                 <div class="sidebar-heading">Katalog</div>
 
                 <a href="{{ route('admin.produk.index') }}"
+                   data-title="Produk"
                    class="sidebar-link {{ request()->routeIs('admin.produk.*') ? 'active' : '' }}">
                     <span class="sidebar-icon"><i class="bi bi-basket2-fill"></i></span>
                     <span class="sidebar-label">Produk</span>
                 </a>
 
                 <a href="{{ route('admin.stok.index') }}"
+                   data-title="Stok"
                    class="sidebar-link {{ request()->routeIs('admin.stok.*') ? 'active' : '' }}">
                     <span class="sidebar-icon"><i class="bi bi-boxes"></i></span>
                     <span class="sidebar-label">Stok</span>
                 </a>
 
                 <a href="{{ route('admin.banner.index') }}"
+                   data-title="Banner"
                    class="sidebar-link {{ request()->routeIs('admin.banner.*') ? 'active' : '' }}">
                     <span class="sidebar-icon"><i class="bi bi-images"></i></span>
                     <span class="sidebar-label">Banner</span>
@@ -901,12 +1333,14 @@
                 <div class="sidebar-heading">Pelanggan</div>
 
                 <a href="{{ route('admin.pembeli.index') }}"
+                   data-title="Pembeli"
                    class="sidebar-link {{ request()->routeIs('admin.pembeli.*') ? 'active' : '' }}">
                     <span class="sidebar-icon"><i class="bi bi-people-fill"></i></span>
                     <span class="sidebar-label">Pembeli</span>
                 </a>
 
                 <a href="{{ route('admin.ulasan.index') }}"
+                   data-title="Ulasan"
                    class="sidebar-link {{ request()->routeIs('admin.ulasan.*') ? 'active' : '' }}">
                     <span class="sidebar-icon"><i class="bi bi-star-fill"></i></span>
                     <span class="sidebar-label">Ulasan</span>
@@ -917,18 +1351,21 @@
                 <div class="sidebar-heading">Bisnis & Sistem</div>
 
                 <a href="{{ route('admin.laporan.index') }}"
+                   data-title="Laporan"
                    class="sidebar-link {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}">
                     <span class="sidebar-icon"><i class="bi bi-bar-chart-fill"></i></span>
                     <span class="sidebar-label">Laporan</span>
                 </a>
 
                 <a href="{{ route('admin.pengaturan.edit') }}"
+                   data-title="Pengaturan Toko"
                    class="sidebar-link {{ request()->routeIs('admin.pengaturan.*') ? 'active' : '' }}">
                     <span class="sidebar-icon"><i class="bi bi-shop-window"></i></span>
                     <span class="sidebar-label">Pengaturan Toko</span>
                 </a>
 
                 <a href="{{ route('admin.pengguna-admin.index') }}"
+                   data-title="Pengguna Admin"
                    class="sidebar-link {{ request()->routeIs('admin.pengguna-admin.*') ? 'active' : '' }}">
                     <span class="sidebar-icon"><i class="bi bi-person-badge-fill"></i></span>
                     <span class="sidebar-label">Pengguna Admin</span>
@@ -939,6 +1376,17 @@
                 <i class="bi bi-lightning-charge-fill me-1"></i>
                 Kerjakan dari pembayaran aktif, proses pesanan, lalu ambil/kirim.
             </div>
+
+            <button
+                class="sidebar-collapse-btn d-none d-lg-flex"
+                id="sidebarCollapseButton"
+                type="button"
+                title="Kecilkan / lebarkan sidebar"
+                aria-label="Kecilkan / lebarkan sidebar"
+            >
+                <i class="bi bi-chevron-left"></i>
+                <span class="sidebar-collapse-text">Kecilkan Sidebar</span>
+            </button>
         </nav>
     </aside>
 
@@ -1132,18 +1580,26 @@
     const sidebar = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
     const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarCollapseButton = document.getElementById('sidebarCollapseButton');
     const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+
+    function toggleSidebarMini() {
+        if (window.innerWidth <= 900) return;
+
+        const willBeMini = !body.classList.contains('sidebar-mini');
+
+        body.classList.toggle('sidebar-mini', willBeMini);
+        body.classList.toggle('sidebar-lock-open', !willBeMini);
+
+        localStorage.setItem('sitahu-sidebar-mini', willBeMini ? '1' : '0');
+    }
 
     if (localStorage.getItem('sitahu-sidebar-mini') === '1' && window.innerWidth > 900) {
         body.classList.add('sidebar-mini');
     }
 
-    sidebarToggle?.addEventListener('click', () => {
-        if (window.innerWidth > 900) {
-            body.classList.toggle('sidebar-mini');
-            localStorage.setItem('sitahu-sidebar-mini', body.classList.contains('sidebar-mini') ? '1' : '0');
-        }
-    });
+    sidebarToggle?.addEventListener('click', toggleSidebarMini);
+    sidebarCollapseButton?.addEventListener('click', toggleSidebarMini);
 
     mobileMenuToggle?.addEventListener('click', () => {
         sidebar?.classList.add('open');
@@ -1164,8 +1620,15 @@
         });
     });
 
+    window.addEventListener('resize', () => {
+        if (window.innerWidth <= 900) {
+            body.classList.remove('sidebar-mini', 'sidebar-lock-open');
+        }
+    });
+
     document.querySelectorAll('.js-instant-filter').forEach((form) => {
         let timer = null;
+
         const submitForm = () => {
             window.clearTimeout(timer);
             timer = window.setTimeout(() => {
@@ -1191,8 +1654,22 @@
         const container = document.querySelector('.toast-container');
         if (!container) return;
 
-        const bgClass = type === 'success' ? 'text-bg-success' : type === 'error' || type === 'danger' ? 'text-bg-danger' : type === 'warning' ? 'text-bg-warning' : 'text-bg-dark';
-        const icon = type === 'success' ? 'bi-check-circle' : type === 'error' || type === 'danger' ? 'bi-exclamation-triangle' : type === 'warning' ? 'bi-info-circle' : 'bi-bell';
+        const bgClass = type === 'success'
+            ? 'text-bg-success'
+            : type === 'error' || type === 'danger'
+                ? 'text-bg-danger'
+                : type === 'warning'
+                    ? 'text-bg-warning'
+                    : 'text-bg-dark';
+
+        const icon = type === 'success'
+            ? 'bi-check-circle'
+            : type === 'error' || type === 'danger'
+                ? 'bi-exclamation-triangle'
+                : type === 'warning'
+                    ? 'bi-info-circle'
+                    : 'bi-bell';
+
         const toastEl = document.createElement('div');
         toastEl.className = `toast align-items-center ${bgClass} border-0 shadow js-dynamic-toast`;
         toastEl.setAttribute('role', 'alert');
@@ -1200,8 +1677,10 @@
         toastEl.setAttribute('aria-atomic', 'true');
         toastEl.innerHTML = `<div class="d-flex"><div class="toast-body"><i class="bi ${icon} me-2"></i>${message || 'Informasi berhasil diperbarui.'}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Tutup"></button></div>`;
         container.appendChild(toastEl);
+
         const toast = new bootstrap.Toast(toastEl, { delay: 4200 });
         toast.show();
+
         toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
     };
 
@@ -1225,9 +1704,11 @@
             if (globalConfirmTitle) {
                 globalConfirmTitle.textContent = form.dataset.confirmTitle || 'Konfirmasi Tindakan';
             }
+
             if (globalConfirmMessage) {
                 globalConfirmMessage.textContent = form.dataset.confirmMessage || 'Apakah kamu yakin ingin melanjutkan tindakan ini?';
             }
+
             if (globalConfirmButton) {
                 globalConfirmButton.textContent = form.dataset.confirmButton || 'Lanjutkan';
             }
@@ -1238,8 +1719,10 @@
 
     globalConfirmButton?.addEventListener('click', () => {
         if (!pendingConfirmForm) return;
+
         pendingConfirmForm.dataset.confirmed = '1';
         globalConfirmModal?.hide();
+
         if (typeof pendingConfirmForm.requestSubmit === 'function') {
             pendingConfirmForm.requestSubmit();
         } else {
