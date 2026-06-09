@@ -55,6 +55,7 @@ class AlamatController extends Controller
                 'user_id' => Auth::id(),
                 'nama_penerima' => $data['nama_penerima'],
                 'telepon' => $data['telepon'],
+                'email_penerima' => $data['email_penerima'] ?? null,
                 'alamat_lengkap' => $data['alamat_lengkap'],
                 'latitude' => $data['latitude'] ?? null,
                 'longitude' => $data['longitude'] ?? null,
@@ -62,9 +63,7 @@ class AlamatController extends Controller
             ]);
         });
 
-        return redirect()
-            ->route('pembeli-web.alamat.index')
-            ->with('success', 'Alamat berhasil ditambahkan.');
+        return $this->redirectSetelahSimpan($request, 'Alamat berhasil ditambahkan.');
     }
 
     public function edit(Alamat $alamat): View
@@ -93,6 +92,7 @@ class AlamatController extends Controller
             $alamat->update([
                 'nama_penerima' => $data['nama_penerima'],
                 'telepon' => $data['telepon'],
+                'email_penerima' => $data['email_penerima'] ?? null,
                 'alamat_lengkap' => $data['alamat_lengkap'],
                 'latitude' => $data['latitude'] ?? null,
                 'longitude' => $data['longitude'] ?? null,
@@ -100,9 +100,7 @@ class AlamatController extends Controller
             ]);
         });
 
-        return redirect()
-            ->route('pembeli-web.alamat.index')
-            ->with('success', 'Alamat berhasil diperbarui.');
+        return $this->redirectSetelahSimpan($request, 'Alamat berhasil diperbarui.');
     }
 
     public function destroy(Alamat $alamat): RedirectResponse
@@ -152,11 +150,25 @@ class AlamatController extends Controller
             ->with('success', 'Alamat utama berhasil diubah.');
     }
 
+    private function redirectSetelahSimpan(Request $request, string $message): RedirectResponse
+    {
+        if ($request->input('redirect') === 'checkout') {
+            return redirect()
+                ->route('pembeli-web.checkout.index')
+                ->with('success', $message);
+        }
+
+        return redirect()
+            ->route('pembeli-web.alamat.index')
+            ->with('success', $message);
+    }
+
     private function validasiAlamat(Request $request): array
     {
         return $request->validate([
             'nama_penerima' => ['required', 'string', 'max:150'],
             'telepon' => ['required', 'string', 'max:30'],
+            'email_penerima' => ['required', 'email', 'max:150'],
             'alamat_lengkap' => ['required', 'string', 'max:1000'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
@@ -166,6 +178,9 @@ class AlamatController extends Controller
             'nama_penerima.max' => 'Nama penerima maksimal 150 karakter.',
             'telepon.required' => 'Nomor telepon wajib diisi.',
             'telepon.max' => 'Nomor telepon maksimal 30 karakter.',
+            'email_penerima.required' => 'Email penerima wajib diisi.',
+            'email_penerima.email' => 'Email penerima harus valid.',
+            'email_penerima.max' => 'Email penerima maksimal 150 karakter.',
             'alamat_lengkap.required' => 'Alamat lengkap wajib diisi.',
             'alamat_lengkap.max' => 'Alamat lengkap maksimal 1000 karakter.',
             'latitude.numeric' => 'Latitude harus berupa angka.',

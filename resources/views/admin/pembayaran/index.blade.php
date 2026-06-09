@@ -4,452 +4,88 @@
 @section('page_title', 'Pembayaran')
 
 @section('content')
-<style>
-    .payment-box {
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        background: #fff;
-        margin-bottom: 1.5rem;
-        overflow: hidden;
-        box-shadow: var(--shadow-sm);
-    }
-
-    .payment-metric {
-        background: #fff;
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 18px;
-        min-height: 116px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        transition: 0.18s ease;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .payment-metric:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow);
-        border-color: rgba(223, 186, 104, 0.42);
-    }
-
-    .payment-metric-label {
-        color: var(--muted);
-        font-size: 0.74rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-    }
-
-    .payment-metric-value {
-        margin-top: 8px;
-        color: var(--text);
-        font-size: 1.75rem;
-        line-height: 1;
-        font-weight: 950;
-        letter-spacing: -0.05em;
-    }
-
-    .payment-metric-note {
-        display: inline-block;
-        margin-top: 8px;
-        font-size: 0.76rem;
-        font-weight: 850;
-    }
-
-    .payment-metric-icon {
-        width: 46px;
-        height: 46px;
-        border-radius: 16px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        font-size: 1.15rem;
-    }
-
-    .payment-filter {
-        padding: 16px;
-        border-bottom: 1px solid var(--border);
-        background: #fff;
-    }
-
-    .payment-search {
-        min-height: 44px;
-        padding: 0 14px;
-        border: 1px solid var(--border);
-        border-radius: 15px;
-        background: #f9fafb;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        transition: 0.16s ease;
-    }
-
-    .payment-search:focus-within {
-        background: #fff;
-        border-color: var(--brand);
-        box-shadow: 0 0 0 4px rgba(223, 186, 104, 0.16);
-    }
-
-    .payment-search input {
-        width: 100%;
-        border: 0;
-        outline: 0;
-        background: transparent;
-        color: var(--text);
-        font-size: 0.9rem;
-        font-weight: 650;
-    }
-
-    .payment-invoice {
-        color: var(--text);
-        font-size: 0.92rem;
-        font-weight: 900;
-        letter-spacing: -0.02em;
-    }
-
-    .buyer-avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 999px;
-        background: var(--brand-soft);
-        color: var(--brand-dark);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.76rem;
-        font-weight: 900;
-        flex-shrink: 0;
-    }
-
-    .payment-ref {
-        max-width: 180px;
-        padding: 7px 10px;
-        border-radius: 999px;
-        background: #f9fafb;
-        border: 1px solid var(--border);
-        color: #4b5563;
-        font-size: 0.76rem;
-        font-weight: 850;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .method-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 7px 10px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: #fff;
-        color: #374151;
-        font-size: 0.78rem;
-        font-weight: 900;
-        white-space: nowrap;
-    }
-
-    .payment-total {
-        color: var(--text);
-        font-size: 0.92rem;
-        font-weight: 950;
-        white-space: nowrap;
-    }
-
-    .payment-status-form {
-        min-width: 260px;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 8px;
-    }
-
-    .payment-status-form select {
-        min-width: 150px;
-        min-height: 36px;
-        border-radius: 12px;
-        font-size: 0.78rem;
-        font-weight: 800;
-        padding: 6px 10px;
-    }
-
-    .empty-payment {
-        padding: 48px 16px;
-        text-align: center;
-    }
-
-    .empty-payment-icon {
-        width: 58px;
-        height: 58px;
-        margin: 0 auto 12px;
-        border-radius: 18px;
-        background: #f3f4f6;
-        color: var(--muted);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.45rem;
-    }
-
-    @media (max-width: 992px) {
-        .payment-status-form {
-            min-width: 220px;
-        }
-    }
-
-    @media (max-width: 640px) {
-        .payment-status-form {
-            align-items: stretch;
-            flex-direction: column;
-        }
-
-        .payment-status-form select,
-        .payment-status-form button {
-            width: 100%;
-        }
-    }
-</style>
+@include('admin.partials.ops-page-style')
 
 @php
-    $totalPembayaranHalaman = collect($pembayaran->items())->sum('jumlah');
+    $methodLabel = fn($method) => match($method){'transfer_bank'=>'Transfer Bank','cod'=>'COD',default=>strtoupper((string)$method)};
+    $tab = request('tab', 'semua');
+    $hasActiveFilter = request()->filled('q') || request()->filled('status') || request()->filled('metode') || request()->filled('bukti') || request()->filled('tanggal_mulai') || request()->filled('tanggal_selesai');
 @endphp
 
-<div class="hero">
+<div class="ops-page-head">
     <div>
-        <h1>Pembayaran</h1>
-        <p>Monitoring pembayaran dari pesanan mobile, termasuk status, metode, reference, dan total tagihan.</p>
-    </div>
-
-    <a href="{{ route('admin.pesanan.index') }}" class="btn btn-light border fw-bold px-3">
-        <i class="bi bi-receipt me-1 text-muted"></i>
-        Lihat Pesanan
-    </a>
-</div>
-
-<div class="grid g4 mb-4">
-    <div class="payment-metric">
-        <div>
-            <div class="payment-metric-label">Dibayar</div>
-            <div class="payment-metric-value">{{ $stats['dibayar'] ?? 0 }}</div>
-            <span class="payment-metric-note text-success">Berhasil</span>
-        </div>
-
-        <div class="payment-metric-icon bg-success-subtle text-success-emphasis">
-            <i class="bi bi-check-circle-fill"></i>
-        </div>
-    </div>
-
-    <div class="payment-metric">
-        <div>
-            <div class="payment-metric-label">Menunggu</div>
-            <div class="payment-metric-value">{{ $stats['menunggu'] ?? 0 }}</div>
-            <span class="payment-metric-note text-warning">Belum bayar</span>
-        </div>
-
-        <div class="payment-metric-icon bg-warning-subtle text-warning-emphasis">
-            <i class="bi bi-hourglass-split"></i>
-        </div>
-    </div>
-
-    <div class="payment-metric">
-        <div>
-            <div class="payment-metric-label">Gagal</div>
-            <div class="payment-metric-value">{{ $stats['gagal'] ?? 0 }}</div>
-            <span class="payment-metric-note text-danger">Transaksi gagal</span>
-        </div>
-
-        <div class="payment-metric-icon bg-danger-subtle text-danger-emphasis">
-            <i class="bi bi-x-circle-fill"></i>
-        </div>
-    </div>
-
-    <div class="payment-metric">
-        <div>
-            <div class="payment-metric-label">Kedaluwarsa</div>
-            <div class="payment-metric-value">{{ $stats['kedaluwarsa'] ?? 0 }}</div>
-            <span class="payment-metric-note text-danger">Expired</span>
-        </div>
-
-        <div class="payment-metric-icon bg-danger-subtle text-danger-emphasis">
-            <i class="bi bi-clock-history"></i>
-        </div>
+        <h1 class="ops-title">Pembayaran</h1>
+        <p class="ops-subtitle">Fokus untuk memeriksa bukti transfer dan status COD. Detail pembayaran dibuka lewat pop up agar halaman tetap rapi.</p>
     </div>
 </div>
 
-<div class="payment-box">
-    <div class="payment-filter">
-        <form id="page-filter" class="js-instant-filter" method="GET">
-            <div class="row g-3 align-items-center">
-                <div class="col-12 col-lg">
-                    <div class="payment-search">
-                        <i class="bi bi-search text-muted"></i>
-                        <input name="q"
-                               value="{{ request('q') }}"
-                               placeholder="Cari invoice, nama pembeli, atau reference pembayaran...">
-                    </div>
-                </div>
+<div class="ops-tabs">
+    <a class="ops-tab {{ $tab==='semua' ? 'active' : '' }}" href="{{ route('admin.pembayaran.index') }}">Semua</a>
+    <a class="ops-tab {{ $tab==='perlu_dicek' ? 'active' : '' }}" href="{{ route('admin.pembayaran.index', ['tab'=>'perlu_dicek']) }}">Perlu dicek <b>{{ $stats['perlu_dicek'] ?? 0 }}</b></a>
+    <a class="ops-tab {{ $tab==='belum_upload' ? 'active' : '' }}" href="{{ route('admin.pembayaran.index', ['tab'=>'belum_upload']) }}">Belum upload <b>{{ $stats['belum_upload'] ?? 0 }}</b></a>
+    <a class="ops-tab {{ $tab==='dibayar' ? 'active' : '' }}" href="{{ route('admin.pembayaran.index', ['tab'=>'dibayar']) }}">Dibayar <b>{{ $stats['dibayar'] ?? 0 }}</b></a>
+    <a class="ops-tab {{ $tab==='ditolak' ? 'active' : '' }}" href="{{ route('admin.pembayaran.index', ['tab'=>'ditolak']) }}">Ditolak <b>{{ $stats['ditolak'] ?? 0 }}</b></a>
+    <a class="ops-tab {{ $tab==='cod' ? 'active' : '' }}" href="{{ route('admin.pembayaran.index', ['tab'=>'cod']) }}">COD <b>{{ $stats['cod'] ?? 0 }}</b></a>
+</div>
 
-                <div class="col-12 col-md-5 col-lg-3">
-                    <select class="form-select" name="status">
-                        <option value="">Semua status</option>
-                        @foreach(['menunggu_pembayaran','dibayar','gagal','kedaluwarsa','dibatalkan'] as $s)
-                            <option value="{{ $s }}" @selected(request('status') === $s)>
-                                {{ $statusLabel($s) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+<div class="ops-filter-card">
+    <form id="page-filter" class="js-instant-filter" method="GET">
+        @if($tab !== 'semua')<input type="hidden" name="tab" value="{{ $tab }}">@endif
+        <div class="ops-filter-grid">
+            <div class="ops-field"><label class="ops-label">Cari pembayaran</label><div class="ops-search"><i class="bi bi-search text-muted"></i><input name="q" value="{{ request('q') }}" placeholder="Invoice, pembeli, nomor HP, atau referensi"></div></div>
+            <div class="ops-field"><label class="ops-label">Status</label><select class="ops-control" name="status"><option value="">Semua</option>@foreach(['menunggu_pembayaran','dibayar','ditolak','gagal','kedaluwarsa','dibatalkan'] as $s)<option value="{{ $s }}" @selected(request('status')===$s)>{{ $statusLabel($s) }}</option>@endforeach</select></div>
+            <div class="ops-field"><label class="ops-label">Metode</label><select class="ops-control" name="metode"><option value="">Semua</option><option value="transfer_bank" @selected(request('metode')==='transfer_bank')>Transfer</option><option value="cod" @selected(request('metode')==='cod')>COD</option></select></div>
+            <div class="ops-field"><label class="ops-label">Bukti</label><select class="ops-control" name="bukti"><option value="">Semua</option><option value="ada" @selected(request('bukti')==='ada')>Ada bukti</option><option value="belum" @selected(request('bukti')==='belum')>Belum upload</option></select></div>
+            <div class="ops-field"><label class="ops-label">Dari tanggal</label><input type="date" class="ops-control" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}"></div>
+            <div class="ops-field"><label class="ops-label">Sampai</label><input type="date" class="ops-control" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}"></div>
+            <div class="ops-filter-actions"><a href="{{ route('admin.pembayaran.index') }}" class="ops-btn-reset"><i class="bi bi-x-circle"></i> Reset</a></div>
+        </div>
+        @if($hasActiveFilter || $tab !== 'semua')<div class="ops-filter-note"><i class="bi bi-funnel text-brand"></i> Filter sedang aktif. <a href="{{ route('admin.pembayaran.index') }}" class="text-brand fw-black text-decoration-none">Bersihkan</a></div>@endif
+    </form>
+</div>
 
-                <div class="col-12 col-md-3 col-lg-2">
-                    <a href="{{ route('admin.pembayaran.index') }}" class="btn btn-light border fw-bold w-100">
-                        Reset
-                    </a>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <div class="table-wrap">
-        <table>
-            <thead>
-            <tr>
-                <th>Invoice & Pembeli</th>
-                <th>Reference</th>
-                <th>Metode</th>
-                <th>Status</th>
-                <th>Tanggal</th>
-                <th>Total</th>
-                <th class="text-end">Update Status</th>
-            </tr>
-            </thead>
-
+@if($pembayaran->count())
+    <div class="ops-table-card table-wrap">
+        <table class="table align-middle">
+            <thead><tr><th>Invoice</th><th>Pembeli</th><th>Metode</th><th>Bukti</th><th>Status</th><th>Total</th><th class="text-end">Aksi</th></tr></thead>
             <tbody>
-            @forelse($pembayaran as $pay)
+            @foreach($pembayaran as $pay)
                 @php
-                    $namaPembeli = $pay->pesanan?->user?->name ?? 'Pembeli';
-                    $initialPembeli = strtoupper(substr($namaPembeli, 0, 2));
-                    $metode = strtoupper($pay->metode_pembayaran ?? '-');
+                    $order = $pay->pesanan;
+                    $buyer = $order?->user;
+                    $initial = strtoupper(substr($buyer?->name ?? 'PB',0,2));
+                    $proofUrl = $pay->bukti_transfer ? asset('storage/'.$pay->bukti_transfer) : null;
+                    $isPdfProof = $pay->bukti_transfer && str_ends_with(strtolower($pay->bukti_transfer), '.pdf');
+                    $firstItem = $order?->item?->first();
                 @endphp
-
                 <tr>
-                    <td>
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="buyer-avatar">
-                                {{ $initialPembeli }}
-                            </div>
-
-                            <div class="min-w-0">
-                                <div class="payment-invoice text-truncate">
-                                    {{ $pay->pesanan?->nomor_invoice ?? '-' }}
-                                </div>
-
-                                <span class="sub">
-                                    {{ $namaPembeli }}
-                                </span>
-                            </div>
-                        </div>
-                    </td>
-
-                    <td>
-                        <div class="payment-ref" title="{{ $pay->referensi_pembayaran ?? '-' }}">
-                            {{ $pay->referensi_pembayaran ?? '-' }}
-                        </div>
-                    </td>
-
-                    <td>
-                        <span class="method-pill">
-                            @if(($pay->metode_pembayaran ?? '') === 'qris')
-                                <i class="bi bi-qr-code text-primary"></i>
-                            @elseif(($pay->metode_pembayaran ?? '') === 'va')
-                                <i class="bi bi-bank text-success"></i>
-                            @elseif(($pay->metode_pembayaran ?? '') === 'ewallet')
-                                <i class="bi bi-wallet2 text-warning"></i>
-                            @else
-                                <i class="bi bi-credit-card text-muted"></i>
-                            @endif
-
-                            {{ $metode }}
-                        </span>
-                    </td>
-
-                    <td>
-                        <span class="chip {{ $statusClass($pay->status) }}">
-                            {{ $statusLabel($pay->status) }}
-                        </span>
-                    </td>
-
-                    <td>
-                        <strong>
-                            {{ optional($pay->created_at)->format('d M Y') }}
-                        </strong>
-                        <span class="sub">
-                            {{ optional($pay->created_at)->format('H:i') }}
-                        </span>
-                    </td>
-
-                    <td>
-                        <div class="payment-total">
-                            {{ $rupiah($pay->jumlah) }}
-                        </div>
-                    </td>
-
-                    <td class="text-end">
-                        <form method="POST"
-                              action="{{ route('admin.pembayaran.status', $pay) }}"
-                              class="payment-status-form"
-                              data-confirm-title="Ubah Status Pembayaran"
-                              data-confirm-message="Yakin ingin menyimpan perubahan status pembayaran invoice {{ $pay->pesanan?->nomor_invoice ?? '-' }}?"
-                              data-confirm-button="Simpan Status">
-                            @csrf
-                            @method('PATCH')
-
-                            <select class="form-select" name="status">
-                                @foreach(['menunggu_pembayaran','dibayar','gagal','kedaluwarsa','dibatalkan'] as $s)
-                                    <option value="{{ $s }}" @selected($pay->status === $s)>
-                                        {{ $statusLabel($s) }}
-                                    </option>
-                                @endforeach
-                            </select>
-
-                            <button class="small-btn" type="submit">
-                                <i class="bi bi-check2"></i>
-                                Update
-                            </button>
-                        </form>
-                    </td>
+                    <td><button type="button" class="ops-link action-modal-btn text-start" data-bs-toggle="modal" data-bs-target="#paymentDetail{{ $pay->id }}">{{ $order?->nomor_invoice ?? '-' }}</button><span class="ops-muted">{{ optional($pay->created_at)->format('d M Y H:i') }}</span></td>
+                    <td><div class="d-flex align-items-center gap-2 min-w-0"><span class="ops-avatar">{{ $initial }}</span><div class="min-w-0"><div class="fw-black text-truncate">{{ $buyer?->name ?? 'Pembeli' }}</div><span class="ops-muted text-truncate">{{ $buyer?->telepon ?: $buyer?->email }}</span></div></div></td>
+                    <td><span class="ops-pill"><i class="bi {{ $pay->metode_pembayaran === 'cod' ? 'bi-cash-coin text-success' : 'bi-bank text-primary' }}"></i>{{ $methodLabel($pay->metode_pembayaran) }}</span><span class="ops-muted">{{ $pay->referensi_pembayaran ?: 'Tanpa referensi' }}</span></td>
+                    <td>@if($proofUrl)@if($isPdfProof)<a href="{{ $proofUrl }}" target="_blank" class="small-btn"><i class="bi bi-file-earmark-pdf"></i> PDF</a>@else<img src="{{ $proofUrl }}" class="proof-thumb" alt="Bukti transfer">@endif@else<span class="ops-pill text-muted"><i class="bi bi-dash-circle"></i> Belum ada</span>@endif</td>
+                    <td><span class="chip {{ $statusClass($pay->status) }}">{{ $statusLabel($pay->status) }}</span></td>
+                    <td class="fw-black">{{ $rupiah($pay->jumlah) }}</td>
+                    <td><div class="ops-actions">
+                        @if($pay->metode_pembayaran === 'transfer_bank' && $pay->status === 'menunggu_pembayaran' && filled($pay->bukti_transfer))
+                            <button type="button" class="small-btn text-success" data-bs-toggle="modal" data-bs-target="#acceptPayment{{ $pay->id }}"><i class="bi bi-check2-circle"></i> Terima</button>
+                            <button type="button" class="small-btn text-danger" data-bs-toggle="modal" data-bs-target="#rejectPayment{{ $pay->id }}"><i class="bi bi-x-circle"></i> Tolak</button>
+                        @endif
+                        <button type="button" class="small-btn" data-bs-toggle="modal" data-bs-target="#paymentDetail{{ $pay->id }}"><i class="bi bi-eye"></i> Detail</button>
+                    </div></td>
                 </tr>
-            @empty
-                <tr>
-                    <td colspan="7">
-                        <div class="empty-payment">
-                            <div class="empty-payment-icon">
-                                <i class="bi bi-credit-card"></i>
-                            </div>
-                            <strong class="d-block text-dark mb-1">Belum ada pembayaran</strong>
-                            <span class="text-muted small">
-                                Data pembayaran akan muncul setelah pembeli melakukan checkout dari aplikasi mobile.
-                            </span>
-                        </div>
-                    </td>
-                </tr>
-            @endforelse
+
+                <div class="modal fade" id="paymentDetail{{ $pay->id }}" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden"><div class="modal-header bg-white border-bottom p-4"><div><h5 class="modal-title fw-black">Detail pembayaran</h5><div class="ops-muted">{{ $order?->nomor_invoice ?? '-' }} · {{ $methodLabel($pay->metode_pembayaran) }}</div></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body modal-body-soft p-4"><div class="row g-3"><div class="col-lg-7"><div class="detail-modal-card mb-3"><span class="detail-label">Pembeli</span><div class="detail-value">{{ $buyer?->name ?? '-' }}</div><div class="ops-muted">{{ $buyer?->telepon ?: '-' }} · {{ $buyer?->email ?: '-' }}</div></div><div class="detail-modal-card mb-3"><span class="detail-label">Ringkasan pesanan</span><div class="detail-value">{{ $firstItem?->produk?->nama ?? 'Produk' }}</div><div class="ops-muted">{{ $order?->item?->sum('jumlah') ?? 0 }} item dari {{ $order?->item?->count() ?? 0 }} produk</div></div>@if($proofUrl)<div class="detail-modal-card"><span class="detail-label">Bukti transfer</span>@if($isPdfProof)<a href="{{ $proofUrl }}" target="_blank" class="btn btn-soft-brand btn-sm">Buka PDF</a>@else<img src="{{ $proofUrl }}" class="modal-proof" alt="Bukti transfer">@endif</div>@endif</div><div class="col-lg-5"><div class="detail-modal-card mb-3"><span class="detail-label">Status</span><div class="d-flex flex-wrap gap-2"><span class="chip {{ $statusClass($pay->status) }}">{{ $statusLabel($pay->status) }}</span><span class="ops-pill">{{ $methodLabel($pay->metode_pembayaran) }}</span></div></div><div class="detail-modal-card"><span class="detail-label">Nominal</span><div class="summary-row"><span>Total dibayar</span><strong>{{ $rupiah($pay->jumlah) }}</strong></div><div class="summary-row"><span>Referensi</span><strong>{{ $pay->referensi_pembayaran ?: '-' }}</strong></div><div class="summary-row"><span>Diverifikasi</span><strong>{{ optional($pay->diverifikasi_pada)->format('d M Y H:i') ?: '-' }}</strong></div>@if($pay->catatan_admin)<div class="ops-muted mt-2">Catatan admin: {{ $pay->catatan_admin }}</div>@endif</div></div></div></div></div></div></div>
+                @if($pay->metode_pembayaran === 'transfer_bank' && $pay->status === 'menunggu_pembayaran' && filled($pay->bukti_transfer))
+                    <div class="modal fade" id="acceptPayment{{ $pay->id }}" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><form method="POST" action="{{ route('admin.pembayaran.terima', $pay) }}" class="modal-content border-0 shadow-lg rounded-4">@csrf @method('PATCH')<div class="modal-header"><h5 class="modal-title fw-black">Terima pembayaran?</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p class="fw-bold mb-3">Pesanan akan masuk ke tahap diproses.</p><label class="form-label-modern">Catatan admin</label><textarea name="catatan_admin" rows="3" class="form-control form-control-modern" placeholder="Opsional"></textarea></div><div class="modal-footer"><button type="button" class="btn btn-light border fw-bold rounded-4" data-bs-dismiss="modal">Batal</button><button class="btn btn-brand">Terima</button></div></form></div></div>
+                    <div class="modal fade" id="rejectPayment{{ $pay->id }}" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><form method="POST" action="{{ route('admin.pembayaran.tolak', $pay) }}" class="modal-content border-0 shadow-lg rounded-4">@csrf @method('PATCH')<div class="modal-header"><h5 class="modal-title fw-black">Tolak bukti transfer?</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><label class="form-label-modern">Alasan penolakan</label><textarea name="catatan_admin" rows="4" class="form-control form-control-modern" required placeholder="Contoh: nominal tidak sesuai atau gambar kurang jelas"></textarea></div><div class="modal-footer"><button type="button" class="btn btn-light border fw-bold rounded-4" data-bs-dismiss="modal">Batal</button><button class="btn btn-danger fw-bold rounded-4">Tolak</button></div></form></div></div>
+                @endif
+            @endforeach
             </tbody>
         </table>
     </div>
+@else
+    <div class="ops-empty"><i class="bi bi-credit-card fs-2 text-muted"></i><strong class="d-block mt-2">Belum ada pembayaran</strong><span class="text-muted fw-bold small">Data pembayaran muncul setelah pesanan dibuat.</span></div>
+@endif
 
-    <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap p-3 border-top bg-white">
-        <div class="text-muted small fw-bold">
-            Total pembayaran di halaman ini:
-            <span class="text-dark">{{ $rupiah($totalPembayaranHalaman) }}</span>
-        </div>
-
-        <div>
-            {{ $pembayaran->links() }}
-        </div>
-    </div>
-</div>
+<div class="ops-footer"><div class="text-muted small fw-bold">Menampilkan {{ $pembayaran->count() }} dari {{ $pembayaran->total() }} pembayaran.</div><div>{{ $pembayaran->links() }}</div></div>
 @endsection

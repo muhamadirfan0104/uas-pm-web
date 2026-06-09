@@ -1,319 +1,177 @@
 @extends('layouts.admin')
-@section('title', 'Pengambilan & Pengantaran - SiTahu')
+
+@section('title', 'Pengambilan & Kirim - SiTahu')
+@section('page_title', 'Pengambilan & Kirim')
 
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<style>
-    /* Styling Standar Enterprise */
-    .sc-box { border: 1px solid #e5e7eb; border-radius: 0.75rem; background: #fff; margin-bottom: 1.5rem; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
-    .sc-header { padding: 1.25rem 1.5rem; font-weight: 700; font-size: 1rem; border-bottom: 1px solid #f3f4f6; color: #111827; display: flex; align-items: center; gap: 0.5rem; }
-    
-    /* Tabel Enterprise */
-    .table-enterprise th { border-bottom: 2px solid #e5e7eb; color: #6b7280; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 1rem 1.5rem; font-weight: 600; background: #fafafa; }
-    .table-enterprise td { vertical-align: middle; padding: 1rem 1.5rem; border-bottom: 1px solid #f3f4f6; color: #111827; }
-    .table-enterprise tbody tr:hover { background-color: #f9fafb; }
-    
-    /* Form & Input Modern */
-    .form-label-modern { font-size: 0.85rem; font-weight: 700; color: #374151; margin-bottom: 0.4rem; display: block; }
-    .form-control-modern, .form-select-modern { background-color: #f9fafb; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0.6rem 0.75rem; font-size: 0.9rem; transition: all 0.2s; box-shadow: none; width: 100%; }
-    .form-control-modern:focus, .form-select-modern:focus { background-color: #ffffff; border-color: var(--brand-color, #dfba68); box-shadow: 0 0 0 3px rgba(223, 186, 104, 0.15); outline: none; }
-    .form-select-inline { background-color: #f9fafb; border: 1px solid #e5e7eb; font-size: 0.85rem; font-weight: 500; color: #374151; box-shadow: none; transition: all 0.2s; }
-    .form-select-inline:focus { background-color: #ffffff; border-color: var(--brand-color, #dfba68); box-shadow: 0 0 0 3px rgba(223, 186, 104, 0.15); }
-    
-    /* Peta Styling */
-    .leaflet-container { font-family: inherit; z-index: 1; }
-    #mapToko { height: 100%; min-height: 280px; width: 100%; background: #e5e7eb; }
-    #mapPickerToko { height: 360px; width: 100%; border-radius: 0.5rem; border: 1px solid #e5e7eb; }
-    
-    /* List Item Custom */
-    .info-list-item { padding: 1rem 0; border-bottom: 1px dashed #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
-    .info-list-item:last-child { border-bottom: none; padding-bottom: 0; }
-</style>
 @endpush
 
 @section('content')
+@include('admin.partials.ops-page-style')
+
 @php
-    $mapLat = $pengaturan->latitude_toko ?: -6.917464;
-    $mapLng = $pengaturan->longitude_toko ?: 107.619123;
+    $methodLabel = fn($method) => match($method){'ambil_toko'=>'Ambil toko','kurir_toko'=>'Kurir toko',default=>$statusLabel($method)};
+    $paymentMethodLabel = fn($method) => match($method){'transfer_bank'=>'Transfer Bank','cod'=>'COD',default=>strtoupper((string)$method)};
+    $nextShip = fn($ship) => \App\Support\OrderFlow::nextShippingStatus($ship);
+    $nextOrder = fn($order) => \App\Support\OrderFlow::nextOrderStatus($order);
+    $orderActionLabel = function($status, $order = null) use ($statusLabel) {
+        return match($status) {
+            'diproses' => 'Proses pesanan',
+            'siap_diambil' => 'Siap diambil',
+            'dalam_pengantaran' => 'Mulai pengantaran',
+            'selesai' => (($order?->pembayaran?->metode_pembayaran ?? null) === 'cod') ? 'Selesai & bayar COD' : 'Selesaikan',
+            default => $statusLabel($status),
+        };
+    };
+    $shipActionLabel = function($status, $ship = null) use ($statusLabel) {
+        return match($status) {
+            'siap_diambil' => 'Tandai siap diambil',
+            'dalam_pengantaran' => 'Mulai pengantaran',
+            'selesai' => (($ship?->pesanan?->pembayaran?->metode_pembayaran ?? null) === 'cod') ? 'Selesai & bayar COD' : 'Selesaikan',
+            default => $statusLabel($status),
+        };
+    };
+    $shipFlowText = fn($ship) => $ship?->metode === 'kurir_toko'
+        ? 'Belum bayar → Diproses → Dalam pengantaran → Selesai'
+        : 'Belum bayar → Diproses → Siap diambil → Selesai';
+    $tab = request('tab', 'semua');
+    $hasActiveFilter = request()->filled('q') || request()->filled('metode') || request()->filled('status') || request()->filled('tanggal_mulai') || request()->filled('tanggal_selesai');
 @endphp
 
-<!-- HEADER UTAMA -->
-<div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3 mb-4">
+<div class="ops-page-head">
     <div>
-        <h1 class="h4 fw-bold text-dark mb-1">Pengambilan & Pengantaran</h1>
-        <p class="text-muted small mb-0">Kelola status pesanan logistik dan area jangkauan toko.</p>
+        <h1 class="ops-title">Pengambilan & Kirim</h1>
+        <p class="ops-subtitle">Pantau pesanan yang perlu disiapkan, diambil, atau dikirim. Detail alamat dibuka lewat pop up supaya tabel tetap ringan.</p>
     </div>
-    <div>
-        <button class="btn shadow-sm fw-bold px-4 text-white d-flex align-items-center gap-2" type="button" data-bs-toggle="modal" data-bs-target="#modalLogistikToko" style="background: var(--brand-color, #dfba68);">
-            <i class="bi bi-gear-fill"></i> Atur Logistik Toko
-        </button>
-    </div>
+    <button class="btn btn-soft-brand" type="button" data-bs-toggle="modal" data-bs-target="#modalLogistikToko"><i class="bi bi-gear me-1"></i> Pengaturan toko</button>
 </div>
 
-<!-- BARIS 1: INFO KONFIGURASI & PETA -->
-<div class="row g-4 mb-4">
-    <div class="col-12 col-xl-6">
-        <div class="sc-box h-100 mb-0 d-flex flex-column">
-            <div class="sc-header bg-light">
-                <i class="bi bi-sliders text-muted"></i> Konfigurasi Logistik Saat Ini
-            </div>
-            <div class="p-4 flex-grow-1 d-flex flex-column justify-content-center">
-                <div class="info-list-item pt-0">
-                    <span class="text-muted small fw-bold text-uppercase"><i class="bi bi-shop me-2"></i>Alamat Titik Toko</span>
-                    <span class="text-dark fw-medium text-end" style="max-width: 60%; font-size: 0.9rem;">{{ $pengaturan->alamat ?? 'Belum diatur' }}</span>
-                </div>
-                <div class="info-list-item">
-                    <span class="text-muted small fw-bold text-uppercase"><i class="bi bi-cash me-2"></i>Biaya Min. Pengiriman</span>
-                    <span class="text-dark fw-bold fs-5">{{ $rupiah($pengaturan->biaya_minimum_pengiriman) }}</span>
-                </div>
-                <div class="info-list-item">
-                    <span class="text-muted small fw-bold text-uppercase"><i class="bi bi-signpost-split me-2"></i>Tarif per KM</span>
-                    <span class="text-dark fw-bold fs-5">{{ $rupiah($pengaturan->tarif_per_km) }}</span>
-                </div>
-                <div class="info-list-item pb-0">
-                    <span class="text-muted small fw-bold text-uppercase"><i class="bi bi-radar me-2"></i>Radius Maksimal</span>
-                    <span class="badge bg-info-subtle text-info-emphasis rounded-pill px-3 py-2 fs-6 shadow-sm">{{ $pengaturan->radius_maksimal_km ?? '0' }} KM</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-xl-6">
-        <div class="sc-box h-100 mb-0 d-flex flex-column">
-            <div class="sc-header bg-light">
-                <i class="bi bi-geo-alt text-danger"></i> Titik Toko di Maps
-            </div>
-            <div class="flex-grow-1 position-relative">
-                <div id="mapToko" data-lat="{{ $mapLat }}" data-lng="{{ $mapLng }}" data-title="{{ $pengaturan->nama ?? 'SiTahu' }}" data-address="{{ $pengaturan->alamat ?? 'Alamat belum diatur' }}"></div>
-            </div>
-            <div class="bg-light p-2 text-center border-top text-muted" style="font-size: 0.75rem;">
-                Koordinat GPS Aktif: <strong class="text-dark">{{ $mapLat }}, {{ $mapLng }}</strong>
-            </div>
-        </div>
-    </div>
+<div class="ops-tabs">
+    <a class="ops-tab {{ $tab==='semua' ? 'active' : '' }}" href="{{ route('admin.pengiriman.index') }}">Semua</a>
+    <a class="ops-tab {{ $tab==='belum_diproses' ? 'active' : '' }}" href="{{ route('admin.pengiriman.index', ['tab'=>'belum_diproses']) }}">Belum siap <b>{{ $stats['belum_diproses'] ?? 0 }}</b></a>
+    <a class="ops-tab {{ $tab==='siap_diambil' ? 'active' : '' }}" href="{{ route('admin.pengiriman.index', ['tab'=>'siap_diambil']) }}">Siap diambil <b>{{ $stats['siap_diambil'] ?? 0 }}</b></a>
+    <a class="ops-tab {{ $tab==='dalam_pengantaran' ? 'active' : '' }}" href="{{ route('admin.pengiriman.index', ['tab'=>'dalam_pengantaran']) }}">Diantar <b>{{ $stats['dalam_pengantaran'] ?? 0 }}</b></a>
+    <a class="ops-tab {{ $tab==='selesai' ? 'active' : '' }}" href="{{ route('admin.pengiriman.index', ['tab'=>'selesai']) }}">Selesai <b>{{ $stats['selesai'] ?? 0 }}</b></a>
+    <a class="ops-tab {{ $tab==='kurir_toko' ? 'active' : '' }}" href="{{ route('admin.pengiriman.index', ['tab'=>'kurir_toko']) }}">Kurir toko <b>{{ $stats['kurir_toko'] ?? 0 }}</b></a>
 </div>
 
-<!-- BARIS 2: TABEL DATA PENGIRIMAN -->
-<div class="sc-box mb-4">
-    <!-- Filter Bar -->
-    <div class="bg-white border-bottom p-3 p-md-4">
-        <form id="page-filter" class="js-instant-filter" method="GET">
-            <div class="row g-3 align-items-center">
-                <div class="col-12 col-md-5 col-lg-4">
-                    <select class="form-select form-select-modern fw-medium" name="metode" style="min-height: 44px;" onchange="this.form.submit()">
-                        <option value="">Semua Metode Logistik</option>
-                        <option value="ambil_toko" @selected(request('metode')==='ambil_toko')>Ambil di Toko</option>
-                        <option value="kurir_toko" @selected(request('metode')==='kurir_toko')>Kurir Toko (Diantar)</option>
-                    </select>
-                </div>
-                <div class="col-12 col-md-4 col-lg-3">
-                    <select class="form-select form-select-modern fw-medium" name="status" style="min-height: 44px;" onchange="this.form.submit()">
-                        <option value="">Semua Status Pengiriman</option>
-                        @foreach(['siap_diambil','dalam_pengantaran','selesai'] as $s)
-                            <option value="{{ $s }}" @selected(request('status')===$s)>{{ $statusLabel($s) }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-12 col-md-3 d-none d-md-block">
-                    <div class="text-muted small"><i class="bi bi-lightning-charge me-1"></i>Filter otomatis.</div>
-                </div>
-            </div>
-        </form>
-    </div>
+<div class="ops-filter-card">
+    <form id="page-filter" class="js-instant-filter" method="GET">
+        @if($tab !== 'semua')<input type="hidden" name="tab" value="{{ $tab }}">@endif
+        <div class="ops-filter-grid shipments">
+            <div class="ops-field"><label class="ops-label">Cari data</label><div class="ops-search"><i class="bi bi-search text-muted"></i><input name="q" value="{{ request('q') }}" placeholder="Invoice, pembeli, nomor HP, atau alamat"></div></div>
+            <div class="ops-field"><label class="ops-label">Metode</label><select class="ops-control" name="metode"><option value="">Semua</option><option value="ambil_toko" @selected(request('metode')==='ambil_toko')>Ambil toko</option><option value="kurir_toko" @selected(request('metode')==='kurir_toko')>Kurir toko</option></select></div>
+            <div class="ops-field"><label class="ops-label">Status</label><select class="ops-control" name="status"><option value="">Semua</option><option value="belum_diproses" @selected(request('status')==='belum_diproses')>Belum siap</option>@foreach(['siap_diambil','dalam_pengantaran','selesai'] as $s)<option value="{{ $s }}" @selected(request('status')===$s)>{{ $statusLabel($s) }}</option>@endforeach</select></div>
+            <div class="ops-field"><label class="ops-label">Dari tanggal</label><input type="date" class="ops-control" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}"></div>
+            <div class="ops-field"><label class="ops-label">Sampai</label><input type="date" class="ops-control" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}"></div>
+            <div class="ops-filter-actions"><a href="{{ route('admin.pengiriman.index') }}" class="ops-btn-reset"><i class="bi bi-x-circle"></i> Reset</a></div>
+        </div>
+        @if($hasActiveFilter || $tab !== 'semua')<div class="ops-filter-note"><i class="bi bi-funnel text-brand"></i> Filter sedang aktif. <a href="{{ route('admin.pengiriman.index') }}" class="text-brand fw-black text-decoration-none">Bersihkan</a></div>@endif
+    </form>
+</div>
 
-    <!-- Tabel -->
-    <div class="table-responsive bg-white">
-        <table class="table table-enterprise table-borderless mb-0" style="min-width: 900px;">
-            <thead>
-                <tr>
-                    <th class="ps-4">No. Pesanan</th>
-                    <th>Detail Pengiriman / Alamat</th>
-                    <th>Biaya Logistik</th>
-                    <th>Status Saat Ini</th>
-                    <th class="pe-4 text-end">Update Status</th>
-                </tr>
-            </thead>
+@if($pengiriman->count())
+    <div class="ops-table-card table-wrap">
+        <table class="table align-middle">
+            <thead><tr><th>Invoice</th><th>Pembeli</th><th>Metode</th><th>Alamat</th><th>Biaya</th><th>Status</th><th class="text-end">Aksi</th></tr></thead>
             <tbody>
-            @forelse($pengiriman as $ship)
+            @foreach($pengiriman as $ship)
                 @php
-                    $badgeStatus = match($ship->status_pengiriman) {
-                        'selesai' => 'bg-success-subtle text-success-emphasis',
-                        'dalam_pengantaran' => 'bg-primary-subtle text-primary-emphasis',
-                        default => 'bg-warning-subtle text-warning-emphasis',
-                    };
+                    $order = $ship->pesanan;
+                    $buyer = $order?->user;
+                    $pay = $order?->pembayaran;
+                    $alamat = $order?->alamatPengiriman;
+                    $initial = strtoupper(substr($buyer?->name ?? 'PB',0,2));
+                    $next = $nextShip($ship);
+                    $orderNext = $nextOrder($order);
+                    $paidOrCod = $order && ($order->status_pembayaran === 'dibayar' || $pay?->metode_pembayaran === 'cod');
+                    $stageReady = $order && ((!$ship->status_pengiriman && $order->status === 'diproses') || ($ship->status_pengiriman && in_array($order->status, ['siap_diambil','dalam_pengantaran'], true)));
+                    $canMove = $paidOrCod && $stageReady;
+                    $alamatTampil = $ship->metode === 'kurir_toko' ? ($ship->alamat_tujuan ?: $alamat?->alamat_lengkap ?: 'Alamat belum tersedia') : ($ship->alamat_toko ?: $pengaturan->alamat ?: 'Alamat toko belum diisi');
                 @endphp
                 <tr>
-                    <td class="ps-4">
-                        <strong class="d-block text-dark mb-1" style="font-size: 0.95rem;">{{ $ship->pesanan?->nomor_invoice ?? 'INV-UNKNOWN' }}</strong>
-                        <div class="text-muted small">Pembeli: <span class="fw-medium text-dark">{{ $ship->pesanan?->user?->name ?? 'Anonim' }}</span></div>
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-start gap-3">
-                            <div class="mt-1 flex-shrink-0">
-                                @if($ship->metode === 'ambil_toko')
-                                    <div class="bg-warning-subtle text-warning-emphasis rounded-3 d-flex align-items-center justify-content-center" style="width:36px;height:36px;"><i class="bi bi-shop fs-5"></i></div>
-                                @else
-                                    <div class="bg-primary-subtle text-primary-emphasis rounded-3 d-flex align-items-center justify-content-center" style="width:36px;height:36px;"><i class="bi bi-truck fs-5"></i></div>
-                                @endif
-                            </div>
-                            <div>
-                                <span class="badge bg-light text-secondary border rounded-pill mb-1 fw-medium" style="font-size: 0.7rem;">{{ $statusLabel($ship->metode) }}</span>
-                                <div class="text-dark small lh-sm" style="max-width: 250px;">{{ $ship->alamat_tujuan ?: $ship->alamat_toko }}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        @if($ship->biaya > 0)
-                            <strong class="text-dark fs-6">{{ $rupiah($ship->biaya) }}</strong>
+                    <td><button type="button" class="ops-link action-modal-btn text-start" data-bs-toggle="modal" data-bs-target="#shipDetail{{ $ship->id }}">{{ $order?->nomor_invoice ?? '-' }}</button><span class="ops-muted">{{ optional($order?->tanggal_pesanan)->format('d M Y H:i') }}</span></td>
+                    <td><div class="d-flex align-items-center gap-2 min-w-0"><span class="ops-avatar">{{ $initial }}</span><div class="min-w-0"><div class="fw-black text-truncate">{{ $buyer?->name ?? 'Pembeli' }}</div><span class="ops-muted text-truncate">{{ $buyer?->telepon ?: $buyer?->email }}</span></div></div></td>
+                    <td><div class="d-flex gap-1 flex-wrap"><span class="ops-pill"><i class="bi {{ $ship->metode === 'kurir_toko' ? 'bi-truck text-primary' : 'bi-shop text-warning' }}"></i>{{ $methodLabel($ship->metode) }}</span><span class="ops-pill"><i class="bi {{ $pay?->metode_pembayaran === 'cod' ? 'bi-cash-coin text-success' : 'bi-bank text-primary' }}"></i>{{ $paymentMethodLabel($pay?->metode_pembayaran) }}</span></div></td>
+                    <td><div class="fw-bold">{{ $ship->metode === 'kurir_toko' ? 'Alamat tujuan' : 'Alamat toko' }}</div><span class="ops-muted address-one-line">{{ $alamatTampil }}</span></td>
+                    <td><div class="fw-black">{{ $rupiah($ship->biaya) }}</div><span class="ops-muted">{{ $ship->jarak_km ? $ship->jarak_km.' km' : 'Jarak belum ada' }}</span></td>
+                    <td><span class="chip {{ $statusClass($ship->status_pengiriman ?: 'menunggu_pembayaran') }}">{{ $ship->status_pengiriman ? $statusLabel($ship->status_pengiriman) : 'Belum siap' }}</span></td>
+                    <td><div class="ops-actions">
+                        @if($canMove && $next)
+                            <form method="POST" action="{{ route('admin.pengiriman.status', $ship) }}" data-confirm-title="Lanjutkan alur pengambilan/kirim" data-confirm-message="{{ $shipFlowText($ship) }}. Lanjutkan {{ $order?->nomor_invoice }} ke tahap {{ $statusLabel($next) }}?" data-confirm-button="Simpan">@csrf @method('PATCH')<input type="hidden" name="status_pengiriman" value="{{ $next }}"><button class="small-btn text-brand" type="submit"><i class="bi bi-arrow-right-circle"></i> {{ $shipActionLabel($next, $ship) }}</button></form>
+                        @elseif($orderNext === 'diproses' && $paidOrCod)
+                            <form method="POST" action="{{ route('admin.pesanan.status', $order) }}" data-confirm-title="Proses pesanan" data-confirm-message="{{ $shipFlowText($ship) }}. Proses {{ $order?->nomor_invoice }} terlebih dahulu sebelum masuk tahap {{ $ship->metode === 'kurir_toko' ? 'pengantaran' : 'siap diambil' }}?" data-confirm-button="Proses">@csrf @method('PATCH')<input type="hidden" name="status" value="diproses"><button class="small-btn text-brand" type="submit"><i class="bi bi-arrow-right-circle"></i> Proses pesanan</button></form>
+                        @elseif(!$canMove)
+                            <span class="small-btn text-muted"><i class="bi bi-lock"></i> {{ !$paidOrCod ? 'Menunggu bayar' : 'Proses dulu' }}</span>
                         @else
-                            <span class="badge bg-success-subtle text-success-emphasis rounded-pill">Gratis</span>
+                            <span class="small-btn text-success"><i class="bi bi-check2-circle"></i> Selesai</span>
                         @endif
-                    </td>
-                    <td>
-                        <span class="badge rounded-pill fw-medium px-3 py-2 shadow-sm {{ $badgeStatus }}" style="font-size: 0.75rem;">{{ $statusLabel($ship->status_pengiriman) }}</span>
-                    </td>
-                    <td class="pe-4">
-                        <form method="POST" action="{{ route('admin.pengiriman.status', $ship) }}" class="d-flex justify-content-end align-items-center gap-2 m-0" data-confirm-title="Ubah Status Pengiriman" data-confirm-message="Yakin ingin menyimpan perubahan status pengiriman pesanan {{ $ship->pesanan?->nomor_invoice ?? 'ini' }}?" data-confirm-button="Simpan Status">
-                            @csrf @method('PATCH')
-                            <select class="form-select form-select-sm form-select-inline rounded-3" name="status_pengiriman" style="width: 170px; height: 36px;">
-                                @foreach(['siap_diambil','dalam_pengantaran','selesai'] as $s)
-                                    <option value="{{ $s }}" @selected($ship->status_pengiriman === $s)>Ubah ke: {{ $statusLabel($s) }}</option>
-                                @endforeach
-                            </select>
-                            <button class="btn btn-sm btn-dark rounded-3 px-3 fw-medium" type="submit" style="height: 36px;">Simpan</button>
-                        </form>
-                    </td>
+                        <button type="button" class="small-btn" data-bs-toggle="modal" data-bs-target="#shipDetail{{ $ship->id }}"><i class="bi bi-eye"></i> Detail</button>
+                    </div></td>
                 </tr>
-            @empty
-                <tr>
-                    <td colspan="5" class="text-center py-5">
-                        <i class="bi bi-truck-flatbed fs-1 text-muted mb-3 d-block"></i>
-                        <strong class="text-dark d-block mb-1">Belum ada data pengiriman aktif.</strong>
-                        <span class="text-muted small">Pesanan dengan metode ambil/kurir akan otomatis muncul di sini.</span>
-                    </td>
-                </tr>
-            @endforelse
+
+                <div class="modal fade" id="shipDetail{{ $ship->id }}" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden"><div class="modal-header bg-white border-bottom p-4"><div><h5 class="modal-title fw-black">Detail pengambilan/kirim</h5><div class="ops-muted">{{ $order?->nomor_invoice ?? '-' }} · {{ $methodLabel($ship->metode) }}</div></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body modal-body-soft p-4"><div class="row g-3"><div class="col-lg-7"><div class="detail-modal-card mb-3"><span class="detail-label">Penerima</span><div class="detail-value">{{ $alamat?->nama_penerima ?: $buyer?->name ?: '-' }}</div><div class="ops-muted">{{ $alamat?->telepon ?: $buyer?->telepon ?: '-' }} · {{ $alamat?->email_penerima ?: $buyer?->email ?: '-' }}</div></div><div class="detail-modal-card mb-3"><span class="detail-label">Alamat</span><div class="detail-value">{{ $ship->metode === 'kurir_toko' ? 'Alamat tujuan' : 'Alamat toko' }}</div><div class="ops-muted">{{ $alamatTampil }}</div></div><div class="detail-modal-card"><span class="detail-label">Produk</span><div class="detail-list">@foreach($order?->item ?? [] as $item)<div class="detail-product"><div><div class="fw-black">{{ $item->produk?->nama ?? 'Produk' }}</div><div class="ops-muted">{{ $item->jumlah }} item</div></div><strong>{{ $rupiah($item->subtotal) }}</strong></div>@endforeach</div></div></div><div class="col-lg-5"><div class="detail-modal-card mb-3"><span class="detail-label">Status</span><div class="d-flex flex-wrap gap-2"><span class="chip {{ $statusClass($ship->status_pengiriman ?: 'menunggu_pembayaran') }}">{{ $ship->status_pengiriman ? $statusLabel($ship->status_pengiriman) : 'Belum siap' }}</span><span class="chip {{ $statusClass($order?->status_pembayaran) }}">Bayar: {{ $statusLabel($order?->status_pembayaran) }}</span></div><div class="flow-mini mt-3"><i class="bi bi-diagram-3 text-brand"></i><span>{{ $shipFlowText($ship) }}</span></div>@php
+    $shipSteps = $ship->metode === 'kurir_toko' ? ['diproses','dalam_pengantaran','selesai'] : ['diproses','siap_diambil','selesai'];
+    $shipCurrent = $ship->status_pengiriman ?: ($order?->status === 'diproses' ? 'diproses' : $order?->status);
+    $shipCurrentIndex = array_search($shipCurrent, $shipSteps, true);
+@endphp
+<div class="flow-steps">
+    @foreach($shipSteps as $idx => $step)
+        @php
+            $done = $shipCurrentIndex !== false && $idx < $shipCurrentIndex;
+            $current = $shipCurrent === $step;
+            $isNextShipping = $next === $step && $canMove;
+            $isProcessButton = $step === 'diproses' && $orderNext === 'diproses' && $paidOrCod;
+        @endphp
+        @if($isNextShipping)
+            <form method="POST" action="{{ route('admin.pengiriman.status', $ship) }}" class="flow-step-form" data-confirm-title="Lanjutkan alur pengambilan/kirim" data-confirm-message="{{ $shipFlowText($ship) }}. Lanjutkan {{ $order?->nomor_invoice }} ke tahap {{ $statusLabel($step) }}?" data-confirm-button="Simpan">
+                @csrf @method('PATCH')
+                <input type="hidden" name="status_pengiriman" value="{{ $step }}">
+                <button class="flow-step action" type="submit"><i class="bi bi-arrow-right-circle"></i>{{ $shipActionLabel($step, $ship) }}</button>
+            </form>
+        @elseif($isProcessButton)
+            <form method="POST" action="{{ route('admin.pesanan.status', $order) }}" class="flow-step-form" data-confirm-title="Proses pesanan" data-confirm-message="Proses {{ $order?->nomor_invoice }} terlebih dahulu sebelum pengambilan atau pengiriman?" data-confirm-button="Proses">
+                @csrf @method('PATCH')
+                <input type="hidden" name="status" value="diproses">
+                <button class="flow-step action" type="submit"><i class="bi bi-arrow-right-circle"></i>Proses pesanan</button>
+            </form>
+        @else
+            <span class="flow-step {{ $done ? 'done' : ($current ? 'current' : 'locked') }}"><i class="bi {{ $done ? 'bi-check2-circle' : ($current ? 'bi-record-circle' : 'bi-lock') }}"></i>{{ $statusLabel($step) }}</span>
+        @endif
+    @endforeach
+</div>
+@if(! $paidOrCod)
+    <div class="flow-help">Pesanan belum bisa disiapkan karena pembayaran belum selesai. Transfer harus diterima dulu. COD dapat diproses langsung dari tombol tahap berikutnya.</div>
+@elseif($paidOrCod && ! $stageReady && $orderNext !== 'diproses' && ! in_array($order?->status, ['selesai'], true))
+    <div class="flow-help">Selesaikan tahap pesanan sebelumnya agar tombol pengambilan/kirim aktif.</div>
+@endif
+</div><div class="detail-modal-card"><span class="detail-label">Ringkasan biaya</span><div class="summary-row"><span>Subtotal produk</span><strong>{{ $rupiah($order?->subtotal_produk) }}</strong></div><div class="summary-row"><span>Ongkir</span><strong>{{ $rupiah($ship->biaya) }}</strong></div><div class="summary-row"><span>Jarak</span><strong>{{ $ship->jarak_km ? $ship->jarak_km.' km' : '-' }}</strong></div><div class="summary-row"><span>Total bayar</span><strong>{{ $rupiah($order?->total_bayar) }}</strong></div></div></div></div></div></div></div></div>
+            @endforeach
             </tbody>
         </table>
     </div>
+@else
+    <div class="ops-empty"><i class="bi bi-truck fs-2 text-muted"></i><strong class="d-block mt-2">Belum ada data pengambilan/kirim</strong><span class="text-muted fw-bold small">Pesanan akan muncul setelah checkout dibuat.</span></div>
+@endif
 
-    @if($pengiriman->hasPages())
-        <div class="bg-light border-top p-3">{{ $pengiriman->links() }}</div>
-    @endif
-</div>
+<div class="ops-footer"><div class="text-muted small fw-bold">Menampilkan {{ $pengiriman->count() }} dari {{ $pengiriman->total() }} data.</div><div>{{ $pengiriman->links() }}</div></div>
 
-<!-- ============================================== -->
-<!-- MODAL: ATUR LOGISTIK TOKO                      -->
-<!-- ============================================== -->
 <div class="modal fade" id="modalLogistikToko" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <form method="POST" action="{{ route('admin.pengiriman.pengaturan.update') }}" class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
             @csrf @method('PUT')
-            
-            <div class="modal-header bg-white border-bottom p-4">
-                <div>
-                    <h5 class="modal-title fw-bold text-dark mb-1">Pengaturan Logistik Toko</h5>
-                    <div class="text-muted small">Titik koordinat digunakan untuk API Maps dan penentuan tarif.</div>
-                </div>
-                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Tutup"></button>
-            </div>
-            
-            <div class="modal-body p-4 p-md-5" style="background-color:#f9fafb;">
+            <div class="modal-header bg-white border-bottom p-4"><div><h5 class="modal-title fw-black">Pengaturan toko dan tarif</h5><div class="text-muted small fw-bold">Dipakai untuk alamat pengambilan dan perhitungan ongkir kurir toko.</div></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body p-4 modal-body-soft">
                 <div class="row g-4">
-                    
-                    <!-- Informasi Alamat & Jam -->
-                    <div class="col-12">
-                        <div class="bg-white p-4 rounded-4 shadow-sm border border-light">
-                            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-shop text-muted me-2"></i>Informasi Fisik Toko</h6>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="form-label-modern">Alamat Lengkap / Titik Pengambilan</label>
-                                    <textarea class="form-control form-control-modern" rows="2" name="alamat">{{ old('alamat', $pengaturan->alamat) }}</textarea>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label-modern">Jam Buka</label>
-                                    <input class="form-control form-control-modern" type="time" name="jam_buka" value="{{ old('jam_buka', $pengaturan->jam_buka) }}">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label-modern">Jam Tutup</label>
-                                    <input class="form-control form-control-modern" type="time" name="jam_tutup" value="{{ old('jam_tutup', $pengaturan->jam_tutup) }}">
-                                </div>
-                            </div>
-                        </div>
+                    <div class="col-lg-5">
+                        <div class="modal-card mb-3"><label class="form-label-modern">Alamat toko</label><textarea class="form-control form-control-modern" rows="4" name="alamat" placeholder="Alamat lengkap titik pengambilan">{{ old('alamat', $pengaturan->alamat) }}</textarea></div>
+                        <div class="modal-card"><div class="row g-3"><div class="col-6"><label class="form-label-modern">Jam buka</label><input class="form-control form-control-modern" type="time" name="jam_buka" value="{{ old('jam_buka', $pengaturan->jam_buka) }}"></div><div class="col-6"><label class="form-label-modern">Jam tutup</label><input class="form-control form-control-modern" type="time" name="jam_tutup" value="{{ old('jam_tutup', $pengaturan->jam_tutup) }}"></div><div class="col-6"><label class="form-label-modern">Tarif / km</label><input class="form-control form-control-modern" type="number" min="0" name="tarif_per_km" value="{{ old('tarif_per_km', $pengaturan->tarif_per_km) }}"></div><div class="col-6"><label class="form-label-modern">Minimum ongkir</label><input class="form-control form-control-modern" type="number" min="0" name="biaya_minimum_pengiriman" value="{{ old('biaya_minimum_pengiriman', $pengaturan->biaya_minimum_pengiriman) }}"></div><div class="col-6"><label class="form-label-modern">Radius maksimal</label><input class="form-control form-control-modern" type="number" min="0" step="0.01" name="radius_maksimal_km" value="{{ old('radius_maksimal_km', $pengaturan->radius_maksimal_km) }}"></div><div class="col-6"><label class="form-label-modern">Area layanan</label><input class="form-control form-control-modern" name="area_pengiriman" value="{{ old('area_pengiriman', $pengaturan->area_pengiriman) }}" placeholder="Kota/area"></div></div></div>
                     </div>
-
-                    <!-- Pemilih Peta -->
-                    <div class="col-12">
-                        <div class="bg-white p-4 rounded-4 shadow-sm border border-light">
-                            <div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-3">
-                                <div>
-                                    <h6 class="fw-bold text-dark mb-1"><i class="bi bi-geo-alt text-danger me-2"></i>Titik Lokasi GPS</h6>
-                                    <span class="text-muted small">Klik peta atau geser marker untuk menentukan lokasi presisi.</span>
-                                </div>
-                                <button class="btn btn-sm btn-light border fw-medium align-self-start shadow-sm" type="button" id="btnUseMyLocation">
-                                    <i class="bi bi-crosshair me-1 text-primary"></i> Gunakan GPS Saya
-                                </button>
-                            </div>
-
-                            <input type="hidden" name="latitude_toko" id="latitudeTokoInput" value="{{ old('latitude_toko', $mapLat) }}">
-                            <input type="hidden" name="longitude_toko" id="longitudeTokoInput" value="{{ old('longitude_toko', $mapLng) }}">
-
-                            <div id="mapPickerToko" class="shadow-sm" data-lat="{{ old('latitude_toko', $mapLat) }}" data-lng="{{ old('longitude_toko', $mapLng) }}"></div>
-
-                            <div class="row g-2 mt-3 p-3 bg-light rounded-3 border">
-                                <div class="col-6">
-                                    <div class="small text-muted fw-bold text-uppercase" style="font-size:0.7rem;">Latitude Terpilih</div>
-                                    <div class="font-monospace text-dark" id="latitudeTokoPreview">{{ old('latitude_toko', $mapLat) }}</div>
-                                </div>
-                                <div class="col-6 border-start">
-                                    <div class="small text-muted fw-bold text-uppercase ms-2" style="font-size:0.7rem;">Longitude Terpilih</div>
-                                    <div class="font-monospace text-dark ms-2" id="longitudeTokoPreview">{{ old('longitude_toko', $mapLng) }}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Parameter Tarif -->
-                    <div class="col-12">
-                        <div class="bg-white p-4 rounded-4 shadow-sm border border-light">
-                            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-calculator text-muted me-2"></i>Parameter Tarif & Jangkauan</h6>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label-modern">Tarif per Kilometer (Rp)</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light border-light text-muted fw-bold">Rp</span>
-                                        <input class="form-control form-control-modern border-start-0" style="border-top-left-radius:0; border-bottom-left-radius:0;" type="number" min="0" name="tarif_per_km" value="{{ old('tarif_per_km', $pengaturan->tarif_per_km) }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label-modern">Biaya Minimum (Rp)</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light border-light text-muted fw-bold">Rp</span>
-                                        <input class="form-control form-control-modern border-start-0" style="border-top-left-radius:0; border-bottom-left-radius:0;" type="number" min="0" name="biaya_minimum_pengiriman" value="{{ old('biaya_minimum_pengiriman', $pengaturan->biaya_minimum_pengiriman) }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label-modern">Radius Maksimal Antar</label>
-                                    <div class="input-group">
-                                        <input class="form-control form-control-modern border-end-0" style="border-top-right-radius:0; border-bottom-right-radius:0;" type="number" min="0" step="0.01" name="radius_maksimal_km" value="{{ old('radius_maksimal_km', $pengaturan->radius_maksimal_km) }}">
-                                        <span class="input-group-text bg-light border-light text-muted fw-bold">KM</span>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label-modern">Area Teks (Opsional)</label>
-                                    <input class="form-control form-control-modern" name="area_pengiriman" value="{{ old('area_pengiriman', $pengaturan->area_pengiriman) }}" placeholder="Misal: Kota Bandung">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
+                    <div class="col-lg-7"><div class="modal-card"><div class="d-flex justify-content-between gap-2 align-items-start mb-3"><div><div class="fw-black">Titik lokasi toko</div><div class="ops-muted">Klik peta atau geser marker supaya titik toko tidak diisi manual.</div></div><button type="button" id="btnUseMyLocation" class="btn btn-light border fw-bold rounded-4"><i class="bi bi-crosshair me-1"></i> Lokasi saya</button></div><input type="hidden" name="latitude_toko" id="latitudeTokoInput" value="{{ old('latitude_toko', $mapLat) }}"><input type="hidden" name="longitude_toko" id="longitudeTokoInput" value="{{ old('longitude_toko', $mapLng) }}"><div id="mapPickerToko" data-lat="{{ old('latitude_toko', $mapLat) }}" data-lng="{{ old('longitude_toko', $mapLng) }}"></div><div class="row g-2 mt-3"><div class="col-6"><div class="summary-row"><span>Latitude</span><strong id="latitudeTokoPreview">{{ old('latitude_toko', $mapLat) }}</strong></div></div><div class="col-6"><div class="summary-row"><span>Longitude</span><strong id="longitudeTokoPreview">{{ old('longitude_toko', $mapLng) }}</strong></div></div></div></div></div>
                 </div>
             </div>
-            
-            <div class="modal-footer bg-white border-top p-4 d-flex justify-content-between">
-                <button class="btn btn-light border fw-medium px-4" type="button" data-bs-dismiss="modal">Batal</button>
-                <button class="btn fw-bold px-4 shadow-sm text-white" type="submit" style="background: var(--brand-color, #dfba68);">Simpan Konfigurasi Logistik</button>
-            </div>
+            <div class="modal-footer bg-white p-4"><button class="btn btn-light border fw-bold rounded-4" type="button" data-bs-dismiss="modal">Batal</button><button class="btn btn-brand px-4" type="submit">Simpan pengaturan</button></div>
         </form>
     </div>
 </div>
@@ -323,118 +181,53 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const mapElement = document.getElementById('mapToko');
     const pickerElement = document.getElementById('mapPickerToko');
-
-    if (!mapElement || typeof L === 'undefined') return;
-
-    const lat = parseFloat(mapElement.dataset.lat || '-6.917464');
-    const lng = parseFloat(mapElement.dataset.lng || '107.619123');
-    const title = mapElement.dataset.title || 'SiTahu';
-    const address = mapElement.dataset.address || 'Alamat belum diatur';
-
-    // Map Utama Statis
-    const map = L.map('mapToko').setView([lat, lng], 15);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
-
-    L.marker([lat, lng]).addTo(map)
-        .bindPopup('<strong class="text-dark">' + title + '</strong><br><span class="small text-muted">' + address + '</span>')
-        .openPopup();
-
-    setTimeout(() => map.invalidateSize(), 250);
-
-    // Map Picker di dalam Modal
+    if (!pickerElement || typeof L === 'undefined') return;
     let pickerMap = null;
     let pickerMarker = null;
-
     const latInput = document.getElementById('latitudeTokoInput');
     const lngInput = document.getElementById('longitudeTokoInput');
     const latPreview = document.getElementById('latitudeTokoPreview');
     const lngPreview = document.getElementById('longitudeTokoPreview');
-    const btnUseMyLocation = document.getElementById('btnUseMyLocation');
     const modalLogistik = document.getElementById('modalLogistikToko');
-
+    const btnUseMyLocation = document.getElementById('btnUseMyLocation');
     function updatePickedLocation(newLat, newLng) {
         const cleanLat = Number(newLat).toFixed(7);
         const cleanLng = Number(newLng).toFixed(7);
-
-        if (latInput) latInput.value = cleanLat;
-        if (lngInput) lngInput.value = cleanLng;
-        if (latPreview) latPreview.textContent = cleanLat;
-        if (lngPreview) lngPreview.textContent = cleanLng;
-
-        if (pickerMarker) {
-            pickerMarker.setLatLng([cleanLat, cleanLng]);
-        }
+        latInput.value = cleanLat;
+        lngInput.value = cleanLng;
+        latPreview.textContent = cleanLat;
+        lngPreview.textContent = cleanLng;
+        if (pickerMarker) pickerMarker.setLatLng([cleanLat, cleanLng]);
     }
-
     function initPickerMap() {
-        if (!pickerElement || pickerMap) {
-            if (pickerMap) setTimeout(() => pickerMap.invalidateSize(), 200);
-            return;
-        }
-
-        const startLat = parseFloat(latInput?.value || pickerElement.dataset.lat || lat);
-        const startLng = parseFloat(lngInput?.value || pickerElement.dataset.lng || lng);
-
+        if (pickerMap) { setTimeout(() => pickerMap.invalidateSize(), 200); return; }
+        const startLat = parseFloat(latInput.value || pickerElement.dataset.lat || '-7.2575');
+        const startLng = parseFloat(lngInput.value || pickerElement.dataset.lng || '112.7521');
         pickerMap = L.map('mapPickerToko').setView([startLat, startLng], 16);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(pickerMap);
-
-        pickerMarker = L.marker([startLat, startLng], { draggable: true }).addTo(pickerMap)
-            .bindPopup('<span class="small fw-medium">Geser marker untuk ubah titik</span>')
-            .openPopup();
-
-        pickerMap.on('click', function (event) {
-            updatePickedLocation(event.latlng.lat, event.latlng.lng);
-        });
-
-        pickerMarker.on('dragend', function () {
-            const pos = pickerMarker.getLatLng();
-            updatePickedLocation(pos.lat, pos.lng);
-        });
-
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(pickerMap);
+        pickerMarker = L.marker([startLat, startLng], {draggable:true}).addTo(pickerMap);
+        pickerMap.on('click', e => updatePickedLocation(e.latlng.lat, e.latlng.lng));
+        pickerMarker.on('dragend', () => { const pos = pickerMarker.getLatLng(); updatePickedLocation(pos.lat, pos.lng); });
         updatePickedLocation(startLat, startLng);
         setTimeout(() => pickerMap.invalidateSize(), 250);
     }
-
-    modalLogistik?.addEventListener('shown.bs.modal', function () {
-        initPickerMap();
-    });
-
+    modalLogistik?.addEventListener('shown.bs.modal', initPickerMap);
     btnUseMyLocation?.addEventListener('click', function () {
-        if (!navigator.geolocation) {
-            alert('Browser tidak mendukung fitur lokasi.');
-            return;
-        }
-
+        if (!navigator.geolocation) { window.showSitahuToast?.('Browser tidak mendukung fitur lokasi.', 'warning'); return; }
         btnUseMyLocation.disabled = true;
         btnUseMyLocation.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Mencari...';
-
-        navigator.geolocation.getCurrentPosition(
-            function (position) {
-                const currentLat = position.coords.latitude;
-                const currentLng = position.coords.longitude;
-
-                initPickerMap();
-                pickerMap.setView([currentLat, currentLng], 17);
-                updatePickedLocation(currentLat, currentLng);
-
-                btnUseMyLocation.disabled = false;
-                btnUseMyLocation.innerHTML = '<i class="bi bi-crosshair me-1 text-primary"></i> Gunakan GPS Saya';
-            },
-            function () {
-                alert('Gagal mengambil lokasi. Pastikan izin lokasi browser aktif.');
-                btnUseMyLocation.disabled = false;
-                btnUseMyLocation.innerHTML = '<i class="bi bi-crosshair me-1 text-primary"></i> Gunakan GPS Saya';
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
+        navigator.geolocation.getCurrentPosition(function (position) {
+            initPickerMap();
+            pickerMap.setView([position.coords.latitude, position.coords.longitude], 17);
+            updatePickedLocation(position.coords.latitude, position.coords.longitude);
+            btnUseMyLocation.disabled = false;
+            btnUseMyLocation.innerHTML = '<i class="bi bi-crosshair me-1"></i> Lokasi saya';
+        }, function () {
+            window.showSitahuToast?.('Gagal mengambil lokasi. Pastikan izin lokasi aktif.', 'error');
+            btnUseMyLocation.disabled = false;
+            btnUseMyLocation.innerHTML = '<i class="bi bi-crosshair me-1"></i> Lokasi saya';
+        }, {enableHighAccuracy:true, timeout:10000});
     });
 });
 </script>

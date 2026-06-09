@@ -4,6 +4,7 @@ namespace App\Http\Controllers\WebPembeli;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pesanan;
+use App\Models\PengaturanToko;
 use App\Models\RiwayatStok;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,15 @@ class PesananController extends Controller
         $user = Auth::user();
 
         $status = trim((string) $request->query('status'));
+        $q = trim((string) $request->query('q'));
+
+        $statusGroups = [
+            'menunggu_pembayaran' => ['menunggu_pembayaran'],
+            'diproses' => ['dibayar', 'diproses'],
+            'siap_diterima' => ['siap_diambil', 'dalam_pengantaran'],
+            'selesai' => ['selesai'],
+            'dibatalkan' => ['dibatalkan'],
+        ];
 
         $pesananList = Pesanan::query()
             ->with([
@@ -29,42 +39,37 @@ class PesananController extends Controller
                 'ulasan',
             ])
             ->where('user_id', $user->id)
-            ->when($status !== '', function ($query) use ($status) {
-                $query->where('status', $status);
+            ->when($status !== '' && isset($statusGroups[$status]), function ($query) use ($statusGroups, $status) {
+                $query->whereIn('status', $statusGroups[$status]);
+            })
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(function ($subQuery) use ($q) {
+                    $subQuery
+                        ->where('nomor_invoice', 'like', '%' . $q . '%')
+                        ->orWhereHas('item.produk', function ($productQuery) use ($q) {
+                            $productQuery->where('nama', 'like', '%' . $q . '%');
+                        });
+                });
             })
             ->latest('tanggal_pesanan')
-            ->paginate(8)
+            ->paginate(6)
             ->withQueryString();
 
+        $baseCountQuery = Pesanan::query()->where('user_id', $user->id);
+
         $jumlahStatus = [
-            'semua' => Pesanan::query()
-                ->where('user_id', $user->id)
-                ->count(),
-
-            'menunggu_pembayaran' => Pesanan::query()
-                ->where('user_id', $user->id)
-                ->where('status', 'menunggu_pembayaran')
-                ->count(),
-
-            'diproses' => Pesanan::query()
-                ->where('user_id', $user->id)
-                ->whereIn('status', ['dibayar', 'diproses', 'siap_diambil', 'dalam_pengantaran'])
-                ->count(),
-
-            'selesai' => Pesanan::query()
-                ->where('user_id', $user->id)
-                ->where('status', 'selesai')
-                ->count(),
-
-            'dibatalkan' => Pesanan::query()
-                ->where('user_id', $user->id)
-                ->where('status', 'dibatalkan')
-                ->count(),
+            'semua' => (clone $baseCountQuery)->count(),
+            'menunggu_pembayaran' => (clone $baseCountQuery)->whereIn('status', $statusGroups['menunggu_pembayaran'])->count(),
+            'diproses' => (clone $baseCountQuery)->whereIn('status', $statusGroups['diproses'])->count(),
+            'siap_diterima' => (clone $baseCountQuery)->whereIn('status', $statusGroups['siap_diterima'])->count(),
+            'selesai' => (clone $baseCountQuery)->whereIn('status', $statusGroups['selesai'])->count(),
+            'dibatalkan' => (clone $baseCountQuery)->whereIn('status', $statusGroups['dibatalkan'])->count(),
         ];
 
         return view('pembeli.pesanan', [
             'pesananList' => $pesananList,
             'status' => $status,
+            'q' => $q,
             'jumlahStatus' => $jumlahStatus,
         ]);
     }
@@ -72,8 +77,9 @@ class PesananController extends Controller
     public function show(string $nomor_invoice): View
     {
         $pesanan = $this->ambilPesananLogin($nomor_invoice);
+        $pengaturan = PengaturanToko::utama();
 
-        return view('pembeli.detail-pesanan', compact('pesanan'));
+        return view('pembeli.detail-pesanan', compact('pesanan', 'pengaturan'));
     }
 
     public function cancel(string $nomor_invoice): RedirectResponse
@@ -124,6 +130,47 @@ class PesananController extends Controller
         return redirect()
             ->route('pembeli-web.pesanan.show', $pesanan->nomor_invoice)
             ->with('success', 'Pesanan berhasil dibatalkan dan stok produk sudah dikembalikan.');
+    }
+
+    public function uploadBuktiPembayaran(Request $request, string $nomor_invoice): RedirectResponse
+    {
+        $pesanan = $this->ambilPesananLogin($nomor_invoice);
+        $pembayaran = $pesanan->pembayaran;
+
+        if (! $pembayaran || $pembayaran->metode_pembayaran !== 'transfer_bank') {
+            return back()->with('error', 'Upload bukti hanya tersedia untuk metode transfer bank.');
+        }
+
+        if (! in_array($pembayaran->status, ['menunggu_pembayaran', 'ditolak'], true)) {
+            return back()->with('error', 'Bukti pembayaran tidak bisa diubah karena status pembayaran sudah diproses.');
+        }
+
+        $data = $request->validate([
+            'bukti_transfer' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
+        ], [
+            'bukti_transfer.required' => 'Pilih file bukti transfer terlebih dahulu.',
+            'bukti_transfer.mimes' => 'Bukti transfer harus berupa JPG, PNG, WEBP, atau PDF.',
+            'bukti_transfer.max' => 'Ukuran bukti transfer maksimal 4 MB.',
+        ]);
+
+        $path = $data['bukti_transfer']->store('bukti-transfer', 'public');
+
+        DB::transaction(function () use ($pesanan, $pembayaran, $path) {
+            $pembayaran->update([
+                'bukti_transfer' => $path,
+                'status' => 'menunggu_pembayaran',
+                'catatan_admin' => null,
+                'dibayar_pada' => null,
+                'diverifikasi_pada' => null,
+            ]);
+
+            $pesanan->update([
+                'status' => 'menunggu_pembayaran',
+                'status_pembayaran' => 'menunggu_pembayaran',
+            ]);
+        });
+
+        return back()->with('success', 'Bukti transfer berhasil diupload. Toko akan memeriksa pembayaran Anda.');
     }
 
     public function confirmReceived(string $nomor_invoice): RedirectResponse

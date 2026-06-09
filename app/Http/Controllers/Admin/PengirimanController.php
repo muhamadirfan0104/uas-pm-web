@@ -5,30 +5,85 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\PengaturanToko;
 use App\Models\Pengiriman;
+use App\Support\OrderFlow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PengirimanController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Pengiriman::with(['pesanan.user'])->latest();
+        $query = Pengiriman::with(['pesanan.user', 'pesanan.pembayaran', 'pesanan.alamatPengiriman', 'pesanan.item.produk.gambarUtama'])
+            ->whereHas('pesanan', fn ($order) => $order->where('status', '!=', 'dibatalkan'))
+            ->latest();
+
+        if ($request->filled('q')) {
+            $keyword = trim((string) $request->q);
+            $query->where(function ($q) use ($keyword) {
+                $q->where('alamat_tujuan', 'like', '%' . $keyword . '%')
+                    ->orWhereHas('pesanan', function ($order) use ($keyword) {
+                        $order->where('nomor_invoice', 'like', '%' . $keyword . '%')
+                            ->orWhereHas('user', function ($user) use ($keyword) {
+                                $user->where('name', 'like', '%' . $keyword . '%')
+                                    ->orWhere('telepon', 'like', '%' . $keyword . '%')
+                                    ->orWhere('email', 'like', '%' . $keyword . '%');
+                            });
+                    });
+            });
+        }
+
+        $tab = (string) $request->input('tab', 'semua');
+        if ($tab !== 'semua') {
+            match ($tab) {
+                'belum_diproses' => $query->whereNull('status_pengiriman'),
+                'siap_diambil' => $query->where('status_pengiriman', 'siap_diambil'),
+                'dalam_pengantaran' => $query->where('status_pengiriman', 'dalam_pengantaran'),
+                'selesai' => $query->where('status_pengiriman', 'selesai'),
+                'ambil_toko' => $query->where('metode', 'ambil_toko'),
+                'kurir_toko' => $query->where('metode', 'kurir_toko'),
+                default => null,
+            };
+        }
 
         if ($request->filled('metode')) {
             $query->where('metode', $request->metode);
         }
 
         if ($request->filled('status')) {
-            $query->where('status_pengiriman', $request->status);
+            if ($request->status === 'belum_diproses') {
+                $query->whereNull('status_pengiriman');
+            } else {
+                $query->where('status_pengiriman', $request->status);
+            }
         }
 
-        $pengiriman = $query->paginate(12)->withQueryString();
+        if ($request->filled('tanggal_mulai')) {
+            $query->whereDate('created_at', '>=', $request->tanggal_mulai);
+        }
+
+        if ($request->filled('tanggal_selesai')) {
+            $query->whereDate('created_at', '<=', $request->tanggal_selesai);
+        }
+
+        $pengiriman = $query->paginate(10)->withQueryString();
         $pengaturan = PengaturanToko::utama();
 
-        return view('admin.pengiriman.index', compact('pengiriman', 'pengaturan'));
-    }
+        $stats = [
+            'belum_diproses' => Pengiriman::whereNull('status_pengiriman')->whereHas('pesanan', fn ($q) => $q->where('status', '!=', 'dibatalkan'))->count(),
+            'siap_diambil' => Pengiriman::where('status_pengiriman', 'siap_diambil')->count(),
+            'dalam_pengantaran' => Pengiriman::where('status_pengiriman', 'dalam_pengantaran')->count(),
+            'selesai' => Pengiriman::where('status_pengiriman', 'selesai')->count(),
+            'kurir_toko' => Pengiriman::where('metode', 'kurir_toko')->count(),
+            'ambil_toko' => Pengiriman::where('metode', 'ambil_toko')->count(),
+        ];
 
+        $mapLat = old('latitude_toko', $pengaturan->latitude_toko ?: -7.2575);
+        $mapLng = old('longitude_toko', $pengaturan->longitude_toko ?: 112.7521);
+
+        return view('admin.pengiriman.index', compact('pengiriman', 'pengaturan', 'stats', 'mapLat', 'mapLng'));
+    }
 
     public function updatePengaturan(Request $request): RedirectResponse
     {
@@ -48,7 +103,7 @@ class PengirimanController extends Controller
 
         $pengaturan->update($data);
 
-        return back()->with('success', 'Pengaturan logistik toko berhasil diperbarui.');
+        return back()->with('success', 'Pengaturan pengambilan dan pengiriman berhasil diperbarui.');
     }
 
     public function updateStatus(Request $request, Pengiriman $pengiriman): RedirectResponse
@@ -57,16 +112,37 @@ class PengirimanController extends Controller
             'status_pengiriman' => ['required', 'in:siap_diambil,dalam_pengantaran,selesai'],
         ]);
 
-        $pengiriman->update($data);
+        try {
+            DB::transaction(function () use ($pengiriman, $data) {
+                $pengiriman->loadMissing(['pesanan.pembayaran']);
 
-        $statusPesanan = match ($data['status_pengiriman']) {
-            'siap_diambil' => 'siap_diambil',
-            'dalam_pengantaran' => 'dalam_pengantaran',
-            'selesai' => 'selesai',
-        };
+                OrderFlow::assertShippingTransition($pengiriman, $data['status_pengiriman']);
 
-        $pengiriman->pesanan?->update(['status' => $statusPesanan]);
+                $statusPesanan = OrderFlow::shippingStatusToOrderStatus($data['status_pengiriman']);
+                $order = $pengiriman->pesanan;
+                $metodeBayar = $order?->pembayaran?->metode_pembayaran;
 
-        return back()->with('success', 'Status pengiriman berhasil diperbarui.');
+                $pengiriman->update($data);
+
+                if ($order) {
+                    $order->status = $statusPesanan;
+
+                    if ($statusPesanan === 'selesai' && $metodeBayar === 'cod') {
+                        $order->status_pembayaran = 'dibayar';
+                        $order->pembayaran?->update([
+                            'status' => 'dibayar',
+                            'dibayar_pada' => now(),
+                            'diverifikasi_pada' => now(),
+                        ]);
+                    }
+
+                    $order->save();
+                }
+            });
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage() ?: 'Status pengambilan/pengiriman gagal diperbarui.');
+        }
+
+        return back()->with('success', 'Status pengambilan/pengiriman berhasil diperbarui.');
     }
 }

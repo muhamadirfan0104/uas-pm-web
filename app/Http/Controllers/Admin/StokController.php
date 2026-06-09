@@ -7,32 +7,70 @@ use App\Models\Produk;
 use App\Models\RiwayatStok;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class StokController extends Controller
 {
     public function index(Request $request): View
     {
-        $produkQuery = Produk::query()->latest();
+        $produkQuery = Produk::query()->with('gambarUtama');
 
         if ($request->filled('q')) {
-            $produkQuery->where('nama', 'like', '%' . $request->q . '%');
+            $keyword = trim((string) $request->q);
+            $produkQuery->where(function ($q) use ($keyword) {
+                $q->where('nama', 'like', "%{$keyword}%")
+                    ->orWhere('satuan', 'like', "%{$keyword}%");
+            });
         }
 
-        if ($request->filter === 'menipis') {
+        if ($request->filter === 'aman') {
+            $produkQuery->whereColumn('stok', '>', 'min_stok');
+        } elseif ($request->filter === 'menipis') {
             $produkQuery->where('stok', '>', 0)->whereColumn('stok', '<=', 'min_stok');
         } elseif ($request->filter === 'habis') {
             $produkQuery->where('stok', '<=', 0);
         }
 
+        match ($request->sort) {
+            'stok_terendah' => $produkQuery->orderBy('stok'),
+            'stok_terbanyak' => $produkQuery->orderByDesc('stok'),
+            'nama' => $produkQuery->orderBy('nama'),
+            default => $produkQuery->latest(),
+        };
+
         $produk = $produkQuery->paginate(10)->withQueryString();
-        $riwayat = RiwayatStok::with('produk')->latest()->limit(250)->get();
+
+        $riwayatQuery = RiwayatStok::query()->with('produk');
+
+        if ($request->filled('riwayat_q')) {
+            $keyword = trim((string) $request->riwayat_q);
+            $riwayatQuery->whereHas('produk', function ($q) use ($keyword) {
+                $q->where('nama', 'like', "%{$keyword}%");
+            });
+        }
+
+        if ($request->filled('tipe')) {
+            $riwayatQuery->where('tipe', $request->tipe);
+        }
+
+        if ($request->filled('tanggal_mulai')) {
+            $riwayatQuery->whereDate('created_at', '>=', $request->tanggal_mulai);
+        }
+
+        if ($request->filled('tanggal_selesai')) {
+            $riwayatQuery->whereDate('created_at', '<=', $request->tanggal_selesai);
+        }
+
+        $riwayat = $riwayatQuery->latest()->paginate(12, ['*'], 'riwayat_page')->withQueryString();
 
         $stats = [
             'total' => Produk::count(),
             'aman' => Produk::whereColumn('stok', '>', 'min_stok')->count(),
             'menipis' => Produk::where('stok', '>', 0)->whereColumn('stok', '<=', 'min_stok')->count(),
             'habis' => Produk::where('stok', '<=', 0)->count(),
+            'total_stok' => Produk::sum('stok'),
+            'pergerakan_hari_ini' => RiwayatStok::whereDate('created_at', today())->count(),
         ];
 
         return view('admin.stok.index', compact('produk', 'riwayat', 'stats'));
@@ -43,7 +81,7 @@ class StokController extends Controller
         $data = $request->validate([
             'tipe' => ['required', 'in:tambah,kurang,penyesuaian'],
             'jumlah' => ['required', 'integer', 'min:0'],
-            'catatan' => ['nullable', 'string'],
+            'catatan' => ['nullable', 'string', 'max:500'],
         ]);
 
         $stokAwal = $produk->stok;

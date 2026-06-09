@@ -1,384 +1,204 @@
 @extends('layouts.pembeli')
 
-@section('title', 'Beranda Pembeli - SiTahu')
+@section('title', ($pengaturan->nama ?: 'SiTahu') . ' - Tahu Segar Siap Pesan')
 
 @push('styles')
 <style>
-    .home-hero {
-        display: grid;
-        grid-template-columns: 1.08fr 0.92fr;
-        gap: 24px;
-        align-items: stretch;
-        margin-bottom: 24px;
-    }
-
-    .hero-main {
-        padding: 34px;
-        overflow: hidden;
+    .home-banner-wrap {
         position: relative;
-        background:
-            radial-gradient(circle at top right, rgba(223, 186, 104, 0.28), transparent 34%),
-            linear-gradient(135deg, #ffffff 0%, #fff8e8 100%);
     }
-
-    .hero-main::after {
-        content: "";
+    .home-banner-carousel,
+    .home-banner-carousel .carousel-inner,
+    .home-banner-slide {
+        border-radius: 34px;
+    }
+    .home-banner-carousel .carousel-inner {
+        overflow: hidden;
+        border: 1px solid rgba(200,147,53,.18);
+        box-shadow: var(--shadow-sm);
+        background: #fff;
+    }
+    .home-banner-slide {
+        min-height: 460px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        padding: clamp(28px, 5vw, 70px);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+    .home-banner-slide::after {
+        content: '';
         position: absolute;
-        width: 230px;
-        height: 230px;
-        right: -70px;
-        bottom: -85px;
-        border-radius: 999px;
-        background: rgba(223, 186, 104, 0.20);
+        inset: 0;
+        background:
+            radial-gradient(circle at 80% 10%, rgba(255,255,255,.24), transparent 20rem),
+            linear-gradient(90deg, rgba(16,24,40,.72) 0%, rgba(16,24,40,.46) 44%, rgba(16,24,40,.08) 100%);
+        pointer-events: none;
     }
-
-    .hero-content {
+    .home-banner-content {
         position: relative;
         z-index: 2;
+        max-width: 650px;
+        color: #fff;
     }
-
-    .hero-title {
-        margin: 16px 0 0;
-        max-width: 680px;
-        font-size: clamp(34px, 5vw, 58px);
-        line-height: 0.98;
-        letter-spacing: -0.075em;
-        color: var(--heading);
+    .home-banner-content .eyebrow {
+        background: rgba(255,255,255,.16);
+        border-color: rgba(255,255,255,.28);
+        color: #fff;
+        backdrop-filter: blur(10px);
     }
-
-    .hero-title span {
-        color: var(--brand-text);
-    }
-
-    .hero-desc {
-        margin: 16px 0 0;
-        max-width: 620px;
-        color: var(--muted);
-        line-height: 1.75;
-        font-size: 15px;
-    }
-
-    .hero-actions {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-top: 24px;
-    }
-
-    .hero-mini-info {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
-        margin-top: 28px;
-    }
-
-    .mini-card {
-        padding: 14px;
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.72);
-        border: 1px solid rgba(229, 231, 235, 0.95);
-    }
-
-    .mini-card strong {
-        display: block;
-        color: var(--heading);
-        font-size: 14px;
-        margin-bottom: 4px;
-    }
-
-    .mini-card span {
-        display: block;
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.45;
-    }
-
-    .hero-side {
-        display: grid;
-        gap: 16px;
-    }
-
-    .store-card {
-        padding: 24px;
-    }
-
-    .store-header {
-        display: flex;
-        align-items: center;
-        gap: 14px;
+    .home-banner-title {
+        font-size: clamp(2.25rem, 5vw, 4.5rem);
+        line-height: .98;
+        letter-spacing: -.07em;
+        font-weight: 900;
         margin-bottom: 18px;
+        text-shadow: 0 18px 38px rgba(0,0,0,.22);
     }
-
-    .store-logo {
-        width: 58px;
-        height: 58px;
-        border-radius: 18px;
-        display: grid;
-        place-items: center;
-        background: linear-gradient(135deg, var(--brand-color), #c89335);
-        color: white;
-        font-weight: 900;
-        font-size: 20px;
-        box-shadow: 0 12px 22px rgba(223, 186, 104, 0.28);
-        overflow: hidden;
+    .home-banner-desc {
+        max-width: 560px;
+        color: rgba(255,255,255,.88);
+        font-size: clamp(1rem, 1.5vw, 1.18rem);
+        line-height: 1.8;
+        font-weight: 600;
+        margin-bottom: 28px;
     }
-
-    .store-logo img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+    .home-banner-actions .btn {
+        min-height: 48px;
+        padding-left: 22px;
+        padding-right: 22px;
     }
-
-    .store-header h2 {
-        margin: 0;
-        color: var(--heading);
-        font-size: 21px;
-        letter-spacing: -0.04em;
-    }
-
-    .store-header p {
-        margin: 4px 0 0;
-        color: var(--muted);
-        font-size: 13px;
-    }
-
-    .info-list {
-        display: grid;
-        gap: 11px;
-    }
-
-    .info-item {
-        display: grid;
-        grid-template-columns: 34px 1fr;
-        gap: 10px;
-        align-items: start;
-        padding: 12px;
-        border-radius: 15px;
-        background: #f9fafb;
-        border: 1px solid var(--line);
-    }
-
-    .info-icon {
-        width: 34px;
-        height: 34px;
-        display: grid;
-        place-items: center;
-        border-radius: 12px;
-        background: var(--brand-soft);
-        color: var(--brand-text);
-    }
-
-    .info-item strong {
-        display: block;
-        color: var(--heading);
-        font-size: 13px;
-        margin-bottom: 2px;
-    }
-
-    .info-item span {
-        display: block;
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.5;
-    }
-
-    .feature-card {
-        padding: 20px;
-        background: #ffffff;
-    }
-
-    .feature-row {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-    }
-
-    .feature-item {
-        padding: 14px;
-        border-radius: 16px;
-        background: #f9fafb;
-        border: 1px solid var(--line);
-    }
-
-    .feature-item strong {
-        display: block;
-        color: var(--heading);
-        font-size: 14px;
-        margin-bottom: 4px;
-    }
-
-    .feature-item span {
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.45;
-    }
-
-    .section-head {
-        display: flex;
-        align-items: end;
-        justify-content: space-between;
-        gap: 16px;
-        margin: 34px 0 16px;
-    }
-
-    .section-head h2 {
-        margin: 0;
-        color: var(--heading);
-        font-size: 28px;
-        letter-spacing: -0.055em;
-    }
-
-    .section-head p {
-        margin: 6px 0 0;
-        color: var(--muted);
-        font-size: 14px;
-    }
-
-    .product-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 16px;
-    }
-
-    .product-card {
-        overflow: hidden;
-        transition: 0.18s ease;
-    }
-
-    .product-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 14px 28px rgba(17, 24, 39, 0.10);
-    }
-
-    .product-img {
-        height: 168px;
+    .home-banner-fallback {
+        min-height: 420px;
+        border-radius: 34px;
+        border: 1px solid rgba(200,147,53,.18);
         background:
-            radial-gradient(circle at top right, rgba(223, 186, 104, 0.22), transparent 34%),
-            #f9fafb;
-        border-bottom: 1px solid var(--line);
+            radial-gradient(circle at 85% 10%, rgba(200,147,53,.18), transparent 24rem),
+            linear-gradient(135deg, #fff8ea 0%, #ffffff 48%, #f6efe2 100%);
+        box-shadow: var(--shadow-sm);
         display: grid;
         place-items: center;
-        color: var(--brand-text);
-        font-weight: 900;
-        font-size: 13px;
-        letter-spacing: 0.06em;
+        text-align: center;
+        padding: 48px 24px;
     }
-
-    .product-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+    .home-banner-fallback-icon {
+        width: 84px;
+        height: 84px;
+        margin: 0 auto 18px;
+        border-radius: 28px;
+        display: grid;
+        place-items: center;
+        color: var(--brand-dark);
+        background: #fff;
+        box-shadow: var(--shadow-sm);
+        font-size: 38px;
     }
-
-    .product-body {
-        padding: 16px;
-    }
-
-    .product-name {
+    .home-banner-carousel .carousel-indicators {
+        right: auto;
+        left: clamp(28px, 5vw, 70px);
+        bottom: 22px;
         margin: 0;
-        color: var(--heading);
-        font-size: 15px;
-        font-weight: 850;
-        line-height: 1.35;
-    }
-
-    .product-meta {
-        margin-top: 6px;
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.45;
-    }
-
-    .product-price {
-        margin-top: 12px;
-        color: var(--brand-text);
-        font-size: 17px;
-        font-weight: 900;
-    }
-
-    .product-action {
-        margin-top: 12px;
-        display: flex;
+        justify-content: flex-start;
         gap: 8px;
     }
-
-    .product-action .btn {
-        min-height: 38px;
-        padding: 9px 12px;
-        font-size: 13px;
-        width: 100%;
+    .home-banner-carousel .carousel-indicators [data-bs-target] {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        border: 0;
+        background: rgba(255,255,255,.72);
+        opacity: 1;
+        transition: .2s ease;
     }
-
-    .empty-card {
-        padding: 22px;
-        text-align: center;
-        color: var(--muted);
+    .home-banner-carousel .carousel-indicators .active {
+        width: 34px;
+        background: var(--brand-color);
     }
-
-    .empty-card strong {
-        display: block;
-        color: var(--heading);
-        margin-bottom: 6px;
+    .home-banner-control {
+        width: 46px;
+        height: 46px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 1;
+        background: rgba(255,255,255,.88);
+        border: 1px solid rgba(255,255,255,.72);
+        border-radius: 999px;
+        box-shadow: var(--shadow-sm);
+        backdrop-filter: blur(10px);
     }
-
-    .simple-banner {
-        margin-top: 34px;
+    .home-banner-control:hover {
+        background: #fff;
+    }
+    .home-banner-control.carousel-control-prev {
+        left: 18px;
+    }
+    .home-banner-control.carousel-control-next {
+        right: 18px;
+    }
+    .home-banner-control .carousel-control-prev-icon,
+    .home-banner-control .carousel-control-next-icon {
+        filter: invert(1) grayscale(1);
+        width: 18px;
+        height: 18px;
+    }
+    .home-banner-carousel .carousel-inner {
+        cursor: grab;
+        user-select: none;
+    }
+    .home-banner-carousel.is-dragging .carousel-inner {
+        cursor: grabbing;
+    }
+    .simple-panel {
+        border-radius: 30px;
+        border: 1px solid var(--line);
+        background: #fff;
+        box-shadow: var(--shadow-xs);
+    }
+    .home-section-head {
+        margin-bottom: 24px;
+    }
+    .home-section-head .section-subtitle {
+        max-width: 720px;
+    }
+    .review-card {
+        height: 100%;
         padding: 24px;
-        display: flex;
-        justify-content: space-between;
-        gap: 16px;
-        align-items: center;
-        background:
-            linear-gradient(135deg, #ffffff 0%, #fff8e8 100%);
+        border-radius: 26px;
+        background: #fff;
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-xs);
     }
-
-    .simple-banner h2 {
-        margin: 0;
-        color: var(--heading);
-        font-size: 24px;
-        letter-spacing: -0.05em;
+    .review-avatar {
+        width: 46px;
+        height: 46px;
+        display: grid;
+        place-items: center;
+        border-radius: 16px;
+        background: var(--brand-soft);
+        color: var(--brand-dark);
+        font-size: 20px;
+        flex: 0 0 auto;
     }
-
-    .simple-banner p {
-        margin: 6px 0 0;
-        color: var(--muted);
-        line-height: 1.6;
-        font-size: 14px;
+    @media (max-width: 991.98px) {
+        .home-banner-slide { min-height: 390px; }
+        .home-banner-slide::after {
+            background: linear-gradient(90deg, rgba(16,24,40,.78) 0%, rgba(16,24,40,.50) 100%);
+        }
+        .home-banner-control { display: none; }
     }
-
-    @media (max-width: 960px) {
-        .home-hero {
-            grid-template-columns: 1fr;
-        }
-
-        .product-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-    }
-
-    @media (max-width: 720px) {
-        .hero-main,
-        .store-card,
-        .feature-card,
-        .simple-banner {
-            padding: 20px;
-        }
-
-        .hero-mini-info,
-        .feature-row,
-        .product-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .section-head {
-            align-items: start;
-            flex-direction: column;
-        }
-
-        .simple-banner {
-            align-items: start;
-            flex-direction: column;
-        }
+    @media (max-width: 575.98px) {
+        .home-banner-carousel,
+        .home-banner-carousel .carousel-inner,
+        .home-banner-slide,
+        .home-banner-fallback { border-radius: 26px; }
+        .home-banner-slide { min-height: 360px; padding: 28px; align-items: flex-end; padding-bottom: 58px; }
+        .home-banner-title { font-size: 2.15rem; }
+        .home-banner-actions { flex-direction: column; align-items: stretch; }
+        .home-banner-actions .btn { width: 100%; }
+        .home-banner-carousel .carousel-indicators { left: 28px; bottom: 22px; }
     }
 </style>
 @endpush
@@ -386,241 +206,202 @@
 @section('content')
 @php
     $namaToko = $pengaturan->nama ?: 'SiTahu';
-    $alamatToko = $pengaturan->alamat ?: 'Alamat toko belum diatur.';
-    $tentangToko = $pengaturan->tentang ?: 'Toko tahu rumahan yang menyediakan berbagai pilihan tahu segar untuk kebutuhan harian.';
-    $areaPengiriman = $pengaturan->area_pengiriman ?: 'Area pengiriman akan diinformasikan saat pemesanan.';
-    $jamBuka = $pengaturan->jam_buka ?: null;
-    $jamTutup = $pengaturan->jam_tutup ?: null;
-    $jamOperasional = $jamBuka && $jamTutup ? $jamBuka . ' - ' . $jamTutup : ($jamBuka ?: 'Jam operasional akan segera diperbarui.');
-
+    $tentangToko = $pengaturan->tentang ?: 'Tahu segar berkualitas yang dibuat setiap hari untuk kebutuhan keluarga, usaha kuliner, dan acara.';
     $teleponToko = $pengaturan->telepon ?: '';
     $nomorWa = preg_replace('/[^0-9]/', '', $teleponToko);
-
-    if ($nomorWa && str_starts_with($nomorWa, '0')) {
-        $nomorWa = '62' . substr($nomorWa, 1);
-    }
-
-    $pesanWa = 'Halo ' . $namaToko . ', saya ingin tanya produk tahu.';
-    $linkWa = $nomorWa ? 'https://wa.me/' . $nomorWa . '?text=' . urlencode($pesanWa) : route('pembeli-web.coming-soon');
+    if ($nomorWa && str_starts_with($nomorWa, '0')) { $nomorWa = '62' . substr($nomorWa, 1); }
+    $linkWa = $nomorWa ? 'https://wa.me/' . $nomorWa . '?text=' . urlencode('Halo ' . $namaToko . ', saya ingin bertanya tentang pemesanan tahu.') : route('pembeli-web.produk');
 @endphp
 
-<section class="home-hero">
-    <div class="page-card hero-main">
-        <div class="hero-content">
-            <div class="badge">Tahu segar pilihan keluarga</div>
+<div class="container py-4 py-lg-5">
+    <section class="home-banner-wrap mb-4 mb-lg-5">
+        @if($banner->count())
+            <div id="homeBannerCarousel" class="carousel slide home-banner-carousel" data-bs-ride="carousel" data-bs-interval="4500" data-bs-touch="true" data-bs-pause="hover" data-bs-wrap="true">
+                <div class="carousel-inner">
+                    @foreach($banner as $item)
+                        @php
+                            $judulBanner = trim((string) $item->judul) ?: $namaToko;
+                            $deskripsiBanner = trim((string) $item->deskripsi) ?: $tentangToko;
+                        @endphp
+                        <div class="carousel-item @if($loop->first) active @endif">
+                            <div class="home-banner-slide" style="background-image: url('{{ asset('storage/' . $item->url_gambar) }}');">
+                                <div class="home-banner-content">
+                                    <span class="eyebrow mb-3"><i class="bi bi-patch-check-fill"></i> {{ $namaToko }}</span>
+                                    <h1 class="home-banner-title">{{ $judulBanner }}</h1>
+                                    @if($deskripsiBanner)
+                                        <p class="home-banner-desc">{{ $deskripsiBanner }}</p>
+                                    @endif
+                                    <div class="home-banner-actions d-flex flex-wrap gap-2 gap-sm-3">
+                                        <a href="{{ route('pembeli-web.produk', ['stok' => 'tersedia']) }}" class="btn btn-brand btn-lg">
+                                            <i class="bi bi-shop-window me-2"></i> Belanja Sekarang
+                                        </a>
+                                        <a href="{{ $linkWa }}" target="_blank" rel="noopener" class="btn btn-light btn-lg fw-bold rounded-pill">
+                                            <i class="bi bi-whatsapp text-success me-2"></i> Hubungi Toko
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
 
-            <h1 class="hero-title">
-                Belanja produk tahu segar dari <span>{{ $namaToko }}</span>
-            </h1>
-
-            <p class="hero-desc">
-                {{ $tentangToko }}
-                Temukan pilihan tahu segar untuk lauk harian, camilan keluarga, atau teman makan yang praktis dan enak.
-            </p>
-
-            <div class="hero-actions">
-                <a href="{{ route('pembeli-web.produk') }}" class="btn btn-primary">
-                    Lihat Produk
-                </a>
-
-                <a href="{{ $linkWa }}" target="{{ $nomorWa ? '_blank' : '_self' }}" class="btn btn-whatsapp">
-                    WhatsApp Toko
-                </a>
-
-                <a href="{{ route('pembeli-web.pesanan.index') }}" class="btn btn-outline">
-                    Pesanan Saya
-                </a>
+                @if($banner->count() > 1)
+                    <div class="carousel-indicators">
+                        @foreach($banner as $item)
+                            <button type="button" data-bs-target="#homeBannerCarousel" data-bs-slide-to="{{ $loop->index }}" class="@if($loop->first) active @endif" aria-current="{{ $loop->first ? 'true' : 'false' }}" aria-label="Banner {{ $loop->iteration }}"></button>
+                        @endforeach
+                    </div>
+                    <button class="carousel-control-prev home-banner-control" type="button" data-bs-target="#homeBannerCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Sebelumnya</span>
+                    </button>
+                    <button class="carousel-control-next home-banner-control" type="button" data-bs-target="#homeBannerCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Berikutnya</span>
+                    </button>
+                @endif
             </div>
-
-            <div class="hero-mini-info">
-                <div class="mini-card">
-                    <strong>Pilihan segar</strong>
-                    <span>Beragam produk tahu siap kamu pilih</span>
-                </div>
-
-                <div class="mini-card">
-                    <strong>Mudah diterima</strong>
-                    <span>Bisa ambil di toko atau pakai kurir toko</span>
-                </div>
-
-                <div class="mini-card">
-                    <strong>Pesan praktis</strong>
-                    <span>Lihat produk dan mulai pesan dari browser</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="hero-side">
-        <div class="page-card store-card">
-            <div class="store-header">
-                <div class="store-logo">
-                    @if($pengaturan->logo_url)
-                        <img src="{{ asset('storage/' . $pengaturan->logo_url) }}" alt="{{ $namaToko }}">
-                    @else
-                        ST
-                    @endif
-                </div>
-
+        @else
+            <div class="home-banner-fallback">
                 <div>
-                    <h2>{{ $namaToko }}</h2>
-                    <p>Kenali toko kami lebih dekat</p>
+                    <div class="home-banner-fallback-icon"><i class="bi bi-image"></i></div>
+                    <span class="eyebrow mb-3"><i class="bi bi-patch-check-fill"></i> {{ $namaToko }}</span>
+                    <h1 class="section-heading display-5 mb-3">Banner toko belum tersedia.</h1>
+                    <p class="section-subtitle fs-5 mb-4 mx-auto" style="max-width: 620px;">{{ $tentangToko }}</p>
+                    <a href="{{ route('pembeli-web.produk', ['stok' => 'tersedia']) }}" class="btn btn-brand btn-lg px-4">
+                        <i class="bi bi-shop-window me-2"></i> Belanja Sekarang
+                    </a>
                 </div>
             </div>
-
-            <div class="info-list">
-                <div class="info-item">
-                    <div class="info-icon">📍</div>
-                    <div>
-                        <strong>Alamat toko</strong>
-                        <span>{{ $alamatToko }}</span>
-                    </div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-icon">🕘</div>
-                    <div>
-                        <strong>Jam operasional</strong>
-                        <span>{{ $jamOperasional }}</span>
-                    </div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-icon">🚚</div>
-                    <div>
-                        <strong>Area pengiriman</strong>
-                        <span>{{ $areaPengiriman }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="page-card feature-card">
-            <div class="feature-row">
-                <div class="feature-item">
-                    <strong>Selalu fresh</strong>
-                    <span>Produk tahu disiapkan untuk kebutuhan harianmu.</span>
-                </div>
-
-                <div class="feature-item">
-                    <strong>Belanja nyaman</strong>
-                    <span>Pilih produk, cek informasi, lalu pesan dengan mudah.</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section>
-    <div class="section-head">
-        <div>
-            <h2>Produk pilihan hari ini</h2>
-            <p>Pilihan tahu segar yang cocok untuk lauk, camilan, atau stok di rumah.</p>
-        </div>
-
-        <a href="{{ route('pembeli-web.produk') }}" class="btn btn-outline">
-            Lihat Semua
-        </a>
-    </div>
-
-    @if($produkTerbaru->count())
-        <div class="product-grid">
-            @foreach($produkTerbaru as $produk)
-                <article class="page-card product-card">
-                    <div class="product-img">
-                        @if($produk->gambarUtama && $produk->gambarUtama->url_gambar)
-                            <img src="{{ asset('storage/' . $produk->gambarUtama->url_gambar) }}" alt="{{ $produk->nama }}">
-                        @else
-                            PRODUK TAHU
-                        @endif
-                    </div>
-
-                    <div class="product-body">
-                        <h3 class="product-name">{{ $produk->nama }}</h3>
-
-                        <div class="product-meta">
-                            {{ $produk->satuan ?: 'Satuan belum tersedia' }}
-                            @if($produk->isi_per_satuan)
-                                · isi {{ $produk->isi_per_satuan }}
-                            @endif
-                            · stok {{ $produk->stok }}
-                        </div>
-
-                        <div class="product-price">
-                            Rp {{ number_format($produk->harga, 0, ',', '.') }}
-                        </div>
-
-                        <div class="product-action">
-                            <a href="{{ route('pembeli-web.produk') }}" class="btn btn-outline">
-                                Lihat Produk
-                            </a>
-                        </div>
-                    </div>
-                </article>
-            @endforeach
-        </div>
-    @else
-        <div class="page-card empty-card">
-            <strong>Produk belum tersedia</strong>
-            Kami sedang menyiapkan pilihan tahu terbaik untuk kamu. Coba cek lagi nanti ya.
-        </div>
-    @endif
-</section>
-
-@if($produkTerlaris->count())
-    <section>
-        <div class="section-head">
-            <div>
-                <h2>Favorit pelanggan</h2>
-                <p>Produk yang banyak disukai dan sering jadi pilihan pembeli.</p>
-            </div>
-        </div>
-
-        <div class="product-grid">
-            @foreach($produkTerlaris as $produk)
-                <article class="page-card product-card">
-                    <div class="product-img">
-                        @if($produk->gambarUtama && $produk->gambarUtama->url_gambar)
-                            <img src="{{ asset('storage/' . $produk->gambarUtama->url_gambar) }}" alt="{{ $produk->nama }}">
-                        @else
-                            FAVORIT
-                        @endif
-                    </div>
-
-                    <div class="product-body">
-                        <h3 class="product-name">{{ $produk->nama }}</h3>
-
-                        <div class="product-meta">
-                            Sering dipilih pelanggan · stok {{ $produk->stok }}
-                        </div>
-
-                        <div class="product-price">
-                            Rp {{ number_format($produk->harga, 0, ',', '.') }}
-                        </div>
-
-                        <div class="product-action">
-                            <a href="{{ route('pembeli-web.produk') }}" class="btn btn-outline">
-                                Lihat Produk
-                            </a>
-                        </div>
-                    </div>
-                </article>
-            @endforeach
-        </div>
+        @endif
     </section>
-@endif
 
-<section class="page-card simple-banner">
-    <div>
-        <h2>Siap pilih tahu favoritmu?</h2>
-        <p>
-            Yuk lihat pilihan produk tahu yang tersedia. Cocok untuk lauk keluarga,
-            camilan sore, atau stok praktis di rumah.
-        </p>
-    </div>
+    <section class="mb-5">
+        <div class="home-section-head d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
+            <div>
+                <span class="eyebrow mb-2"><i class="bi bi-clock-history"></i> Terbaru</span>
+                <h2 class="section-heading h1 mb-1">Baru tersedia di katalog.</h2>
+                <p class="section-subtitle mb-0">Cek pilihan produk terbaru yang bisa dipesan hari ini.</p>
+            </div>
+            <a href="{{ route('pembeli-web.produk', ['sort' => 'terbaru']) }}" class="btn btn-soft-brand px-4">Buka Semua Produk</a>
+        </div>
+        @if($produkTerbaru->count())
+            <div class="row g-3 g-lg-4">
+                @foreach($produkTerbaru->take(8) as $produk)
+                    <div class="col-sm-6 col-lg-3">
+                        @include('pembeli.partials.product-card', ['produk' => $produk, 'compact' => true])
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <div class="surface p-4 text-center text-muted fw-semibold">Belum ada produk terbaru yang aktif.</div>
+        @endif
+    </section>
 
-    <a href="{{ route('pembeli-web.produk') }}" class="btn btn-primary">
-        Pilih Produk Sekarang
-    </a>
-</section>
+    <section class="mb-5">
+        <div class="home-section-head d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
+            <div>
+                <span class="eyebrow mb-2"><i class="bi bi-chat-heart-fill"></i> Ulasan pembeli</span>
+                <h2 class="section-heading h1 mb-1">Kata pembeli tentang produk kami.</h2>
+                <p class="section-subtitle mb-0">Ulasan dari pelanggan yang sudah menyelesaikan pesanan.</p>
+            </div>
+            <a href="{{ route('pembeli-web.ulasan') }}" class="btn btn-soft-brand px-4">
+                Lihat Semua Ulasan <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+        @if($ulasanBeranda->count())
+            <div class="row g-3 g-lg-4">
+                @foreach($ulasanBeranda as $ulasan)
+                    <div class="col-md-4">
+                        <div class="review-card">
+                            <div class="rating-stars mb-3">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <i class="bi {{ $i <= (int) $ulasan->rating ? 'bi-star-fill' : 'bi-star' }}"></i>
+                                @endfor
+                            </div>
+                            <p class="line-clamp-3 text-muted mb-4">“{{ $ulasan->komentar ?: 'Produk sesuai harapan, segar, dan pelayanan toko baik.' }}”</p>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="review-avatar"><i class="bi bi-person-fill"></i></div>
+                                <div>
+                                    <div class="fw-bold">{{ $ulasan->user?->name ?: 'Pembeli' }}</div>
+                                    <div class="small text-muted fw-semibold">{{ $ulasan->produk?->nama ?: 'Produk SiTahu' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <div class="surface p-4 text-center">
+                <i class="bi bi-chat-square-text fs-1 text-brand"></i>
+                <h3 class="h5 fw-bold mt-2">Belum ada ulasan yang ditampilkan.</h3>
+                <p class="text-muted mb-0">Ulasan akan muncul setelah pembeli memberikan penilaian pada pesanan selesai.</p>
+            </div>
+        @endif
+    </section>
+
+</div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const banner = document.getElementById('homeBannerCarousel');
+    if (!banner || typeof bootstrap === 'undefined') return;
+
+    const carousel = bootstrap.Carousel.getOrCreateInstance(banner, {
+        interval: 4500,
+        ride: 'carousel',
+        touch: true,
+        wrap: true,
+        pause: 'hover'
+    });
+
+    carousel.cycle();
+
+    const track = banner.querySelector('.carousel-inner');
+    if (!track) return;
+
+    let startX = 0;
+    let currentX = 0;
+    let dragging = false;
+    const minSwipe = 45;
+
+    track.addEventListener('pointerdown', function (event) {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        if (event.target.closest('a, button')) return;
+        startX = event.clientX;
+        currentX = event.clientX;
+        dragging = true;
+        banner.classList.add('is-dragging');
+        carousel.pause();
+        try { track.setPointerCapture(event.pointerId); } catch (error) {}
+    });
+
+    track.addEventListener('pointermove', function (event) {
+        if (!dragging) return;
+        currentX = event.clientX;
+    });
+
+    const finishDrag = function (event) {
+        if (!dragging) return;
+        const diff = currentX - startX;
+        dragging = false;
+        banner.classList.remove('is-dragging');
+        try { track.releasePointerCapture(event.pointerId); } catch (error) {}
+
+        if (Math.abs(diff) >= minSwipe) {
+            diff < 0 ? carousel.next() : carousel.prev();
+        }
+        carousel.cycle();
+    };
+
+    track.addEventListener('pointerup', finishDrag);
+    track.addEventListener('pointercancel', finishDrag);
+    track.addEventListener('pointerleave', function (event) {
+        if (dragging && event.pointerType === 'mouse') finishDrag(event);
+    });
+});
+</script>
+@endpush
+

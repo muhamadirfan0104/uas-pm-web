@@ -1,298 +1,81 @@
 @extends('layouts.pembeli')
 
-@section('title', 'Login Pembeli - SiTahu')
+@section('title', 'Masuk Akun Pembeli - SiTahu')
 
 @push('styles')
 <style>
-    .auth-wrap {
-        min-height: 70vh;
-        display: grid;
-        place-items: center;
-    }
-
-    .auth-card {
-        width: min(980px, 100%);
-        display: grid;
-        grid-template-columns: 0.95fr 1.05fr;
-        overflow: hidden;
-        background: #ffffff;
-        border: 1px solid var(--line);
-        border-radius: 28px;
-        box-shadow: var(--shadow);
-    }
-
-    .auth-side {
-        padding: 34px;
-        background:
-            radial-gradient(circle at top right, rgba(223, 186, 104, 0.34), transparent 34%),
-            linear-gradient(135deg, #fff8e8, #ffffff);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        gap: 24px;
-    }
-
-    .auth-logo {
-        width: 64px;
-        height: 64px;
-        border-radius: 22px;
-        display: grid;
-        place-items: center;
-        background: linear-gradient(135deg, var(--brand-color), #c89335);
-        color: white;
-        font-weight: 950;
-        font-size: 22px;
-        box-shadow: 0 12px 26px rgba(223, 186, 104, 0.30);
-    }
-
-    .auth-side h1 {
-        margin: 18px 0 0;
-        color: var(--heading);
-        font-size: clamp(32px, 4vw, 48px);
-        line-height: 1;
-        letter-spacing: -0.075em;
-    }
-
-    .auth-side h1 span {
-        color: var(--brand-text);
-    }
-
-    .auth-side p {
-        margin: 14px 0 0;
-        color: var(--muted);
-        line-height: 1.75;
-        font-size: 14px;
-    }
-
-    .auth-feature {
-        display: grid;
-        gap: 10px;
-    }
-
-    .auth-feature div {
-        padding: 12px 14px;
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.72);
-        border: 1px solid rgba(229, 231, 235, 0.95);
-        color: var(--heading);
-        font-size: 13px;
-        font-weight: 800;
-    }
-
-    .auth-form {
-        padding: 34px;
-    }
-
-    .auth-form h2 {
-        margin: 0;
-        color: var(--heading);
-        font-size: 28px;
-        letter-spacing: -0.055em;
-    }
-
-    .auth-form > p {
-        margin: 8px 0 24px;
-        color: var(--muted);
-        font-size: 14px;
-        line-height: 1.6;
-    }
-
-    .form-grid {
-        display: grid;
-        gap: 14px;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 7px;
-        color: var(--heading);
-        font-size: 13px;
-        font-weight: 850;
-    }
-
-    .form-control {
-        width: 100%;
-        min-height: 48px;
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        background: #ffffff;
-        color: var(--text);
-        padding: 11px 14px;
-        outline: none;
-        transition: 0.16s ease;
-    }
-
-    .form-control:focus {
-        border-color: rgba(223, 186, 104, 0.95);
-        box-shadow: 0 0 0 4px rgba(223, 186, 104, 0.16);
-    }
-
-    .error-text {
-        margin-top: 7px;
-        color: #b91c1c;
-        font-size: 12px;
-        font-weight: 750;
-    }
-
-    .alert {
-        margin-bottom: 16px;
-        padding: 13px 15px;
-        border-radius: 15px;
-        font-size: 13px;
-        font-weight: 800;
-        line-height: 1.5;
-    }
-
-    .alert-success {
-        background: #ecfdf5;
-        color: #15803d;
-        border: 1px solid #bbf7d0;
-    }
-
-    .alert-error {
-        background: #fef2f2;
-        color: #b91c1c;
-        border: 1px solid #fecaca;
-    }
-
-    .remember-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-top: 2px;
-        color: var(--muted);
-        font-size: 13px;
-        font-weight: 700;
-    }
-
-    .remember-row label {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-    }
-
-    .auth-bottom {
-        margin-top: 18px;
-        padding-top: 18px;
-        border-top: 1px solid var(--line);
-        color: var(--muted);
-        font-size: 14px;
-        text-align: center;
-    }
-
-    .auth-bottom a {
-        color: var(--brand-text);
-        font-weight: 900;
-    }
-
-    @media (max-width: 860px) {
-        .auth-card {
-            grid-template-columns: 1fr;
-        }
-
-        .auth-side {
-            padding: 26px;
-        }
-
-        .auth-feature {
-            display: none;
-        }
-
-        .auth-form {
-            padding: 26px;
-        }
-    }
+    .auth-wrap { min-height: 680px; }
+    .auth-panel { border-radius: 34px; overflow: hidden; background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-md); }
+    .auth-hero { min-height: 100%; background: radial-gradient(circle at 20% 15%, rgba(255,255,255,.35), transparent 20rem), linear-gradient(135deg, var(--brand-color), var(--brand-dark)); color: #fff; padding: 42px; position: relative; overflow: hidden; }
+    .auth-hero::after { content: ''; position: absolute; width: 320px; height: 320px; right: -140px; bottom: -140px; background: rgba(255,255,255,.12); border-radius: 50%; }
+    .auth-form { padding: 38px; }
+    .auth-field { min-height: 52px; border-radius: 16px; border-color: var(--line); font-weight: 700; }
+    .auth-field:focus { border-color: rgba(200,147,53,.55); box-shadow: 0 0 0 .25rem rgba(200,147,53,.12); }
+    .auth-benefit { display: flex; gap: 14px; align-items: flex-start; margin-top: 22px; position: relative; z-index: 1; }
+    .auth-benefit i { width: 42px; height: 42px; border-radius: 16px; display: grid; place-items: center; background: rgba(255,255,255,.16); }
+    @media (max-width: 991.98px) { .auth-form, .auth-hero { padding: 26px; } }
 </style>
 @endpush
 
 @section('content')
-<section class="auth-wrap">
-    <div class="auth-card">
-        <div class="auth-side">
-            <div>
-                <div class="auth-logo">ST</div>
-
-                <h1>
-                    Masuk dulu, <span>baru belanja tahu</span>
-                </h1>
-
-                <p>
-                    Login pembeli dipakai untuk menyimpan keranjang, checkout, melihat pesanan,
-                    dan nanti memberi ulasan produk setelah pesanan selesai.
-                </p>
+<div class="container py-4 py-lg-5 auth-wrap d-flex align-items-center">
+    <div class="auth-panel w-100">
+        <div class="row g-0">
+            <div class="col-lg-5">
+                <div class="auth-hero h-100 d-flex flex-column justify-content-between">
+                    <div class="position-relative" style="z-index:1;">
+                        <span class="badge rounded-pill mb-3" style="background: rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.18);">Akun pembeli</span>
+                        <h1 class="section-heading text-white display-6 mb-3">Masuk untuk melanjutkan pesanan.</h1>
+                        <p class="mb-0" style="color: rgba(255,255,255,.78); line-height: 1.75;">Keranjang yang sudah Anda isi sebelum login akan otomatis masuk ke akun pembeli setelah berhasil masuk.</p>
+                    </div>
+                    <div>
+                        <div class="auth-benefit"><i class="bi bi-bag-check"></i><div><div class="fw-bold">Keranjang tersimpan</div><small style="color:rgba(255,255,255,.72);">Produk pilihan tetap aman setelah login.</small></div></div>
+                        <div class="auth-benefit"><i class="bi bi-receipt"></i><div><div class="fw-bold">Riwayat pesanan</div><small style="color:rgba(255,255,255,.72);">Pantau status pembayaran, pengambilan, dan pengiriman.</small></div></div>
+                        <div class="auth-benefit"><i class="bi bi-chat-heart"></i><div><div class="fw-bold">Beri ulasan</div><small style="color:rgba(255,255,255,.72);">Nilai produk setelah pesanan selesai.</small></div></div>
+                    </div>
+                </div>
             </div>
+            <div class="col-lg-7">
+                <div class="auth-form">
+                    <div class="mb-4">
+                        <a href="{{ route('pembeli-web.home') }}" class="text-decoration-none text-brand fw-bold"><i class="bi bi-arrow-left me-1"></i> Kembali ke beranda</a>
+                        <h2 class="section-heading h1 mt-3 mb-2">Selamat datang kembali.</h2>
+                        <p class="text-muted mb-0">Gunakan email atau nomor HP yang terdaftar sebagai pembeli.</p>
+                    </div>
 
-            <div class="auth-feature">
-                <div>🛒 Keranjang tersimpan selama sesi belanja</div>
-                <div>📦 Pesanan bisa dipantau dari akun pembeli</div>
-                <div>⭐ Ulasan hanya untuk pembeli yang sudah menyelesaikan pesanan</div>
-            </div>
-        </div>
+                    <form action="{{ route('pembeli-web.login.post') }}" method="POST" class="d-grid gap-3">
+                        @csrf
+                        <div>
+                            <label for="login" class="form-label fw-bold">Email atau Nomor HP</label>
+                            <input id="login" type="text" name="login" value="{{ old('login') }}" class="form-control auth-field @error('login') is-invalid @enderror" placeholder="contoh@email.com / 08123456789" required autofocus>
+                            @error('login')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div>
+                            <label for="password" class="form-label fw-bold">Password</label>
+                            <input id="password" type="password" name="password" class="form-control auth-field @error('password') is-invalid @enderror" placeholder="Masukkan password" required>
+                            @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="1" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
+                                <label class="form-check-label fw-semibold text-muted" for="remember">Ingat saya</label>
+                            </div>
+                            <a href="{{ route('pembeli-web.produk') }}" class="fw-bold text-brand text-decoration-none">Belanja dulu</a>
+                        </div>
+                        <button type="submit" class="btn btn-brand btn-lg py-3"><i class="bi bi-box-arrow-in-right me-2"></i> Masuk</button>
+                    </form>
 
-        <div class="auth-form">
-            <h2>Login Pembeli</h2>
-            <p>Masukkan email atau nomor HP yang sudah terdaftar.</p>
+                    <div class="surface p-3 mt-4 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+                        <span class="text-muted fw-semibold">Belum punya akun pembeli?</span>
+                        <button type="button" class="btn btn-soft-brand px-4" data-bs-toggle="modal" data-bs-target="#registerModal">Daftar Sekarang</button>
+                    </div>
 
-            @if(session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
-
-            @if(session('error'))
-                <div class="alert alert-error">{{ session('error') }}</div>
-            @endif
-
-            @if($errors->any())
-                <div class="alert alert-error">{{ $errors->first() }}</div>
-            @endif
-
-            <form action="{{ route('pembeli-web.login.post') }}" method="POST" class="form-grid">
-                @csrf
-
-                <div class="form-group">
-                    <label for="login">Email atau Nomor HP</label>
-                    <input
-                        type="text"
-                        id="login"
-                        name="login"
-                        class="form-control"
-                        value="{{ old('login') }}"
-                        placeholder="Contoh: martha@email.com / 081234567890"
-                        autofocus
-                    >
-                    @error('login') <div class="error-text">{{ $message }}</div> @enderror
+                    <div class="alert alert-light border mt-4 mb-0 rounded-4 small text-muted fw-semibold">
+                        <i class="bi bi-info-circle text-brand me-1"></i> Halaman ini khusus untuk pembeli yang ingin berbelanja dan memantau pesanan.
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        class="form-control"
-                        placeholder="Masukkan password"
-                    >
-                    @error('password') <div class="error-text">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="remember-row">
-                    <label>
-                        <input type="checkbox" name="remember" value="1">
-                        Ingat saya
-                    </label>
-                </div>
-
-                <button type="submit" class="btn btn-primary" style="width: 100%;">
-                    Login Sekarang
-                </button>
-            </form>
-
-            <div class="auth-bottom">
-                Belum punya akun?
-                <a href="{{ route('pembeli-web.register') }}">Daftar sebagai pembeli</a>
             </div>
         </div>
     </div>
-</section>
+</div>
 @endsection

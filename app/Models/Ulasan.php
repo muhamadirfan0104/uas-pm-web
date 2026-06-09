@@ -42,4 +42,10 @@ class Ulasan extends Model
     {
         return $this->belongsTo(Pesanan::class, 'pesanan_id');
     }
+
+    public function media()
+    {
+        return $this->hasMany(MediaUlasan::class, 'ulasan_id')->orderBy('urutan')->latest('id');
+    }
+
 }

@@ -1,567 +1,406 @@
 @extends('layouts.pembeli')
 
-@section('title', 'Profil Pembeli - SiTahu')
+@section('title', 'Profil Saya - SiTahu')
 
 @push('styles')
 <style>
-    .profile-page {
-        display: grid;
-        gap: 18px;
-    }
-
     .profile-hero {
-        padding: 24px;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 260px;
-        gap: 18px;
-        align-items: center;
+        border: 1px solid rgba(200,147,53,.20);
+        border-radius: 30px;
         background:
-            radial-gradient(circle at top right, rgba(223, 186, 104, 0.24), transparent 34%),
-            linear-gradient(135deg, #ffffff 0%, #fff8e8 100%);
+            radial-gradient(circle at 100% 0%, rgba(200,147,53,.18), transparent 26rem),
+            linear-gradient(135deg, #fff, #fffaf0);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
     }
-
-    .profile-hero h1 {
-        margin: 10px 0 0;
-        color: var(--heading);
-        font-size: clamp(30px, 4vw, 44px);
-        line-height: 1.04;
-        letter-spacing: -0.07em;
-    }
-
-    .profile-hero h1 span {
-        color: var(--brand-dark);
-    }
-
-    .profile-hero p {
-        margin: 10px 0 0;
-        max-width: 680px;
-        color: var(--muted);
-        font-size: 14px;
-        line-height: 1.7;
-    }
-
-    .profile-avatar-card {
-        padding: 18px;
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.84);
-        border: 1px solid rgba(223, 186, 104, 0.38);
-        box-shadow: var(--shadow-soft);
-        text-align: center;
-    }
-
     .profile-avatar {
-        width: 86px;
-        height: 86px;
-        margin: 0 auto 12px;
+        width: 84px;
+        height: 84px;
         border-radius: 28px;
-        background: linear-gradient(135deg, var(--brand-color), #c89335);
-        color: #ffffff;
         display: grid;
         place-items: center;
-        font-size: 28px;
-        font-weight: 950;
-        letter-spacing: -0.06em;
-        box-shadow: 0 16px 28px rgba(223, 186, 104, 0.28);
-    }
-
-    .profile-avatar-card strong {
-        display: block;
-        color: var(--heading);
-        font-size: 16px;
-        font-weight: 950;
-        letter-spacing: -0.035em;
-    }
-
-    .profile-avatar-card span {
-        display: block;
-        margin-top: 4px;
-        color: var(--muted);
-        font-size: 12.5px;
-        font-weight: 750;
-    }
-
-    .metric-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
-    }
-
-    .metric-card {
-        padding: 17px;
-        border-radius: 20px;
-        background: #ffffff;
-        border: 1px solid var(--line);
-        box-shadow: var(--shadow-soft);
-    }
-
-    .metric-card span {
-        display: block;
-        color: var(--muted);
-        font-size: 12px;
+        color: #fff;
+        font-size: 30px;
         font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
+        letter-spacing: -.04em;
+        background: linear-gradient(135deg, var(--brand-color), var(--brand-hover));
+        box-shadow: var(--shadow-brand);
+        flex: 0 0 auto;
     }
-
-    .metric-card strong {
-        display: block;
-        margin-top: 9px;
-        color: var(--heading);
-        font-size: 24px;
-        line-height: 1;
-        letter-spacing: -0.06em;
-        font-weight: 950;
-    }
-
-    .metric-card small {
-        display: block;
-        margin-top: 7px;
-        color: var(--brand-dark);
-        font-size: 12px;
-        font-weight: 850;
-    }
-
-    .profile-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.25fr);
-        gap: 18px;
-        align-items: start;
-    }
-
-    .profile-card {
-        padding: 22px;
-    }
-
-    .profile-card h2 {
-        margin: 0;
-        color: var(--heading);
-        font-size: 22px;
-        letter-spacing: -0.05em;
-    }
-
-    .profile-card p {
-        margin: 8px 0 0;
-        color: var(--muted);
-        font-size: 13.5px;
-        line-height: 1.65;
-    }
-
-    .info-list {
-        margin-top: 18px;
-        display: grid;
-        gap: 10px;
-    }
-
-    .info-row {
-        padding: 13px 14px;
-        border-radius: 16px;
-        background: #f9fafb;
+    .profile-panel {
         border: 1px solid var(--line);
-        display: grid;
-        grid-template-columns: 130px minmax(0, 1fr);
-        gap: 12px;
-        align-items: start;
-    }
-
-    .info-row span {
-        color: var(--muted);
-        font-size: 12.5px;
-        font-weight: 900;
-    }
-
-    .info-row strong {
-        color: var(--heading);
-        font-size: 13.5px;
-        font-weight: 900;
-        overflow-wrap: anywhere;
-    }
-
-    .quick-actions {
-        margin-top: 18px;
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-    }
-
-    .quick-action {
-        padding: 15px;
-        border-radius: 18px;
-        border: 1px solid var(--line);
-        background: #ffffff;
-        color: var(--heading);
-        transition: 0.16s ease;
-    }
-
-    .quick-action:hover {
-        transform: translateY(-2px);
-        border-color: rgba(223, 186, 104, 0.56);
-        box-shadow: var(--shadow-soft);
-    }
-
-    .quick-action strong {
-        display: block;
-        font-size: 14px;
-        font-weight: 950;
-    }
-
-    .quick-action span {
-        display: block;
-        margin-top: 5px;
-        color: var(--muted);
-        font-size: 12.5px;
-        line-height: 1.45;
-    }
-
-    .order-list {
-        margin-top: 18px;
-        display: grid;
-        gap: 10px;
-    }
-
-    .order-row {
-        padding: 14px;
-        border-radius: 18px;
-        background: #ffffff;
-        border: 1px solid var(--line);
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 12px;
-        align-items: center;
-        transition: 0.16s ease;
-    }
-
-    .order-row:hover {
-        transform: translateY(-1px);
-        border-color: rgba(223, 186, 104, 0.56);
-        box-shadow: var(--shadow-soft);
-    }
-
-    .order-title {
-        color: var(--heading);
-        font-size: 14px;
-        font-weight: 950;
+        border-radius: 26px;
+        background: #fff;
+        box-shadow: var(--shadow-xs);
         overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
-
-    .order-meta {
-        margin-top: 5px;
-        color: var(--muted);
-        font-size: 12.5px;
-        font-weight: 750;
-        line-height: 1.5;
+    .profile-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 20px 22px;
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(180deg, #fff, #fffdf8);
     }
-
-    .order-price {
+    .profile-panel-body { padding: 22px; }
+    .profile-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        background: var(--brand-soft);
+        border: 1px solid rgba(200,147,53,.20);
         color: var(--brand-dark);
-        font-size: 14px;
-        font-weight: 950;
-        text-align: right;
-        white-space: nowrap;
+        flex: 0 0 auto;
     }
-
-    .order-status {
+    .profile-stat {
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: #fff;
+        padding: 18px;
+        height: 100%;
+        box-shadow: var(--shadow-xs);
+    }
+    .profile-stat .value {
+        font-weight: 900;
+        letter-spacing: -.035em;
+        color: var(--ink);
+        line-height: 1;
+    }
+    .profile-input {
+        height: 48px;
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        font-weight: 700;
+        box-shadow: none !important;
+    }
+    .profile-input:focus {
+        border-color: rgba(200,147,53,.55);
+        box-shadow: 0 0 0 .25rem rgba(200,147,53,.12) !important;
+    }
+    .profile-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        font-weight: 900;
+        color: var(--muted);
+        letter-spacing: .04em;
+        margin-bottom: 8px;
+    }
+    .profile-card-line {
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 16px;
+        background: #fff;
+    }
+    .profile-card-line.primary {
+        border-color: rgba(200,147,53,.28);
+        background: linear-gradient(135deg, #fff, #fff8ea);
+    }
+    .profile-badge {
         display: inline-flex;
-        margin-top: 6px;
-        padding: 5px 9px;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 11px;
         border-radius: 999px;
         background: var(--brand-soft);
         color: var(--brand-dark);
-        font-size: 11.5px;
-        font-weight: 900;
+        border: 1px solid rgba(200,147,53,.22);
+        font-size: 12px;
+        font-weight: 850;
     }
-
-    .empty-orders {
-        margin-top: 18px;
-        padding: 26px 18px;
-        border-radius: 18px;
-        border: 1px dashed var(--line);
-        background: #f9fafb;
-        text-align: center;
-        color: var(--muted);
-        font-size: 13.5px;
-        line-height: 1.6;
+    .order-timeline-card {
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 16px;
+        background: #fff;
+        transition: .2s ease;
     }
-
-    .store-info {
-        margin-top: 18px;
-        padding: 15px;
-        border-radius: 18px;
-        background: var(--brand-soft-2);
-        border: 1px solid rgba(223, 186, 104, 0.38);
+    .order-timeline-card:hover {
+        border-color: rgba(200,147,53,.28);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+    .mini-product-thumb {
+        width: 46px;
+        height: 46px;
+        border-radius: 15px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #fff, var(--brand-soft));
+        border: 1px solid var(--line);
         color: var(--brand-dark);
-        font-size: 13px;
-        line-height: 1.65;
-        font-weight: 750;
+        overflow: hidden;
+        flex: 0 0 auto;
     }
-
-    .profile-actions {
-        margin-top: 18px;
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
+    .mini-product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-side-nav .nav-link {
+        border-radius: 999px;
+        font-weight: 850;
+        color: var(--muted);
+        padding: 10px 14px;
     }
-
-    @media (max-width: 980px) {
-        .profile-hero,
-        .profile-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .profile-avatar-card {
-            text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .profile-avatar {
-            margin: 0;
-            flex-shrink: 0;
-        }
-
-        .metric-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
+    .profile-side-nav .nav-link.active {
+        color: var(--brand-dark);
+        background: var(--brand-soft);
     }
-
-    @media (max-width: 620px) {
-        .profile-card,
-        .profile-hero {
-            padding: 18px;
-        }
-
-        .profile-avatar-card {
-            display: none;
-        }
-
-        .metric-grid,
-        .quick-actions {
-            grid-template-columns: 1fr;
-        }
-
-        .info-row {
-            grid-template-columns: 1fr;
-            gap: 5px;
-        }
-
-        .order-row {
-            grid-template-columns: 1fr;
-        }
-
-        .order-price {
-            text-align: left;
-        }
-
-        .profile-actions .btn {
-            width: 100%;
-        }
+    @media (max-width: 767.98px) {
+        .profile-avatar { width: 72px; height: 72px; border-radius: 24px; font-size: 26px; }
+        .profile-panel-head, .profile-panel-body { padding: 18px; }
     }
 </style>
 @endpush
 
 @section('content')
 @php
-    $namaUser = $user->name ?? 'Pembeli';
-    $initial = strtoupper(substr($namaUser, 0, 2));
-
-    $formatStatus = function ($value) {
-        return ucwords(str_replace('_', ' ', (string) $value));
-    };
+    $initial = strtoupper(mb_substr($user->name ?: 'P', 0, 1));
+    $activeTab = session('profil_tab', 'akun');
+    if ($errors->has('password_lama') || $errors->has('password')) {
+        $activeTab = 'keamanan';
+    }
 @endphp
 
-<div class="profile-page">
-    <section class="page-card profile-hero">
-        <div>
-            <div class="badge">Profil Pembeli</div>
+<div class="container py-4 py-lg-5">
+    <div class="breadcrumb-modern mb-3">
+        <a href="{{ route('pembeli-web.home') }}">Beranda</a>
+        <i class="bi bi-chevron-right small"></i>
+        <span>Profil Saya</span>
+    </div>
 
-            <h1>
-                Halo, <span>{{ $namaUser }}</span>
-            </h1>
-
-            <p>
-                Ini adalah halaman akun pembeli. Dari sini kamu bisa melihat ringkasan pesanan,
-                membuka keranjang, mengatur alamat pengiriman, dan cek status pesanan.
-            </p>
-
-            <div class="profile-actions">
-                <a href="{{ route('pembeli-web.pesanan.index') }}" class="btn btn-primary">
-                    Lihat Pesanan
-                </a>
-
-                <a href="{{ route('pembeli-web.alamat.index') }}" class="btn btn-outline">
-                    Kelola Alamat
-                </a>
-
-                <a href="{{ route('pembeli-web.keranjang.index') }}" class="btn btn-outline">
-                    Buka Keranjang
-                </a>
-            </div>
-        </div>
-
-        <div class="profile-avatar-card">
-            <div class="profile-avatar">{{ $initial }}</div>
-            <div>
-                <strong>{{ $namaUser }}</strong>
-                <span>{{ $user->email }}</span>
-            </div>
-        </div>
-    </section>
-
-    <section class="metric-grid">
-        <div class="metric-card">
-            <span>Total Pesanan</span>
-            <strong>{{ $statProfil['total_pesanan'] ?? 0 }}</strong>
-            <small>Semua pesanan</small>
-        </div>
-
-        <div class="metric-card">
-            <span>Pesanan Aktif</span>
-            <strong>{{ $statProfil['pesanan_aktif'] ?? 0 }}</strong>
-            <small>Belum selesai</small>
-        </div>
-
-        <div class="metric-card">
-            <span>Selesai</span>
-            <strong>{{ $statProfil['pesanan_selesai'] ?? 0 }}</strong>
-            <small>Sudah diterima</small>
-        </div>
-
-        <div class="metric-card">
-            <span>Total Belanja</span>
-            <strong style="font-size:18px;">
-                Rp {{ number_format((float) ($statProfil['total_belanja'] ?? 0), 0, ',', '.') }}
-            </strong>
-            <small>Pembayaran dibayar</small>
-        </div>
-    </section>
-
-    <div class="profile-grid">
-        <section class="page-card profile-card">
-            <h2>Data Akun</h2>
-
-            <p>
-                Data ini digunakan untuk identitas pembeli pada proses checkout dan riwayat pesanan.
-            </p>
-
-            <div class="info-list">
-                <div class="info-row">
-                    <span>Nama</span>
-                    <strong>{{ $namaUser }}</strong>
-                </div>
-
-                <div class="info-row">
-                    <span>Email</span>
-                    <strong>{{ $user->email }}</strong>
-                </div>
-
-                <div class="info-row">
-                    <span>Telepon</span>
-                    <strong>{{ $user->telepon ?: 'Belum diisi' }}</strong>
-                </div>
-
-                <div class="info-row">
-                    <span>Status Akun</span>
-                    <strong>{{ $user->aktif ? 'Aktif' : 'Nonaktif' }}</strong>
-                </div>
-            </div>
-
-            <div class="quick-actions">
-                <a href="{{ route('pembeli-web.pesanan.index') }}" class="quick-action">
-                    <strong>Pesanan Saya</strong>
-                    <span>Lihat status pesanan, pembayaran, dan pengiriman.</span>
-                </a>
-
-                <a href="{{ route('pembeli-web.alamat.index') }}" class="quick-action">
-                    <strong>Alamat Saya</strong>
-                    <span>Kelola alamat pengiriman dan pilih alamat utama.</span>
-                </a>
-
-                <a href="{{ route('pembeli-web.keranjang.index') }}" class="quick-action">
-                    <strong>Keranjang</strong>
-                    <span>Cek produk yang akan kamu checkout.</span>
-                </a>
-
-                <a href="{{ route('pembeli-web.produk') }}" class="quick-action">
-                    <strong>Belanja Lagi</strong>
-                    <span>Lihat daftar produk tahu yang tersedia.</span>
-                </a>
-            </div>
-
-            <div class="store-info">
-                <strong>Info toko:</strong><br>
-                {{ $pengaturan->nama ?? 'SiTahu' }}
-
-                @if($pengaturan->jam_buka)
-                    buka {{ $pengaturan->jam_buka }}.
-                @endif
-
-                @if($pengaturan->telepon)
-                    Kontak toko: {{ $pengaturan->telepon }}.
-                @endif
-            </div>
-
-            <form action="{{ route('pembeli-web.logout') }}" method="POST" style="margin-top:16px;">
-                @csrf
-
-                <button type="submit" class="btn btn-outline">
-                    Logout Akun Pembeli
-                </button>
-            </form>
-        </section>
-
-        <section class="page-card profile-card">
-            <h2>Pesanan Terbaru</h2>
-
-            <p>
-                Ringkasan pesanan terakhir yang kamu buat lewat web pembeli SiTahu.
-            </p>
-
-            @if($pesananTerbaru->count())
-                <div class="order-list">
-                    @foreach($pesananTerbaru as $pesanan)
-                        <a href="{{ route('pembeli-web.pesanan.show', $pesanan->nomor_invoice) }}" class="order-row">
-                            <div class="min-w-0">
-                                <div class="order-title">
-                                    {{ $pesanan->nomor_invoice }}
-                                </div>
-
-                                <div class="order-meta">
-                                    {{ optional($pesanan->tanggal_pesanan)->format('d/m/Y H:i') ?? '-' }}
-                                    · {{ $pesanan->item->count() }} produk
-                                    · {{ $formatStatus($pesanan->metode_pengambilan) }}
-                                </div>
-
-                                <span class="order-status">
-                                    {{ $formatStatus($pesanan->status) }}
-                                </span>
-                            </div>
-
-                            <div class="order-price">
-                                Rp {{ number_format((float) $pesanan->total_bayar, 0, ',', '.') }}
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-
-                <div class="profile-actions">
-                    <a href="{{ route('pembeli-web.pesanan.index') }}" class="btn btn-primary">
-                        Lihat Semua Pesanan
-                    </a>
-                </div>
-            @else
-                <div class="empty-orders">
-                    Kamu belum punya pesanan. Yuk lihat produk tahu yang tersedia dulu.
-
-                    <div style="margin-top:14px;">
-                        <a href="{{ route('pembeli-web.produk') }}" class="btn btn-primary">
-                            Lihat Produk
-                        </a>
+    <section class="profile-hero p-4 p-lg-5 mb-4">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <div class="d-flex align-items-center gap-3 gap-md-4">
+                    <div class="profile-avatar">{{ $initial }}</div>
+                    <div class="min-w-0">
+                        <span class="profile-badge mb-2"><i class="bi bi-person-check-fill"></i> Akun pembeli aktif</span>
+                        <h1 class="section-heading h2 mb-2 text-truncate">{{ $user->name }}</h1>
+                        <div class="d-flex flex-wrap gap-2 text-muted fw-semibold small">
+                            <span><i class="bi bi-envelope me-1"></i>{{ $user->email }}</span>
+                            <span><i class="bi bi-phone me-1"></i>{{ $user->telepon ?: 'Nomor HP belum diisi' }}</span>
+                        </div>
                     </div>
                 </div>
-            @endif
-        </section>
+            </div>
+            <div class="col-lg-5">
+                <div class="d-flex flex-column flex-sm-row justify-content-lg-end gap-2">
+                    <a href="{{ route('pembeli-web.alamat.index') }}" class="btn btn-soft-brand px-4 py-3"><i class="bi bi-geo-alt me-2"></i>Alamat Saya</a>
+                    <a href="{{ route('pembeli-web.pesanan.index') }}" class="btn btn-brand px-4 py-3"><i class="bi bi-receipt me-2"></i>Pesanan Saya</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="row g-3 g-lg-4 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="profile-stat">
+                <div class="small text-muted fw-black text-uppercase">Total Pesanan</div>
+                <div class="value h2 mt-2 mb-1">{{ $statProfil['total_pesanan'] ?? 0 }}</div>
+                <div class="small text-brand fw-bold">Semua transaksi</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="profile-stat">
+                <div class="small text-muted fw-black text-uppercase">Pesanan Aktif</div>
+                <div class="value h2 mt-2 mb-1">{{ $statProfil['pesanan_aktif'] ?? 0 }}</div>
+                <div class="small text-brand fw-bold">Masih berjalan</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="profile-stat">
+                <div class="small text-muted fw-black text-uppercase">Ulasan</div>
+                <div class="value h2 mt-2 mb-1">{{ $statProfil['ulasan'] ?? 0 }}</div>
+                <div class="small text-brand fw-bold">Diberikan</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="profile-stat">
+                <div class="small text-muted fw-black text-uppercase">Total Belanja</div>
+                <div class="value h4 mt-2 mb-1">{{ $rupiah($statProfil['total_belanja'] ?? 0) }}</div>
+                <div class="small text-brand fw-bold">Pesanan dibayar</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 align-items-start">
+        <div class="col-lg-8">
+            <div class="profile-panel">
+                <div class="profile-panel-head flex-column flex-md-row align-items-md-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="profile-icon"><i class="bi bi-sliders2"></i></div>
+                        <div>
+                            <h2 class="h5 fw-black mb-1">Pengaturan profil</h2>
+                            <p class="text-muted mb-0 small fw-semibold">Perbarui data akun dan keamanan login.</p>
+                        </div>
+                    </div>
+                    <ul class="nav profile-side-nav gap-1" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link {{ $activeTab === 'akun' ? 'active' : '' }}" data-bs-toggle="pill" data-bs-target="#tab-akun" type="button" role="tab">Akun</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link {{ $activeTab === 'keamanan' ? 'active' : '' }}" data-bs-toggle="pill" data-bs-target="#tab-keamanan" type="button" role="tab">Keamanan</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="profile-panel-body">
+                    <div class="tab-content">
+                        <div class="tab-pane fade {{ $activeTab === 'akun' ? 'show active' : '' }}" id="tab-akun" role="tabpanel">
+                            <form action="{{ route('pembeli-web.profil.update') }}" method="POST" class="row g-3">
+                                @csrf
+                                @method('PUT')
+                                <div class="col-md-6">
+                                    <label class="profile-label" for="name">Nama akun</label>
+                                    <input type="text" id="name" name="name" class="form-control profile-input @error('name') is-invalid @enderror" value="{{ old('name', $user->name) }}" required>
+                                    @error('name')<div class="invalid-feedback fw-semibold">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="profile-label" for="telepon">Nomor HP akun</label>
+                                    <input type="text" id="telepon" name="telepon" class="form-control profile-input @error('telepon') is-invalid @enderror" value="{{ old('telepon', $user->telepon) }}" required>
+                                    @error('telepon')<div class="invalid-feedback fw-semibold">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-12">
+                                    <label class="profile-label" for="email">Email akun</label>
+                                    <input type="email" id="email" name="email" class="form-control profile-input @error('email') is-invalid @enderror" value="{{ old('email', $user->email) }}" required>
+                                    @error('email')<div class="invalid-feedback fw-semibold">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-12">
+                                    <div class="profile-card-line bg-light">
+                                        <div class="d-flex gap-3">
+                                            <i class="bi bi-info-circle text-brand"></i>
+                                            <div class="small text-muted fw-semibold">Data ini dipakai untuk login, invoice, dan konfirmasi pesanan. Nama penerima pengiriman tetap dapat berbeda melalui menu Alamat Saya.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-brand px-4 py-3"><i class="bi bi-check2-circle me-2"></i>Simpan Profil</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="tab-pane fade {{ $activeTab === 'keamanan' ? 'show active' : '' }}" id="tab-keamanan" role="tabpanel">
+                            <form action="{{ route('pembeli-web.profil.password') }}" method="POST" class="row g-3">
+                                @csrf
+                                @method('PUT')
+                                <div class="col-12">
+                                    <label class="profile-label" for="password_lama">Password saat ini</label>
+                                    <input type="password" id="password_lama" name="password_lama" class="form-control profile-input @error('password_lama') is-invalid @enderror" autocomplete="current-password" required>
+                                    @error('password_lama')<div class="invalid-feedback fw-semibold">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="profile-label" for="password">Password baru</label>
+                                    <input type="password" id="password" name="password" class="form-control profile-input @error('password') is-invalid @enderror" autocomplete="new-password" required>
+                                    @error('password')<div class="invalid-feedback fw-semibold">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="profile-label" for="password_confirmation">Konfirmasi password baru</label>
+                                    <input type="password" id="password_confirmation" name="password_confirmation" class="form-control profile-input" autocomplete="new-password" required>
+                                </div>
+                                <div class="col-12">
+                                    <div class="profile-card-line bg-light">
+                                        <div class="d-flex gap-3">
+                                            <i class="bi bi-shield-lock text-brand"></i>
+                                            <div class="small text-muted fw-semibold">Gunakan password minimal 6 karakter. Setelah password diganti, akun tetap login di perangkat ini.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-brand px-4 py-3"><i class="bi bi-lock me-2"></i>Ubah Password</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-panel mt-4">
+                <div class="profile-panel-head">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="profile-icon"><i class="bi bi-clock-history"></i></div>
+                        <div>
+                            <h2 class="h5 fw-black mb-1">Pesanan terbaru</h2>
+                            <p class="text-muted mb-0 small fw-semibold">Pantau transaksi terakhir dari akun ini.</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('pembeli-web.pesanan.index') }}" class="btn btn-plain btn-sm px-3">Semua</a>
+                </div>
+                <div class="profile-panel-body">
+                    @if($pesananTerbaru->count())
+                        <div class="d-grid gap-3">
+                            @foreach($pesananTerbaru as $pesanan)
+                                @php
+                                    $produkPreview = $pesanan->item->first()?->produk;
+                                    $gambarPreview = $produkPreview?->gambarUtama?->url_gambar;
+                                    $totalItemPesanan = $pesanan->item->sum('jumlah');
+                                @endphp
+                                <a href="{{ route('pembeli-web.pesanan.show', $pesanan->nomor_invoice) }}" class="order-timeline-card text-decoration-none d-flex align-items-center gap-3">
+                                    <div class="mini-product-thumb">
+                                        @if($gambarPreview)
+                                            <img src="{{ asset('storage/' . $gambarPreview) }}" alt="{{ $produkPreview?->nama }}">
+                                        @else
+                                            <i class="bi bi-box-seam fs-5"></i>
+                                        @endif
+                                    </div>
+                                    <div class="min-w-0 flex-grow-1">
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                            <span class="fw-black text-dark">{{ $pesanan->nomor_invoice }}</span>
+                                            <span class="badge rounded-pill bg-brand-soft text-brand border border-soft">{{ $statusLabel($pesanan->status) }}</span>
+                                        </div>
+                                        <div class="small text-muted fw-semibold text-truncate">{{ $produkPreview?->nama ?: 'Produk pesanan' }} · {{ $totalItemPesanan }} item · {{ optional($pesanan->tanggal_pesanan)->format('d M Y H:i') }}</div>
+                                    </div>
+                                    <div class="text-end d-none d-sm-block">
+                                        <div class="fw-black text-brand">{{ $rupiah($pesanan->total_bayar) }}</div>
+                                        <small class="text-muted fw-bold">Detail</small>
+                                    </div>
+                                </a>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center p-4 p-lg-5">
+                            <div class="profile-icon mx-auto mb-3"><i class="bi bi-receipt"></i></div>
+                            <h3 class="h5 fw-black mb-2">Belum ada pesanan</h3>
+                            <p class="text-muted fw-semibold mb-3">Produk yang dibeli akan muncul di riwayat pesanan.</p>
+                            <a href="{{ route('pembeli-web.produk') }}" class="btn btn-brand px-4 py-3">Belanja Sekarang</a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="profile-panel mb-4">
+                <div class="profile-panel-head">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="profile-icon"><i class="bi bi-compass"></i></div>
+                        <div>
+                            <h2 class="h5 fw-black mb-1">Menu akun</h2>
+                            <p class="text-muted mb-0 small fw-semibold">Kelola data transaksi dari halaman terpisah.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-panel-body d-grid gap-2">
+                    <a href="{{ route('pembeli-web.alamat.index') }}" class="btn btn-soft-brand py-3 text-start"><i class="bi bi-geo-alt me-2"></i>Kelola Alamat Saya</a>
+                    <a href="{{ route('pembeli-web.pesanan.index') }}" class="btn btn-soft-brand py-3 text-start"><i class="bi bi-receipt me-2"></i>Riwayat Pesanan</a>
+                </div>
+            </div>
+            <div class="profile-panel">
+                <div class="profile-panel-head">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="profile-icon"><i class="bi bi-box-arrow-right"></i></div>
+                        <div>
+                            <h2 class="h5 fw-black mb-1">Keluar akun</h2>
+                            <p class="text-muted mb-0 small fw-semibold">Akhiri sesi pembeli di perangkat ini.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-panel-body">
+                    <form action="{{ route('pembeli-web.logout') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-plain w-100 py-3 text-danger"><i class="bi bi-box-arrow-right me-2"></i>Keluar dari Akun</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 @endsection

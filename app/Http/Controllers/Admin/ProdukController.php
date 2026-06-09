@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\GambarProduk;
+use App\Models\ItemPesanan;
 use App\Models\Produk;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,10 +15,19 @@ class ProdukController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Produk::with('gambarUtama')->latest();
+        $query = Produk::query()
+            ->with('gambarUtama')
+            ->withSum('itemPesanan as total_terjual', 'jumlah')
+            ->withCount('ulasan')
+            ->withAvg('ulasan', 'rating');
 
         if ($request->filled('q')) {
-            $query->where('nama', 'like', '%' . $request->q . '%');
+            $keyword = trim((string) $request->q);
+            $query->where(function ($q) use ($keyword) {
+                $q->where('nama', 'like', "%{$keyword}%")
+                    ->orWhere('deskripsi', 'like', "%{$keyword}%")
+                    ->orWhere('satuan', 'like', "%{$keyword}%");
+            });
         }
 
         if ($request->filled('status')) {
@@ -25,22 +35,28 @@ class ProdukController extends Controller
                 $query->where('aktif', true);
             } elseif ($request->status === 'nonaktif') {
                 $query->where('aktif', false);
-            } elseif ($request->status === 'habis') {
-                $query->where('stok', '<=', 0);
             }
         }
 
-        if ($request->sort === 'harga_terendah') {
-            $query->orderBy('harga');
-        } elseif ($request->sort === 'harga_tertinggi') {
-            $query->orderByDesc('harga');
-        } elseif ($request->sort === 'stok_terendah') {
-            $query->orderBy('stok');
-        }
+        match ($request->sort) {
+            'nama' => $query->orderBy('nama'),
+            'harga_terendah' => $query->orderBy('harga'),
+            'harga_tertinggi' => $query->orderByDesc('harga'),
+            'terlaris' => $query->orderByDesc('total_terjual'),
+            'rating' => $query->orderByDesc('ulasan_avg_rating'),
+            default => $query->latest(),
+        };
 
         $produk = $query->paginate(10)->withQueryString();
 
-        return view('admin.produk.index', compact('produk'));
+        $stats = [
+            'total' => Produk::count(),
+            'aktif' => Produk::where('aktif', true)->count(),
+            'nonaktif' => Produk::where('aktif', false)->count(),
+            'terjual' => (int) ItemPesanan::sum('jumlah'),
+        ];
+
+        return view('admin.produk.index', compact('produk', 'stats'));
     }
 
     public function create(): View
@@ -50,10 +66,10 @@ class ProdukController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $produk = Produk::create($this->validated($request));
+        $produk = Produk::create($this->validated($request, true));
         $this->simpanGambar($request, $produk);
 
-        return redirect()->route('admin.produk.index')->with('success', 'Produk berhasil ditambahkan.');
+        return redirect()->route('admin.produk.index')->with('success', 'Produk berhasil ditambahkan. Stok dapat diatur dari menu Stok.');
     }
 
     public function edit(Produk $produk): View
@@ -64,7 +80,7 @@ class ProdukController extends Controller
 
     public function update(Request $request, Produk $produk): RedirectResponse
     {
-        $produk->update($this->validated($request));
+        $produk->update($this->validated($request, false));
         $this->simpanGambar($request, $produk, true);
 
         return redirect()->route('admin.produk.index')->with('success', 'Produk berhasil diperbarui.');
@@ -75,6 +91,7 @@ class ProdukController extends Controller
         foreach ($produk->gambar as $gambar) {
             Storage::disk('public')->delete($gambar->url_gambar);
         }
+
         $produk->delete();
 
         return back()->with('success', 'Produk berhasil dihapus.');
@@ -84,16 +101,14 @@ class ProdukController extends Controller
     {
         $produk->update(['aktif' => ! $produk->aktif]);
 
-        return back()->with('success', 'Status produk berhasil diubah.');
+        return back()->with('success', $produk->aktif ? 'Produk ditampilkan di katalog pembeli.' : 'Produk disembunyikan dari katalog pembeli.');
     }
 
-    private function validated(Request $request): array
+    private function validated(Request $request, bool $creating = false): array
     {
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:100'],
             'harga' => ['required', 'numeric', 'min:0'],
-            'stok' => ['nullable', 'integer', 'min:0'],
-            'min_stok' => ['required', 'integer', 'min:0'],
             'satuan' => ['required', 'string', 'max:30'],
             'isi_per_satuan' => ['nullable', 'integer', 'min:0'],
             'berat' => ['nullable', 'numeric', 'min:0'],
@@ -104,8 +119,9 @@ class ProdukController extends Controller
             'aktif' => ['nullable', 'boolean'],
         ]) + ['aktif' => false];
 
-        if (! $request->has('stok')) {
-            unset($data['stok']);
+        if ($creating) {
+            $data['stok'] = 0;
+            $data['min_stok'] = 20;
         }
 
         return $data;

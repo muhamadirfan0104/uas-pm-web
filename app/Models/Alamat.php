@@ -12,6 +12,7 @@ class Alamat extends Model
         'user_id',
         'nama_penerima',
         'telepon',
+        'email_penerima',
         'alamat_lengkap',
         'latitude',
         'longitude',

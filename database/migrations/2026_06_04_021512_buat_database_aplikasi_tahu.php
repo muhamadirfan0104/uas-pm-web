@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('nama_penerima', 100);
             $table->string('telepon', 20);
+            $table->string('email_penerima', 150)->nullable();
             $table->text('alamat_lengkap');
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();

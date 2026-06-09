@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Paginator::defaultView('vendor.pagination.sitahu');
+        Paginator::defaultSimpleView('vendor.pagination.sitahu-simple');
+
         View::share('rupiah', function ($value): string {
             return 'Rp ' . number_format((float) ($value ?? 0), 0, ',', '.');
         });
@@ -29,7 +33,7 @@ class AppServiceProvider extends ServiceProvider
                 'dibayar', 'selesai', 'aktif', 'masuk' => 'c-green',
                 'diproses', 'siap_diambil', 'dalam_pengantaran' => 'c-purple',
                 'menunggu_pembayaran', 'menipis' => 'c-yellow',
-                'gagal', 'kedaluwarsa', 'dibatalkan', 'habis', 'keluar' => 'c-red',
+                'gagal', 'kedaluwarsa', 'dibatalkan', 'ditolak', 'habis', 'keluar' => 'c-red',
                 default => 'c-gray',
             };
         });

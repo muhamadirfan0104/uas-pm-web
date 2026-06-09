@@ -10,6 +10,7 @@ use App\Models\Pengiriman;
 use App\Models\Pesanan;
 use App\Models\Produk;
 use App\Models\RiwayatStok;
+use App\Services\WebPembeli\KeranjangService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -20,11 +21,56 @@ use Illuminate\View\View;
 
 class CheckoutController extends Controller
 {
-    public function index(): View|RedirectResponse
-    {
-        $dataKeranjang = $this->ambilDataKeranjang();
+    private string $buyNowSessionKey = 'checkout_beli_sekarang';
+    private string $selectedCartSessionKey = 'keranjang_web_selected';
 
-        if ($dataKeranjang['items']->isEmpty()) {
+    public function __construct(private KeranjangService $keranjangService)
+    {
+    }
+
+    public function buyNow(Request $request, Produk $produk): RedirectResponse
+    {
+        if (! $produk->aktif) {
+            return back()->with('error', 'Produk belum tersedia untuk dipesan.');
+        }
+
+        if ((int) $produk->stok <= 0) {
+            return back()->with('error', 'Stok produk sedang habis.');
+        }
+
+        $request->validate([
+            'jumlah' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        $jumlah = max(1, (int) $request->input('jumlah', 1));
+        $jumlah = min($jumlah, max(1, (int) $produk->stok));
+
+        // Alur seperti marketplace: Beli Sekarang tetap masuk ke keranjang,
+        // produk yang dipilih langsung dicentang, lalu pembeli melanjutkan checkout dari keranjang.
+        $this->keranjangService->tambah($produk, $jumlah);
+        $this->keranjangService->updateJumlah($produk, 'set', $jumlah);
+        $request->session()->forget($this->buyNowSessionKey);
+        $request->session()->put($this->selectedCartSessionKey, [(int) $produk->id]);
+        $request->session()->put('url.intended', route('pembeli-web.checkout.index'));
+
+        return redirect()
+            ->route('pembeli-web.keranjang.index')
+            ->with('success', $produk->nama . ' sudah dipilih. Lanjutkan checkout dari keranjang.');
+    }
+
+    public function index(Request $request): View|RedirectResponse
+    {
+        $dataCheckout = $this->dataCheckout($request);
+
+        if ($dataCheckout['items']->isEmpty()) {
+            if ($dataCheckout['checkoutMode'] === 'buy_now') {
+                $request->session()->forget($this->buyNowSessionKey);
+
+                return redirect()
+                    ->route('pembeli-web.produk')
+                    ->with('error', 'Produk yang dipilih sudah tidak tersedia. Pilih produk lain terlebih dahulu.');
+            }
+
             return redirect()
                 ->route('pembeli-web.keranjang.index')
                 ->with('error', 'Keranjang masih kosong. Pilih produk dulu ya.');
@@ -42,9 +88,11 @@ class CheckoutController extends Controller
         $alamatUtama = $alamatPembeli->firstWhere('utama', true) ?? $alamatPembeli->first();
 
         return view('pembeli.checkout', [
-            'items' => $dataKeranjang['items'],
-            'totalItem' => $dataKeranjang['totalItem'],
-            'subtotal' => $dataKeranjang['totalBelanja'],
+            'items' => $dataCheckout['items'],
+            'totalItem' => $dataCheckout['totalItem'],
+            'subtotal' => $dataCheckout['totalBelanja'],
+            'checkoutMode' => $dataCheckout['checkoutMode'],
+            'buyNowProduct' => $dataCheckout['buyNowProduct'],
             'pengaturan' => $pengaturan,
             'user' => $user,
             'alamatPembeli' => $alamatPembeli,
@@ -54,42 +102,28 @@ class CheckoutController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $dataKeranjang = $this->ambilDataKeranjang();
+        $dataCheckout = $this->dataCheckout($request);
 
-        if ($dataKeranjang['items']->isEmpty()) {
+        if ($dataCheckout['items']->isEmpty()) {
             return redirect()
-                ->route('pembeli-web.keranjang.index')
-                ->with('error', 'Keranjang masih kosong. Pilih produk dulu ya.');
+                ->route($dataCheckout['checkoutMode'] === 'buy_now' ? 'pembeli-web.produk' : 'pembeli-web.keranjang.index')
+                ->with('error', 'Tidak ada produk yang bisa di-checkout. Pilih produk terlebih dahulu.');
         }
 
         $data = $request->validate([
-            'nama' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore(Auth::id())],
-            'telepon' => ['required', 'string', 'max:30'],
-
+            'alamat_id' => ['required', 'integer', 'exists:alamat,id'],
             'metode_pengambilan' => ['required', Rule::in(['ambil_toko', 'kurir_toko'])],
-            'metode_pembayaran' => ['required', Rule::in(['qris', 'tunai'])],
-
-            'alamat_id' => ['nullable', 'integer', 'exists:alamat,id'],
-
+            'metode_pembayaran' => ['required', Rule::in(['cod', 'transfer_bank'])],
             'catatan' => ['nullable', 'string', 'max:500'],
             'setuju' => ['accepted'],
         ], [
-            'setuju.accepted' => 'Kamu perlu menyetujui pesanan sebelum checkout.',
+            'alamat_id.required' => 'Pilih alamat penerima terlebih dahulu.',
             'alamat_id.exists' => 'Alamat yang dipilih tidak valid.',
+            'setuju.accepted' => 'Kamu perlu menyetujui pesanan sebelum checkout.',
         ]);
 
-        if ($data['metode_pengambilan'] === 'kurir_toko') {
-            $request->validate([
-                'alamat_id' => ['required', 'integer', 'exists:alamat,id'],
-            ], [
-                'alamat_id.required' => 'Pilih alamat pengiriman terlebih dahulu untuk kurir toko.',
-                'alamat_id.exists' => 'Alamat yang dipilih tidak valid.',
-            ]);
-        }
-
         try {
-            $pesanan = DB::transaction(function () use ($data, $dataKeranjang) {
+            $pesanan = DB::transaction(function () use ($data, $dataCheckout, $request) {
                 $pengaturan = PengaturanToko::utama();
                 $user = Auth::user();
 
@@ -98,36 +132,29 @@ class CheckoutController extends Controller
                 }
 
                 $user->update([
-                    'name' => $data['nama'],
-                    'email' => $data['email'],
-                    'telepon' => $data['telepon'],
                     'role' => $user->role ?: 'pembeli',
                     'aktif' => $user->aktif ?? true,
                 ]);
 
-                $alamat = null;
+                $alamat = Alamat::query()
+                    ->where('user_id', $user->id)
+                    ->where('id', $data['alamat_id'])
+                    ->first();
 
-                if ($data['metode_pengambilan'] === 'kurir_toko') {
-                    $alamat = Alamat::query()
-                        ->where('user_id', $user->id)
-                        ->where('id', $data['alamat_id'])
-                        ->first();
-
-                    if (! $alamat) {
-                        throw new \RuntimeException('Alamat pengiriman tidak ditemukan.');
-                    }
+                if (! $alamat) {
+                    throw new \RuntimeException('Alamat penerima tidak ditemukan.');
                 }
 
                 $items = [];
                 $subtotal = 0;
 
-                foreach ($dataKeranjang['items'] as $item) {
-                    $produkKeranjang = $item['produk'];
+                foreach ($dataCheckout['items'] as $item) {
+                    $produkCheckout = $item['produk'];
 
                     $produk = Produk::query()
                         ->where('aktif', true)
                         ->lockForUpdate()
-                        ->findOrFail($produkKeranjang->id);
+                        ->findOrFail($produkCheckout->id);
 
                     $jumlah = (int) $item['jumlah'];
 
@@ -188,9 +215,16 @@ class CheckoutController extends Controller
 
                 $metodePembayaran = $data['metode_pembayaran'];
 
-                $referensiPembayaran = $metodePembayaran === 'tunai'
-                    ? 'TUNAI-' . now()->format('YmdHis') . '-' . $pesanan->id
-                    : 'QRIS-' . now()->format('YmdHis') . '-' . $pesanan->id;
+                if ($metodePembayaran === 'cod') {
+                    $pesanan->update([
+                        'status' => 'diproses',
+                        'status_pembayaran' => 'menunggu_pembayaran',
+                    ]);
+                }
+
+                $referensiPembayaran = $metodePembayaran === 'cod'
+                    ? 'COD-' . now()->format('YmdHis') . '-' . $pesanan->id
+                    : 'TRF-' . now()->format('YmdHis') . '-' . $pesanan->id;
 
                 Pembayaran::create([
                     'pesanan_id' => $pesanan->id,
@@ -198,12 +232,10 @@ class CheckoutController extends Controller
                     'referensi_pembayaran' => $referensiPembayaran,
                     'jumlah' => $totalBayar,
                     'status' => 'menunggu_pembayaran',
-                    'tautan_pembayaran' => $metodePembayaran === 'qris'
-                        ? url('/pembeli-web/checkout/sukses/' . $pesanan->id)
-                        : null,
-                    'qr_code' => $metodePembayaran === 'qris'
-                        ? 'QR-' . $pesanan->nomor_invoice
-                        : null,
+                    'tautan_pembayaran' => null,
+                    'qr_code' => null,
+                    'bukti_transfer' => null,
+                    'catatan_admin' => null,
                 ]);
 
                 Pengiriman::create([
@@ -227,11 +259,22 @@ class CheckoutController extends Controller
                 ]);
             });
 
-            session()->forget('keranjang_web');
+            if ($dataCheckout['checkoutMode'] === 'buy_now') {
+                $request->session()->forget($this->buyNowSessionKey);
+            } else {
+                $this->keranjangService->hapusProdukIds($dataCheckout['selectedProductIds'] ?? []);
+                $request->session()->forget($this->selectedCartSessionKey);
+            }
 
-            return redirect()
+            $redirect = redirect()
                 ->route('pembeli-web.checkout.success', $pesanan)
                 ->with('success', 'Pesanan berhasil dibuat.');
+
+            if ($pesanan->pembayaran?->metode_pembayaran === 'transfer_bank') {
+                $redirect->with('show_transfer_modal', true);
+            }
+
+            return $redirect;
         } catch (\Throwable $e) {
             return back()
                 ->withInput()
@@ -241,6 +284,8 @@ class CheckoutController extends Controller
 
     public function success(Pesanan $pesanan): View
     {
+        abort_unless($pesanan->user_id === Auth::id(), 403);
+
         $pesanan->load([
             'item.produk.gambarUtama',
             'pembayaran',
@@ -249,39 +294,88 @@ class CheckoutController extends Controller
             'user',
         ]);
 
-        return view('pembeli.checkout-sukses', compact('pesanan'));
+        $pengaturan = PengaturanToko::utama();
+
+        return view('pembeli.checkout-sukses', compact('pesanan', 'pengaturan'));
     }
 
-    private function ambilDataKeranjang(): array
+    private function dataCheckout(Request $request): array
     {
-        $keranjang = session('keranjang_web', []);
+        $buyNow = $request->session()->get($this->buyNowSessionKey);
 
-        $items = collect($keranjang)->map(function ($item) {
+        if ($buyNow) {
             $produk = Produk::query()
                 ->with('gambarUtama')
-                ->find($item['produk_id']);
+                ->where('aktif', true)
+                ->find($buyNow['produk_id'] ?? null);
 
-            if (! $produk || ! $produk->aktif) {
-                return null;
+            if (! $produk || (int) $produk->stok <= 0) {
+                return [
+                    'items' => collect(),
+                    'totalItem' => 0,
+                    'totalBelanja' => 0,
+                    'checkoutMode' => 'buy_now',
+                    'buyNowProduct' => null,
+                    'selectedProductIds' => [],
+                ];
             }
 
-            $jumlah = max(1, (int) $item['jumlah']);
+            $jumlah = max(1, (int) ($buyNow['jumlah'] ?? 1));
+            $jumlah = min($jumlah, max(1, (int) $produk->stok));
             $harga = (float) $produk->harga;
-            $subtotal = $jumlah * $harga;
+            $subtotal = $harga * $jumlah;
+
+            $items = collect([
+                [
+                    'produk' => $produk,
+                    'jumlah' => $jumlah,
+                    'harga' => $harga,
+                    'subtotal' => $subtotal,
+                    'stok_tersedia' => (int) $produk->stok,
+                ],
+            ]);
 
             return [
-                'produk' => $produk,
-                'jumlah' => $jumlah,
-                'harga' => $harga,
-                'subtotal' => $subtotal,
-                'stok_tersedia' => (int) $produk->stok,
+                'items' => $items,
+                'totalItem' => $jumlah,
+                'totalBelanja' => $subtotal,
+                'checkoutMode' => 'buy_now',
+                'buyNowProduct' => $produk,
+                'selectedProductIds' => [(int) $produk->id],
             ];
-        })->filter()->values();
+        }
+
+        $dataKeranjang = $this->keranjangService->data();
+
+        $selectedProductIds = collect($request->session()->get($this->selectedCartSessionKey, []))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values();
+
+        if ($selectedProductIds->isEmpty()) {
+            return [
+                'items' => collect(),
+                'totalItem' => 0,
+                'totalBelanja' => 0,
+                'checkoutMode' => 'cart',
+                'buyNowProduct' => null,
+                'selectedProductIds' => [],
+            ];
+        }
+
+        $items = $dataKeranjang['items']
+            ->filter(fn ($item) => $selectedProductIds->contains((int) $item['produk']->id))
+            ->values();
 
         return [
             'items' => $items,
-            'totalItem' => $items->sum('jumlah'),
-            'totalBelanja' => $items->sum('subtotal'),
+            'totalItem' => (int) $items->sum('jumlah'),
+            'totalBelanja' => (float) $items->sum('subtotal'),
+            'checkoutMode' => 'cart',
+            'buyNowProduct' => null,
+            'selectedProductIds' => $selectedProductIds->all(),
         ];
     }
+
 }

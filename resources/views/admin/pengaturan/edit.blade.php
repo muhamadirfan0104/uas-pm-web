@@ -300,18 +300,6 @@
     </div>
 </section>
 
-@if(session('success'))
-    <div class="alert-setting alert-success-setting">
-        {{ session('success') }}
-    </div>
-@endif
-
-@if($errors->any())
-    <div class="alert-setting alert-error-setting">
-        {{ $errors->first() }}
-    </div>
-@endif
-
 <form action="{{ route('admin.pengaturan.update') }}" method="POST" enctype="multipart/form-data">
     @csrf
     @method('PUT')
@@ -546,14 +534,53 @@
                 </div>
 
                 <div class="setting-box-body">
-                    <div class="form-group">
-                        <label for="info_pembayaran">Info Pembayaran</label>
+                    <div class="form-grid-3">
+                        <div class="form-group">
+                            <label for="bank_nama">Nama Bank</label>
+                            <input
+                                type="text"
+                                name="bank_nama"
+                                id="bank_nama"
+                                class="form-control"
+                                value="{{ old('bank_nama', $pengaturan->bank_nama) }}"
+                                placeholder="Contoh: BCA / BRI / Mandiri"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bank_nomor_rekening">Nomor Rekening</label>
+                            <input
+                                type="text"
+                                name="bank_nomor_rekening"
+                                id="bank_nomor_rekening"
+                                class="form-control"
+                                value="{{ old('bank_nomor_rekening', $pengaturan->bank_nomor_rekening) }}"
+                                placeholder="Contoh: 1234567890"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bank_atas_nama">Atas Nama</label>
+                            <input
+                                type="text"
+                                name="bank_atas_nama"
+                                id="bank_atas_nama"
+                                class="form-control"
+                                value="{{ old('bank_atas_nama', $pengaturan->bank_atas_nama) }}"
+                                placeholder="Contoh: SiTahu Premium"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="info_pembayaran">Catatan Pembayaran</label>
                         <textarea
                             name="info_pembayaran"
                             id="info_pembayaran"
                             class="form-control"
-                            placeholder="Contoh: Pembayaran bisa melalui tunai saat ambil toko atau QRIS."
+                            placeholder="Contoh: Transfer sesuai total bayar, lalu unggah bukti pembayaran saat checkout."
                         >{{ old('info_pembayaran', $pengaturan->info_pembayaran) }}</textarea>
+                        <div class="form-note">Nomor rekening ini akan tampil di checkout saat pembeli memilih Transfer Bank.</div>
                     </div>
                 </div>
             </section>

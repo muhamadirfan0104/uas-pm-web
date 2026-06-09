@@ -15,6 +15,7 @@ class PengaturanToko extends Model
         'telepon',
         'email',
         'jam_buka',
+        'jam_tutup',
         'latitude_toko',
         'longitude_toko',
         'tarif_per_km',
@@ -22,6 +23,9 @@ class PengaturanToko extends Model
         'radius_maksimal_km',
         'area_pengiriman',
         'info_pembayaran',
+        'bank_nama',
+        'bank_nomor_rekening',
+        'bank_atas_nama',
         'tentang',
     ];
 
@@ -49,7 +53,10 @@ class PengaturanToko extends Model
                 'biaya_minimum_pengiriman' => 5000,
                 'radius_maksimal_km' => 10,
                 'area_pengiriman' => 'Area sekitar toko',
-                'info_pembayaran' => 'Pembayaran dapat dilakukan melalui tunai atau QRIS.',
+                'info_pembayaran' => 'Transfer bank diverifikasi admin setelah bukti pembayaran dikirim.',
+                'bank_nama' => 'BCA',
+                'bank_nomor_rekening' => '1234567890',
+                'bank_atas_nama' => 'SiTahu Premium',
                 'tentang' => 'SiTahu menyediakan produk tahu segar untuk pembeli.',
             ]
         );

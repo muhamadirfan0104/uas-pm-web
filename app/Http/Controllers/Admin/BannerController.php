@@ -11,11 +11,40 @@ use Illuminate\View\View;
 
 class BannerController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $banner = Banner::orderBy('urutan')->latest()->paginate(12);
+        $query = Banner::query();
 
-        return view('admin.banner.index', compact('banner'));
+        if ($request->filled('q')) {
+            $keyword = trim((string) $request->q);
+            $query->where(function ($q) use ($keyword) {
+                $q->where('judul', 'like', "%{$keyword}%")
+                    ->orWhere('deskripsi', 'like', "%{$keyword}%");
+            });
+        }
+
+        if ($request->status === 'aktif') {
+            $query->where('aktif', true);
+        } elseif ($request->status === 'nonaktif') {
+            $query->where('aktif', false);
+        }
+
+        match ($request->sort) {
+            'terbaru' => $query->latest(),
+            'terlama' => $query->oldest(),
+            default => $query->orderBy('urutan')->latest(),
+        };
+
+        $banner = $query->paginate(9)->withQueryString();
+
+        $stats = [
+            'total' => Banner::count(),
+            'aktif' => Banner::where('aktif', true)->count(),
+            'nonaktif' => Banner::where('aktif', false)->count(),
+            'urutan_berikutnya' => ((int) Banner::max('urutan')) + 1,
+        ];
+
+        return view('admin.banner.index', compact('banner', 'stats'));
     }
 
     public function create(): View
@@ -64,14 +93,14 @@ class BannerController extends Controller
     {
         $banner->update(['aktif' => ! $banner->aktif]);
 
-        return back()->with('success', 'Status banner berhasil diubah.');
+        return back()->with('success', $banner->aktif ? 'Banner ditampilkan di beranda pembeli.' : 'Banner disembunyikan dari beranda pembeli.');
     }
 
     private function validated(Request $request, bool $gambarWajib): array
     {
         return $request->validate([
             'judul' => ['required', 'string', 'max:100'],
-            'deskripsi' => ['nullable', 'string'],
+            'deskripsi' => ['nullable', 'string', 'max:500'],
             'urutan' => ['nullable', 'integer', 'min:0'],
             'aktif' => ['nullable', 'boolean'],
             'gambar' => [$gambarWajib ? 'required' : 'nullable', 'image', 'max:2048'],

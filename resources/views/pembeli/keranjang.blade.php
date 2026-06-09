@@ -4,742 +4,214 @@
 
 @push('styles')
 <style>
-    .cart-hero {
-        padding: 24px;
-        margin-bottom: 20px;
-        display: grid;
-        grid-template-columns: 1fr 230px;
-        gap: 18px;
-        align-items: center;
-        background:
-            radial-gradient(circle at top right, rgba(223, 186, 104, 0.24), transparent 34%),
-            linear-gradient(135deg, #ffffff 0%, #fff8e8 100%);
-    }
-
-    .cart-hero h1 {
-        margin: 10px 0 0;
-        color: var(--heading);
-        font-size: clamp(28px, 3.8vw, 42px);
-        line-height: 1.05;
-        letter-spacing: -0.065em;
-    }
-
-    .cart-hero h1 span {
-        color: var(--brand-dark);
-    }
-
-    .cart-hero p {
-        margin: 10px 0 0;
-        max-width: 650px;
-        color: var(--muted);
-        line-height: 1.65;
-        font-size: 14px;
-    }
-
-    .cart-summary-mini {
-        padding: 17px;
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.82);
-        border: 1px solid var(--line);
-        box-shadow: var(--shadow-soft);
-    }
-
-    .cart-summary-mini strong {
-        display: block;
-        color: var(--heading);
-        font-size: 28px;
-        line-height: 1;
-        letter-spacing: -0.06em;
-    }
-
-    .cart-summary-mini span {
-        display: block;
-        margin-top: 6px;
-        color: var(--muted);
-        font-size: 13px;
-        font-weight: 750;
-    }
-
-    .alert {
-        margin-bottom: 16px;
-        padding: 13px 15px;
-        border-radius: 16px;
-        font-size: 14px;
-        font-weight: 800;
-        border: 1px solid transparent;
-    }
-
-    .alert-success {
-        background: #ecfdf5;
-        color: #15803d;
-        border-color: #bbf7d0;
-    }
-
-    .alert-error {
-        background: #fef2f2;
-        color: #b91c1c;
-        border-color: #fecaca;
-    }
-
-    .cart-layout {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 350px;
-        gap: 20px;
-        align-items: start;
-    }
-
-    .cart-list {
-        display: grid;
-        gap: 14px;
-    }
-
-    .cart-item {
-        padding: 14px;
-        display: grid;
-        grid-template-columns: 104px minmax(0, 1fr) 170px;
-        gap: 16px;
-        align-items: center;
-        transition: 0.16s ease;
-    }
-
-    .cart-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 14px 28px rgba(17, 24, 39, 0.09);
-    }
-
-    .cart-img {
-        width: 104px;
-        height: 104px;
-        border-radius: 18px;
-        overflow: hidden;
-        background:
-            radial-gradient(circle at top right, rgba(223, 186, 104, 0.20), transparent 34%),
-            #f9fafb;
-        border: 1px solid var(--line);
-        display: grid;
-        place-items: center;
-        color: var(--brand-dark);
-        font-size: 10px;
-        font-weight: 950;
-        letter-spacing: 0.05em;
-    }
-
-    .cart-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .cart-info h2 {
-        margin: 0;
-        color: var(--heading);
-        font-size: 17px;
-        line-height: 1.35;
-        letter-spacing: -0.035em;
-    }
-
-    .cart-info p {
-        margin: 6px 0 0;
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.5;
-    }
-
-    .cart-price {
-        margin-top: 10px;
-        color: var(--brand-dark);
-        font-size: 17px;
-        font-weight: 950;
-    }
-
-    .cart-control {
-        display: grid;
-        justify-items: end;
-        gap: 10px;
-    }
-
-    .qty-box {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px;
-        border-radius: 16px;
-        background: #f9fafb;
-        border: 1px solid var(--line);
-    }
-
-    .qty-button {
-        width: 34px;
-        height: 34px;
-        border-radius: 12px;
-        border: 1px solid var(--line);
-        background: #ffffff;
-        color: var(--heading);
-        font-size: 18px;
-        line-height: 1;
-        font-weight: 950;
-        cursor: pointer;
-        display: inline-grid;
-        place-items: center;
-        transition: 0.16s ease;
-    }
-
-    .qty-button:hover {
-        background: var(--brand-soft);
-        color: var(--brand-dark);
-        border-color: rgba(223, 186, 104, 0.55);
-    }
-
-    .qty-button:disabled {
-        opacity: 0.55;
-        cursor: not-allowed;
-        transform: none;
-    }
-
-    .qty-value {
-        min-width: 38px;
-        height: 34px;
-        border-radius: 12px;
-        display: grid;
-        place-items: center;
-        background: #ffffff;
-        border: 1px solid var(--line);
-        color: var(--heading);
-        font-weight: 950;
-    }
-
-    .item-subtotal {
-        color: var(--heading);
-        font-size: 15px;
-        font-weight: 950;
-        text-align: right;
-    }
-
-    .remove-button {
-        border: 0;
-        background: transparent;
-        color: #b91c1c;
-        font-size: 12.5px;
-        font-weight: 900;
-        cursor: pointer;
-        padding: 0;
-    }
-
-    .remove-button:hover {
-        text-decoration: underline;
-    }
-
-    .summary-card {
-        padding: 20px;
-        position: sticky;
-        top: 94px;
-    }
-
-    .summary-card h2 {
-        margin: 0;
-        color: var(--heading);
-        font-size: 22px;
-        letter-spacing: -0.045em;
-    }
-
-    .summary-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 13px 0;
-        border-bottom: 1px solid var(--line);
-        color: var(--muted);
-        font-size: 14px;
-    }
-
-    .summary-row strong {
-        color: var(--heading);
-        text-align: right;
-    }
-
-    .summary-total {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 16px 0 18px;
-        color: var(--heading);
-        font-weight: 950;
-        font-size: 18px;
-    }
-
-    .summary-total span:last-child {
-        color: var(--brand-dark);
-        text-align: right;
-    }
-
-    .summary-actions {
-        display: grid;
-        gap: 10px;
-    }
-
-    .summary-actions .btn {
-        width: 100%;
-    }
-
-    .summary-note {
-        margin-top: 14px;
-        padding: 13px;
-        border-radius: 16px;
-        background: #f9fafb;
-        border: 1px solid var(--line);
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.55;
-    }
-
-    .empty-cart {
-        padding: 44px 24px;
-        text-align: center;
-    }
-
-    .empty-icon {
-        width: 66px;
-        height: 66px;
-        margin: 0 auto 16px;
-        display: grid;
-        place-items: center;
-        border-radius: 22px;
-        background: var(--brand-soft);
-        color: var(--brand-dark);
-        font-size: 30px;
-    }
-
-    .empty-cart h2 {
-        margin: 0;
-        color: var(--heading);
-        font-size: 25px;
-        letter-spacing: -0.05em;
-    }
-
-    .empty-cart p {
-        margin: 9px auto 0;
-        max-width: 460px;
-        color: var(--muted);
-        line-height: 1.7;
-        font-size: 14px;
-    }
-
-    .empty-actions {
-        margin-top: 18px;
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .hidden {
-        display: none !important;
-    }
-
-    @media (max-width: 980px) {
-        .cart-hero {
-            grid-template-columns: 1fr;
-        }
-
-        .cart-summary-mini {
-            width: 100%;
-        }
-
-        .cart-layout {
-            grid-template-columns: 1fr;
-        }
-
-        .summary-card {
-            position: static;
-        }
-    }
-
-    @media (max-width: 720px) {
-        .cart-hero,
-        .summary-card {
-            padding: 18px;
-        }
-
-        .cart-item {
-            grid-template-columns: 92px minmax(0, 1fr);
-            align-items: start;
-        }
-
-        .cart-img {
-            width: 92px;
-            height: 92px;
-        }
-
-        .cart-control {
-            grid-column: 1 / -1;
-            justify-items: start;
-        }
-
-        .item-subtotal {
-            text-align: left;
-        }
-    }
-
-    @media (max-width: 520px) {
-        .cart-item {
-            grid-template-columns: 1fr;
-        }
-
-        .cart-img {
-            width: 100%;
-            height: 210px;
-        }
-
-        .qty-box {
-            width: 100%;
-            justify-content: space-between;
-        }
+    .cart-shell { border-radius: 28px; border: 1px solid var(--line); background: #fff; box-shadow: var(--shadow-xs); overflow: hidden; }
+    .cart-head { display: grid; grid-template-columns: 48px minmax(0, 1fr) 160px 170px 170px 120px; gap: 18px; align-items: center; padding: 18px 22px; background: #fff; border-bottom: 1px solid var(--line); color: var(--muted); font-weight: 800; }
+    .cart-row { display: grid; grid-template-columns: 48px minmax(0, 1fr) 160px 170px 170px 120px; gap: 18px; align-items: center; padding: 22px; border-bottom: 1px solid var(--line); }
+    .cart-row:last-child { border-bottom: 0; }
+    .cart-check { width: 20px; height: 20px; border-radius: 6px; cursor: pointer; }
+    .cart-check:checked { background-color: var(--brand-color); border-color: var(--brand-color); }
+    .cart-product { display: flex; align-items: center; gap: 16px; min-width: 0; }
+    .cart-img { width: 88px; height: 88px; border-radius: 18px; overflow: hidden; background: var(--brand-soft); display: grid; place-items: center; flex: 0 0 auto; color: var(--brand-dark); font-weight: 900; }
+    .cart-img img { width: 100%; height: 100%; object-fit: cover; }
+    .cart-title { color: var(--dark); font-weight: 900; text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .cart-title:hover { color: var(--brand-dark); }
+    .qty-inline { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #fff; }
+    .qty-inline button { width: 38px; height: 38px; border: 0; background: #fff; font-weight: 900; color: var(--dark); }
+    .qty-inline button:disabled { opacity: .45; }
+    .qty-inline input { width: 54px; height: 38px; border: 0; border-left: 1px solid var(--line); border-right: 1px solid var(--line); text-align: center; font-weight: 900; }
+    .cart-action-link { border: 0; background: transparent; color: var(--muted); font-weight: 800; text-decoration: none; padding: 0; }
+    .cart-action-link:hover { color: #dc3545; }
+    .cart-bottom-bar { position: sticky; bottom: 0; z-index: 20; border: 1px solid var(--line); border-radius: 26px 26px 0 0; background: rgba(255,255,255,.96); backdrop-filter: blur(16px); box-shadow: 0 -20px 60px rgba(15,23,42,.10); padding: 16px 22px; margin-top: 22px; }
+    .selected-total { font-size: clamp(1.45rem, 2vw, 2rem); font-weight: 950; color: var(--brand-dark); letter-spacing: -.04em; }
+    .empty-cart-box { border-radius: 30px; border: 1px solid var(--line); background: #fff; box-shadow: var(--shadow-xs); }
+    @media (max-width: 991.98px) {
+        .cart-head { display: none; }
+        .cart-shell { background: transparent; border: 0; box-shadow: none; overflow: visible; }
+        .cart-row { grid-template-columns: 34px minmax(0, 1fr); gap: 12px; border: 1px solid var(--line); border-radius: 24px; background: #fff; box-shadow: var(--shadow-xs); margin-bottom: 14px; padding: 16px; }
+        .cart-row > .cart-price, .cart-row > .cart-qty, .cart-row > .cart-subtotal, .cart-row > .cart-action { grid-column: 2; }
+        .cart-product { align-items: flex-start; }
+        .cart-img { width: 76px; height: 76px; border-radius: 16px; }
+        .cart-price, .cart-subtotal { display: flex; justify-content: space-between; align-items: center; }
+        .cart-price::before { content: 'Harga'; color: var(--muted); font-weight: 700; }
+        .cart-subtotal::before { content: 'Subtotal'; color: var(--muted); font-weight: 700; }
+        .cart-bottom-bar { border-radius: 22px; margin-bottom: 12px; }
     }
 </style>
 @endpush
 
 @section('content')
-<section class="page-card cart-hero">
-    <div>
-        <div class="badge">Keranjang Belanja</div>
+@php
+    $selectedProductIds = collect($selectedProductIds ?? [])->map(fn($id) => (int) $id)->all();
+    $selectedItems = $items->filter(fn($item) => in_array((int) $item['produk']->id, $selectedProductIds, true));
+    $selectedTotalItem = (int) $selectedItems->sum('jumlah');
+    $selectedTotalBelanja = (float) $selectedItems->sum('subtotal');
+    $allChecked = $items->count() > 0 && count($selectedProductIds) === $items->count();
+@endphp
 
-        <h1>
-            Produk pilihanmu <span>siap dipesan</span>
-        </h1>
-
-        <p>
-            Cek ulang produk dan jumlah pesanan sebelum lanjut checkout.
-            Total akhir akan dihitung lagi sesuai metode penerimaan pesanan.
-        </p>
+<div class="container py-4 py-lg-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4">
+        <div>
+            <div class="breadcrumb-modern"><a href="{{ route('pembeli-web.produk') }}">Produk</a><i class="bi bi-chevron-right small"></i><span>Keranjang</span></div>
+            <span class="eyebrow mb-2"><i class="bi bi-bag-check-fill"></i> Keranjang belanja</span>
+            <h1 class="section-heading h2 mb-2">Pilih produk yang ingin di-checkout.</h1>
+            <p class="section-subtitle mb-0">Centang produk, cek jumlahnya, lalu lanjutkan checkout.</p>
+        </div>
+        <a href="{{ route('pembeli-web.produk') }}" class="btn btn-soft-brand px-4 py-3"><i class="bi bi-arrow-left me-2"></i> Lanjut Belanja</a>
     </div>
 
-    <div class="cart-summary-mini">
-        <strong id="heroTotalItem">{{ $totalItem }}</strong>
-        <span>Total produk di keranjang</span>
-    </div>
-</section>
+    @if($items->count())
+        <form id="cartCheckoutForm" action="{{ route('pembeli-web.keranjang.checkout') }}" method="POST">
+            @csrf
+        </form>
 
-<div id="cartAlert" class="alert hidden"></div>
+        <div class="cart-shell">
+            <div class="cart-head">
+                <div class="text-center">
+                    <input type="checkbox" class="form-check-input cart-check js-select-all" aria-label="Pilih semua produk" {{ $allChecked ? 'checked' : '' }}>
+                </div>
+                <div>Produk</div>
+                <div class="text-end">Harga Satuan</div>
+                <div class="text-center">Kuantitas</div>
+                <div class="text-end">Total Harga</div>
+                <div class="text-end">Aksi</div>
+            </div>
 
-@if(session('success'))
-    <div class="alert alert-success">
-        {{ session('success') }}
-    </div>
-@endif
-
-@if(session('error'))
-    <div class="alert alert-error">
-        {{ session('error') }}
-    </div>
-@endif
-
-<section id="cartContent" class="{{ $items->count() ? '' : 'hidden' }}">
-    <div class="cart-layout">
-        <div class="cart-list" id="cartList">
             @foreach($items as $item)
                 @php
                     $produk = $item['produk'];
-                    $gambar = $produk->gambarUtama?->url_gambar;
+                    $image = $produk->gambarUtama?->url_gambar;
+                    $isSelected = in_array((int) $produk->id, $selectedProductIds, true);
                 @endphp
+                <div class="cart-row js-cart-row" data-subtotal="{{ $item['subtotal'] }}" data-jumlah="{{ $item['jumlah'] }}">
+                    <div class="text-center">
+                        <input type="checkbox" name="selected_produk[]" value="{{ $produk->id }}" form="cartCheckoutForm" class="form-check-input cart-check js-cart-select" aria-label="Pilih {{ $produk->nama }}" {{ $isSelected ? 'checked' : '' }}>
+                    </div>
 
-                <article class="page-card cart-item" id="cartItem-{{ $produk->id }}" data-product-id="{{ $produk->id }}">
-                    <a href="{{ route('pembeli-web.produk.detail', $produk) }}" class="cart-img">
-                        @if($gambar)
-                            <img src="{{ asset('storage/' . $gambar) }}" alt="{{ $produk->nama }}">
-                        @else
-                            PRODUK TAHU
-                        @endif
-                    </a>
-
-                    <div class="cart-info">
-                        <h2>{{ $produk->nama }}</h2>
-
-                        <p>
-                            {{ $produk->satuan ?: 'Satuan produk' }}
-                            @if($produk->isi_per_satuan)
-                                · isi {{ $produk->isi_per_satuan }}
+                    <div class="cart-product">
+                        <a href="{{ route('pembeli-web.produk.detail', $produk) }}" class="cart-img text-decoration-none">
+                            @if($image)
+                                <img src="{{ asset('storage/' . $image) }}" alt="{{ $produk->nama }}">
+                            @else
+                                <i class="bi bi-box-seam fs-2"></i>
                             @endif
-                            · stok tersedia {{ $item['stok_tersedia'] }}
-                        </p>
-
-                        <div class="cart-price">
-                            Rp {{ number_format($item['harga'], 0, ',', '.') }}
-                        </div>
-                    </div>
-
-                    <div class="cart-control">
-                        <div class="qty-box">
-                            <button
-                                type="button"
-                                class="qty-button js-cart-update"
-                                data-url="{{ route('pembeli-web.keranjang.update', $produk) }}"
-                                data-action="kurang"
-                                aria-label="Kurangi jumlah"
-                                title="Kurangi jumlah"
-                            >
-                                −
-                            </button>
-
-                            <div class="qty-value" id="qty-{{ $produk->id }}">
-                                {{ $item['jumlah'] }}
+                        </a>
+                        <div class="min-w-0">
+                            <a href="{{ route('pembeli-web.produk.detail', $produk) }}" class="cart-title mb-2">{{ $produk->nama }}</a>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="meta-chip"><i class="bi bi-basket2"></i>{{ $produk->satuan }}</span>
+                                <span class="meta-chip"><i class="bi bi-box"></i>Stok {{ $item['stok_tersedia'] }}</span>
                             </div>
-
-                            <button
-                                type="button"
-                                class="qty-button js-cart-update"
-                                data-url="{{ route('pembeli-web.keranjang.update', $produk) }}"
-                                data-action="tambah"
-                                aria-label="Tambah jumlah"
-                                title="Tambah jumlah"
-                            >
-                                +
-                            </button>
                         </div>
-
-                        <div class="item-subtotal" id="subtotal-{{ $produk->id }}">
-                            Rp {{ number_format($item['subtotal'], 0, ',', '.') }}
-                        </div>
-
-                        <button
-                            type="button"
-                            class="remove-button js-cart-delete"
-                            data-url="{{ route('pembeli-web.keranjang.destroy', $produk) }}"
-                            data-product-id="{{ $produk->id }}"
-                        >
-                            Hapus produk
-                        </button>
                     </div>
-                </article>
+
+                    <div class="cart-price text-lg-end fw-bold">{{ $rupiah($item['harga']) }}</div>
+
+                    <div class="cart-qty text-lg-center">
+                        <div class="qty-inline">
+                            <form action="{{ route('pembeli-web.keranjang.update', $produk) }}" method="POST" class="m-0">
+                                @csrf @method('PATCH')
+                                <input type="hidden" name="aksi" value="kurang">
+                                <button type="submit" {{ $item['jumlah'] <= 1 ? 'disabled' : '' }} aria-label="Kurangi jumlah"><i class="bi bi-dash"></i></button>
+                            </form>
+                            <form action="{{ route('pembeli-web.keranjang.update', $produk) }}" method="POST" class="m-0">
+                                @csrf @method('PATCH')
+                                <input type="hidden" name="aksi" value="set">
+                                <input type="number" name="jumlah" min="1" max="{{ max(1, $item['stok_tersedia']) }}" value="{{ $item['jumlah'] }}" aria-label="Jumlah {{ $produk->nama }}" onchange="this.form.submit()">
+                            </form>
+                            <form action="{{ route('pembeli-web.keranjang.update', $produk) }}" method="POST" class="m-0">
+                                @csrf @method('PATCH')
+                                <input type="hidden" name="aksi" value="tambah">
+                                <button type="submit" {{ $item['jumlah'] >= $item['stok_tersedia'] ? 'disabled' : '' }} aria-label="Tambah jumlah"><i class="bi bi-plus"></i></button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="cart-subtotal text-lg-end fw-black text-brand">{{ $rupiah($item['subtotal']) }}</div>
+
+                    <div class="cart-action text-lg-end">
+                        <form action="{{ route('pembeli-web.keranjang.destroy', $produk) }}" method="POST" onsubmit="return confirm('Hapus produk ini dari keranjang?')">
+                            @csrf @method('DELETE')
+                            <button class="cart-action-link" type="submit">Hapus</button>
+                        </form>
+                    </div>
+                </div>
             @endforeach
         </div>
 
-        <aside class="page-card summary-card">
-            <h2>Ringkasan belanja</h2>
-
-            <div style="margin-top:12px;">
-                <div class="summary-row">
-                    <span>Total item</span>
-                    <strong id="summaryTotalItem">{{ $totalItem }} produk</strong>
+        <div class="cart-bottom-bar">
+            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    <label class="d-flex align-items-center gap-2 fw-bold mb-0">
+                        <input type="checkbox" class="form-check-input cart-check js-select-all" {{ $allChecked ? 'checked' : '' }}>
+                        Pilih Semua <span class="text-muted fw-semibold">({{ $items->count() }})</span>
+                    </label>
+                    <form action="{{ route('pembeli-web.keranjang.clear') }}" method="POST" onsubmit="return confirm('Kosongkan semua isi keranjang?')" class="m-0">
+                        @csrf @method('DELETE')
+                        <button class="cart-action-link text-danger" type="submit">Kosongkan Keranjang</button>
+                    </form>
                 </div>
 
-                <div class="summary-row">
-                    <span>Subtotal</span>
-                    <strong id="summarySubtotal">Rp {{ number_format($totalBelanja, 0, ',', '.') }}</strong>
-                </div>
-
-                <div class="summary-row">
-                    <span>Pengiriman</span>
-                    <strong>Dipilih saat checkout</strong>
-                </div>
-
-                <div class="summary-total">
-                    <span>Total sementara</span>
-                    <span id="summaryTotal">Rp {{ number_format($totalBelanja, 0, ',', '.') }}</span>
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3">
+                    <div class="text-sm-end">
+                        <div class="fw-bold">Total (<span class="js-selected-count">{{ $selectedTotalItem }}</span> produk)</div>
+                        <div class="selected-total js-selected-total">{{ $rupiah($selectedTotalBelanja) }}</div>
+                    </div>
+                    <button class="btn btn-brand px-5 py-3 js-checkout-btn" type="submit" form="cartCheckoutForm" {{ $selectedTotalItem <= 0 ? 'disabled' : '' }}>
+                        Checkout
+                    </button>
                 </div>
             </div>
-
-            <div class="summary-actions">
-                <a href="{{ route('pembeli-web.checkout.index') }}" class="btn btn-primary">
-                    Checkout
-                </a>
-
-                <a href="{{ route('pembeli-web.produk') }}" class="btn btn-outline">
-                    Tambah Produk
-                </a>
-
-                <button
-                    type="button"
-                    class="btn btn-outline js-cart-clear"
-                    data-url="{{ route('pembeli-web.keranjang.clear') }}"
-                >
-                    Kosongkan Keranjang
-                </button>
-            </div>
-
-            <div class="summary-note">
-                Total akhir akan menyesuaikan pilihan ambil di toko atau kurir toko saat checkout.
-            </div>
-        </aside>
-    </div>
-</section>
-
-<section id="emptyCart" class="page-card empty-cart {{ $items->count() ? 'hidden' : '' }}">
-    <div class="empty-icon">🛒</div>
-
-    <h2>Keranjangmu masih kosong</h2>
-
-    <p>
-        Yuk pilih produk tahu favoritmu dulu. Produk yang kamu tambahkan akan muncul di sini.
-    </p>
-
-    <div class="empty-actions">
-        <a href="{{ route('pembeli-web.produk') }}" class="btn btn-primary">
-            Lihat Produk
-        </a>
-
-        <a href="{{ route('pembeli-web.home') }}" class="btn btn-outline">
-            Kembali ke Beranda
-        </a>
-    </div>
-</section>
+        </div>
+    @else
+        <div class="empty-cart-box p-4 p-lg-5 text-center">
+            <div class="stat-icon mx-auto mb-3"><i class="bi bi-bag-x"></i></div>
+            <h2 class="h3 fw-bold">Keranjang masih kosong.</h2>
+            <p class="text-muted mb-4">Pilih produk dari katalog, lalu tambahkan ke keranjang. Anda bisa melakukannya tanpa login terlebih dahulu.</p>
+            <a href="{{ route('pembeli-web.produk', ['stok' => 'tersedia']) }}" class="btn btn-brand px-4 py-3">Mulai Belanja</a>
+        </div>
+    @endif
+</div>
 @endsection
 
 @push('scripts')
 <script>
-    const csrfToken = '{{ csrf_token() }}';
+    document.addEventListener('DOMContentLoaded', function () {
+        const itemChecks = [...document.querySelectorAll('.js-cart-select')];
+        const selectAllChecks = [...document.querySelectorAll('.js-select-all')];
+        const selectedCount = document.querySelector('.js-selected-count');
+        const selectedTotal = document.querySelector('.js-selected-total');
+        const checkoutBtn = document.querySelector('.js-checkout-btn');
+        const rupiah = value => 'Rp ' + Number(value || 0).toLocaleString('id-ID');
 
-    const cartAlert = document.getElementById('cartAlert');
-    const heroTotalItem = document.getElementById('heroTotalItem');
-    const summaryTotalItem = document.getElementById('summaryTotalItem');
-    const summarySubtotal = document.getElementById('summarySubtotal');
-    const summaryTotal = document.getElementById('summaryTotal');
-    const cartContent = document.getElementById('cartContent');
-    const emptyCart = document.getElementById('emptyCart');
+        function updateSummary() {
+            let count = 0;
+            let total = 0;
 
-    function showCartAlert(message, type = 'success') {
-        if (!cartAlert) return;
-
-        cartAlert.textContent = message;
-        cartAlert.classList.remove('hidden', 'alert-success', 'alert-error');
-        cartAlert.classList.add(type === 'success' ? 'alert-success' : 'alert-error');
-
-        setTimeout(() => {
-            cartAlert.classList.add('hidden');
-        }, 2200);
-    }
-
-    function setButtonsLoading(isLoading) {
-        document.querySelectorAll('.js-cart-update, .js-cart-delete, .js-cart-clear').forEach(button => {
-            button.disabled = isLoading;
-        });
-    }
-
-    async function sendCartRequest(url, method, body = null) {
-        setButtonsLoading(true);
-
-        try {
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
-                },
-                body: body ? JSON.stringify(body) : null
+            itemChecks.forEach(check => {
+                const row = check.closest('.js-cart-row');
+                if (check.checked && row) {
+                    count += Number(row.dataset.jumlah || 0);
+                    total += Number(row.dataset.subtotal || 0);
+                }
             });
 
-            const data = await response.json();
+            if (selectedCount) selectedCount.textContent = count;
+            if (selectedTotal) selectedTotal.textContent = rupiah(total);
+            if (checkoutBtn) checkoutBtn.disabled = count <= 0;
 
-            if (!response.ok || !data.success) {
-                showCartAlert(data.message || 'Keranjang gagal diperbarui.', 'error');
-                return null;
-            }
-
-            return data;
-        } catch (error) {
-            showCartAlert('Koneksi bermasalah. Coba lagi ya.', 'error');
-            return null;
-        } finally {
-            setButtonsLoading(false);
-        }
-    }
-
-    function updateCartView(data) {
-        if (!data) return;
-
-        if (heroTotalItem) {
-            heroTotalItem.textContent = data.total_item;
+            const allChecked = itemChecks.length > 0 && itemChecks.every(check => check.checked);
+            selectAllChecks.forEach(check => check.checked = allChecked);
         }
 
-        if (summaryTotalItem) {
-            summaryTotalItem.textContent = data.total_item + ' produk';
-        }
-
-        if (summarySubtotal) {
-            summarySubtotal.textContent = data.total_belanja_format;
-        }
-
-        if (summaryTotal) {
-            summaryTotal.textContent = data.total_belanja_format;
-        }
-
-        const itemIds = data.items.map(item => String(item.produk_id));
-
-        document.querySelectorAll('[id^="cartItem-"]').forEach(card => {
-            const productId = card.dataset.productId;
-
-            if (!itemIds.includes(String(productId))) {
-                card.remove();
-            }
-        });
-
-        data.items.forEach(item => {
-            const qtyEl = document.getElementById('qty-' + item.produk_id);
-            const subtotalEl = document.getElementById('subtotal-' + item.produk_id);
-
-            if (qtyEl) {
-                qtyEl.textContent = item.jumlah;
-            }
-
-            if (subtotalEl) {
-                subtotalEl.textContent = item.subtotal_format;
-            }
-        });
-
-        if (data.total_item <= 0) {
-            cartContent.classList.add('hidden');
-            emptyCart.classList.remove('hidden');
-        } else {
-            cartContent.classList.remove('hidden');
-            emptyCart.classList.add('hidden');
-        }
-    }
-
-    document.querySelectorAll('.js-cart-update').forEach(button => {
-        button.addEventListener('click', async function () {
-            const url = this.dataset.url;
-            const aksi = this.dataset.action;
-
-            const data = await sendCartRequest(url, 'PATCH', {
-                aksi: aksi
+        itemChecks.forEach(check => check.addEventListener('change', updateSummary));
+        selectAllChecks.forEach(check => {
+            check.addEventListener('change', function () {
+                itemChecks.forEach(item => item.checked = check.checked);
+                updateSummary();
             });
-
-            if (data) {
-                updateCartView(data);
-                showCartAlert('Jumlah produk diperbarui.', 'success');
-            }
         });
-    });
 
-    document.querySelectorAll('.js-cart-delete').forEach(button => {
-        button.addEventListener('click', async function () {
-            const yakin = confirm('Hapus produk ini dari keranjang?');
-            if (!yakin) return;
-
-            const url = this.dataset.url;
-            const data = await sendCartRequest(url, 'DELETE');
-
-            if (data) {
-                updateCartView(data);
-                showCartAlert(data.message || 'Produk dihapus dari keranjang.', 'success');
-            }
-        });
-    });
-
-    document.querySelectorAll('.js-cart-clear').forEach(button => {
-        button.addEventListener('click', async function () {
-            const yakin = confirm('Kosongkan semua isi keranjang?');
-            if (!yakin) return;
-
-            const url = this.dataset.url;
-            const data = await sendCartRequest(url, 'DELETE');
-
-            if (data) {
-                updateCartView(data);
-                showCartAlert(data.message || 'Keranjang dikosongkan.', 'success');
-            }
-        });
+        updateSummary();
     });
 </script>
 @endpush

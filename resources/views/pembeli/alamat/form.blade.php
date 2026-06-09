@@ -3,200 +3,44 @@
 @section('title', ($alamat->exists ? 'Edit Alamat' : 'Tambah Alamat') . ' - SiTahu')
 
 @push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQz36ySLBQOjaYj9n2L8Kt2nHLxH0wM=" crossorigin="">
 <style>
-    .address-form-page {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 340px;
-        gap: 18px;
-        align-items: start;
+    .address-map-card {
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: var(--shadow-xs);
     }
-
-    .form-hero {
-        padding: 24px;
-        margin-bottom: 18px;
-        background:
-            radial-gradient(circle at top right, rgba(223, 186, 104, 0.24), transparent 34%),
-            linear-gradient(135deg, #ffffff 0%, #fff8e8 100%);
+    .address-map-toolbar {
+        padding: 14px;
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(180deg, #fff, #fffdf7);
     }
-
-    .form-hero h1 {
-        margin: 10px 0 0;
-        color: var(--heading);
-        font-size: clamp(30px, 4vw, 44px);
-        line-height: 1.04;
-        letter-spacing: -0.07em;
-    }
-
-    .form-hero h1 span {
-        color: var(--brand-dark);
-    }
-
-    .form-hero p {
-        margin: 10px 0 0;
-        max-width: 720px;
-        color: var(--muted);
-        font-size: 14px;
-        line-height: 1.7;
-    }
-
-    .form-card {
-        padding: 24px;
-    }
-
-    .form-grid {
-        display: grid;
-        gap: 16px;
-    }
-
-    .form-row-2 {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 8px;
-        color: var(--heading);
-        font-size: 13px;
-        font-weight: 900;
-    }
-
-    .form-control {
-        width: 100%;
+    .address-map-search {
         min-height: 48px;
-        padding: 12px 14px;
         border-radius: 15px;
         border: 1px solid var(--line);
-        background: #ffffff;
-        color: var(--heading);
-        outline: none;
-        font-size: 14px;
+        font-weight: 700;
     }
-
-    .form-control:focus {
-        border-color: rgba(223, 186, 104, 0.75);
-        box-shadow: 0 0 0 4px rgba(223, 186, 104, 0.16);
+    .address-map-search:focus {
+        border-color: rgba(200,147,53,.55);
+        box-shadow: 0 0 0 .25rem rgba(200,147,53,.12);
     }
-
-    textarea.form-control {
-        min-height: 130px;
-        resize: vertical;
-        line-height: 1.7;
+    #alamatMap {
+        height: 390px;
+        width: 100%;
+        background: var(--brand-soft);
     }
-
-    .checkbox-row {
-        padding: 13px 14px;
-        border-radius: 16px;
-        border: 1px solid var(--line);
-        background: #f9fafb;
-        display: flex;
-        gap: 10px;
-        align-items: flex-start;
+    .address-coordinate-box {
+        border: 1px dashed rgba(200,147,53,.38);
+        background: #fffaf0;
+        border-radius: 18px;
+        padding: 14px 16px;
     }
-
-    .checkbox-row input {
-        margin-top: 3px;
-    }
-
-    .checkbox-row strong {
-        display: block;
-        color: var(--heading);
-        font-size: 13.5px;
-        font-weight: 950;
-    }
-
-    .checkbox-row span {
-        display: block;
-        margin-top: 4px;
-        color: var(--muted);
-        font-size: 12.5px;
-        line-height: 1.5;
-    }
-
-    .alert-error {
-        margin-bottom: 16px;
-        padding: 13px 15px;
-        border-radius: 16px;
-        background: #fef2f2;
-        color: #b91c1c;
-        border: 1px solid #fecaca;
-        font-size: 13.5px;
-        font-weight: 800;
-    }
-
-    .form-actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .helper-card {
-        padding: 20px;
-        position: sticky;
-        top: 94px;
-    }
-
-    .helper-card h2 {
-        margin: 0;
-        color: var(--heading);
-        font-size: 21px;
-        letter-spacing: -0.045em;
-    }
-
-    .helper-card p {
-        margin: 8px 0 0;
-        color: var(--muted);
-        font-size: 13.5px;
-        line-height: 1.65;
-    }
-
-    .helper-list {
-        margin-top: 16px;
-        display: grid;
-        gap: 10px;
-    }
-
-    .helper-item {
-        padding: 13px;
-        border-radius: 16px;
-        background: #f9fafb;
-        border: 1px solid var(--line);
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.55;
-    }
-
-    .helper-item strong {
-        display: block;
-        margin-bottom: 4px;
-        color: var(--heading);
-    }
-
-    @media (max-width: 920px) {
-        .address-form-page {
-            grid-template-columns: 1fr;
-        }
-
-        .helper-card {
-            position: static;
-        }
-    }
-
-    @media (max-width: 560px) {
-        .form-hero,
-        .form-card,
-        .helper-card {
-            padding: 18px;
-        }
-
-        .form-row-2 {
-            grid-template-columns: 1fr;
-        }
-
-        .form-actions .btn {
-            width: 100%;
-        }
+    .leaflet-container { font-family: 'Plus Jakarta Sans', sans-serif; }
+    @media (max-width: 767.98px) {
+        #alamatMap { height: 320px; }
     }
 </style>
 @endpush
@@ -204,158 +48,209 @@
 @section('content')
 @php
     $isEdit = $alamat->exists;
-
-    $action = $isEdit
-        ? route('pembeli-web.alamat.update', $alamat)
-        : route('pembeli-web.alamat.store');
+    $action = $isEdit ? route('pembeli-web.alamat.update', $alamat) : route('pembeli-web.alamat.store');
+    $latValue = old('latitude', $alamat->latitude);
+    $lngValue = old('longitude', $alamat->longitude);
+    $defaultLat = $latValue ?: -7.2575;
+    $defaultLng = $lngValue ?: 112.7521;
 @endphp
-
-<section class="page-card form-hero">
-    <div class="badge">Alamat Saya</div>
-
-    <h1>
-        {{ $isEdit ? 'Edit' : 'Tambah' }} <span>alamat pengiriman</span>
-    </h1>
-
-    <p>
-        Lengkapi nama penerima, nomor telepon, alamat lengkap, dan koordinat jika tersedia.
-        Koordinat membantu admin membuka titik lokasi melalui maps.
-    </p>
-</section>
-
-@if($errors->any())
-    <div class="alert-error">
-        {{ $errors->first() }}
+<div class="container py-4 py-lg-5">
+    <div class="breadcrumb-modern">
+        <a href="{{ route('pembeli-web.home') }}">Beranda</a>
+        <i class="bi bi-chevron-right small"></i>
+        <a href="{{ route('pembeli-web.alamat.index') }}">Alamat</a>
+        <i class="bi bi-chevron-right small"></i>
+        <span>{{ $isEdit ? 'Edit' : 'Tambah' }}</span>
     </div>
-@endif
 
-<div class="address-form-page">
-    <main class="page-card form-card">
-        <form action="{{ $action }}" method="POST" class="form-grid">
-            @csrf
+    <div class="row g-4 align-items-start">
+        <div class="col-lg-8">
+            <div class="surface-strong p-4 p-lg-5">
+                <span class="eyebrow mb-2"><i class="bi bi-geo-alt-fill"></i> {{ $isEdit ? 'Edit alamat' : 'Alamat baru' }}</span>
+                <h1 class="section-heading h2 mb-3">{{ $isEdit ? 'Perbarui alamat penerima' : 'Tambahkan alamat penerima' }}</h1>
+                <p class="section-subtitle mb-4">Isi data penerima, tulis alamat lengkap, lalu tentukan titik lokasi dengan menekan area peta. Latitude dan longitude akan terisi otomatis dari titik yang dipilih.</p>
 
-            @if($isEdit)
-                @method('PUT')
-            @endif
+                <form action="{{ $action }}" method="POST" id="alamatForm">
+                    @csrf
+                    @if($isEdit) @method('PUT') @endif
+                    @if(request('redirect') === 'checkout')
+                        <input type="hidden" name="redirect" value="checkout">
+                    @endif
 
-            <div class="form-row-2">
-                <div class="form-group">
-                    <label for="nama_penerima">Nama Penerima</label>
-                    <input
-                        type="text"
-                        name="nama_penerima"
-                        id="nama_penerima"
-                        class="form-control"
-                        value="{{ old('nama_penerima', $alamat->nama_penerima) }}"
-                        placeholder="Contoh: Sabrina Martha"
-                        required
-                    >
-                </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Nama penerima</label>
+                            <input type="text" name="nama_penerima" value="{{ old('nama_penerima', $alamat->nama_penerima) }}" class="form-control field-modern" style="min-height:52px;border-radius:16px;" placeholder="Contoh: Siti Rahma" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Nomor HP penerima</label>
+                            <input type="text" name="telepon" value="{{ old('telepon', $alamat->telepon) }}" class="form-control field-modern" style="min-height:52px;border-radius:16px;" placeholder="08xxxxxxxxxx" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Email penerima</label>
+                            <input type="email" name="email_penerima" value="{{ old('email_penerima', $alamat->email_penerima) }}" class="form-control field-modern" style="min-height:52px;border-radius:16px;" placeholder="email@example.com" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Alamat lengkap</label>
+                            <textarea name="alamat_lengkap" rows="4" class="form-control" style="border-radius:16px;" placeholder="Nama jalan, nomor rumah, RT/RW, desa/kelurahan, kecamatan, kota/kabupaten, dan patokan" required>{{ old('alamat_lengkap', $alamat->alamat_lengkap) }}</textarea>
+                        </div>
 
-                <div class="form-group">
-                    <label for="telepon">Nomor Telepon</label>
-                    <input
-                        type="text"
-                        name="telepon"
-                        id="telepon"
-                        class="form-control"
-                        value="{{ old('telepon', $alamat->telepon) }}"
-                        placeholder="Contoh: 081234567890"
-                        required
-                    >
-                </div>
-            </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold mb-2">Titik lokasi di maps</label>
+                            <div class="address-map-card">
+                                <div class="address-map-toolbar">
+                                    <div class="row g-2 align-items-center">
+                                        <div class="col-md">
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white border-end-0" style="border-radius:15px 0 0 15px;"><i class="bi bi-search"></i></span>
+                                                <input type="text" id="mapSearchInput" class="form-control address-map-search border-start-0" placeholder="Cari lokasi, contoh: Blitar, Ponggok, Karang Anyar">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-auto d-flex gap-2">
+                                            <button type="button" class="btn btn-soft-brand px-3" id="btnSearchMap"><i class="bi bi-search me-1"></i>Cari</button>
+                                            <button type="button" class="btn btn-plain px-3" id="btnUseMyLocation"><i class="bi bi-crosshair me-1"></i>Lokasi Saya</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="alamatMap" data-lat="{{ $defaultLat }}" data-lng="{{ $defaultLng }}" data-has-point="{{ $latValue && $lngValue ? '1' : '0' }}"></div>
+                            </div>
 
-            <div class="form-group">
-                <label for="alamat_lengkap">Alamat Lengkap</label>
-                <textarea
-                    name="alamat_lengkap"
-                    id="alamat_lengkap"
-                    class="form-control"
-                    placeholder="Contoh: Jl. ..., RT/RW, Kelurahan, Kecamatan, Kota"
-                    required
-                >{{ old('alamat_lengkap', $alamat->alamat_lengkap) }}</textarea>
-            </div>
+                            <input type="hidden" name="latitude" id="latitudeInput" value="{{ $latValue }}">
+                            <input type="hidden" name="longitude" id="longitudeInput" value="{{ $lngValue }}">
 
-            <div class="form-row-2">
-                <div class="form-group">
-                    <label for="latitude">Latitude</label>
-                    <input
-                        type="text"
-                        name="latitude"
-                        id="latitude"
-                        class="form-control"
-                        value="{{ old('latitude', $alamat->latitude) }}"
-                        placeholder="Contoh: -7.8166"
-                    >
-                </div>
+                            <div class="address-coordinate-box mt-3 d-flex flex-column flex-md-row justify-content-between gap-2">
+                                <div>
+                                    <div class="fw-black text-dark">Koordinat alamat</div>
+                                    <div class="small text-muted fw-semibold" id="coordinateText">
+                                        @if($latValue && $lngValue)
+                                            {{ $latValue }}, {{ $lngValue }}
+                                        @else
+                                            Titik belum dipilih. Tekan area peta untuk menentukan lokasi.
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="small text-muted fw-semibold"><i class="bi bi-info-circle me-1"></i>Geser marker jika titik belum tepat.</div>
+                            </div>
+                        </div>
 
-                <div class="form-group">
-                    <label for="longitude">Longitude</label>
-                    <input
-                        type="text"
-                        name="longitude"
-                        id="longitude"
-                        class="form-control"
-                        value="{{ old('longitude', $alamat->longitude) }}"
-                        placeholder="Contoh: 112.0119"
-                    >
-                </div>
-            </div>
-
-            <label class="checkbox-row">
-                <input
-                    type="checkbox"
-                    name="utama"
-                    value="1"
-                    {{ old('utama', $alamat->utama) ? 'checked' : '' }}
-                >
-
-                <div>
-                    <strong>Jadikan alamat utama</strong>
-                    <span>
-                        Alamat utama akan diprioritaskan saat checkout menggunakan kurir toko.
-                    </span>
-                </div>
-            </label>
-
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                    {{ $isEdit ? 'Simpan Perubahan' : 'Simpan Alamat' }}
-                </button>
-
-                <a href="{{ route('pembeli-web.alamat.index') }}" class="btn btn-outline">
-                    Kembali
-                </a>
-            </div>
-        </form>
-    </main>
-
-    <aside class="page-card helper-card">
-        <h2>Bantuan Koordinat</h2>
-
-        <p>
-            Latitude dan longitude boleh dikosongkan, tapi kalau diisi,
-            admin bisa langsung membuka alamat pembeli melalui maps.
-        </p>
-
-        <div class="helper-list">
-            <div class="helper-item">
-                <strong>Cara ambil koordinat</strong>
-                Buka Google Maps, klik kanan titik alamat, lalu salin angka latitude dan longitude.
-            </div>
-
-            <div class="helper-item">
-                <strong>Contoh format</strong>
-                Latitude: -7.8166<br>
-                Longitude: 112.0119
-            </div>
-
-            <div class="helper-item">
-                <strong>Catatan</strong>
-                Untuk demo, input manual koordinat sudah cukup. Maps interaktif bisa jadi pengembangan berikutnya.
+                        <div class="col-12">
+                            <label class="surface p-3 d-flex gap-3 align-items-start mb-0">
+                                <input type="checkbox" name="utama" value="1" class="form-check-input mt-1" {{ old('utama', $alamat->utama) ? 'checked' : '' }}>
+                                <span><span class="fw-bold d-block">Jadikan alamat utama</span><span class="small text-muted fw-semibold">Alamat utama otomatis dipilih saat checkout.</span></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mt-4">
+                        <button class="btn btn-brand px-4 py-3" type="submit"><i class="bi bi-save me-2"></i> Simpan Alamat</button>
+                        <a href="{{ route('pembeli-web.alamat.index') }}" class="btn btn-plain px-4 py-3">Batal</a>
+                    </div>
+                </form>
             </div>
         </div>
-    </aside>
+
+        <div class="col-lg-4">
+            <div class="surface p-4" style="position: sticky; top: 112px;">
+                <h2 class="h4 fw-bold mb-3">Cara menentukan lokasi</h2>
+                <div class="d-grid gap-3 text-muted fw-semibold">
+                    <div><i class="bi bi-check-circle-fill text-brand me-2"></i>Cari nama daerah atau gunakan tombol Lokasi Saya.</div>
+                    <div><i class="bi bi-check-circle-fill text-brand me-2"></i>Tekan titik di peta sesuai alamat penerima.</div>
+                    <div><i class="bi bi-check-circle-fill text-brand me-2"></i>Koordinat otomatis tersimpan untuk menghitung area kurir toko.</div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const mapEl = document.getElementById('alamatMap');
+        if (!mapEl || typeof L === 'undefined') return;
+
+        const latInput = document.getElementById('latitudeInput');
+        const lngInput = document.getElementById('longitudeInput');
+        const coordinateText = document.getElementById('coordinateText');
+        const defaultLat = parseFloat(mapEl.dataset.lat || '-7.2575');
+        const defaultLng = parseFloat(mapEl.dataset.lng || '112.7521');
+        const hasInitialPoint = mapEl.dataset.hasPoint === '1';
+
+        const map = L.map('alamatMap', { scrollWheelZoom: false }).setView([defaultLat, defaultLng], hasInitialPoint ? 16 : 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        let marker = null;
+        function setPoint(lat, lng, zoom = 16) {
+            const fixedLat = Number(lat).toFixed(7);
+            const fixedLng = Number(lng).toFixed(7);
+            latInput.value = fixedLat;
+            lngInput.value = fixedLng;
+            coordinateText.textContent = fixedLat + ', ' + fixedLng;
+
+            if (!marker) {
+                marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+                marker.on('dragend', function () {
+                    const position = marker.getLatLng();
+                    setPoint(position.lat, position.lng, map.getZoom());
+                });
+            } else {
+                marker.setLatLng([lat, lng]);
+            }
+            map.setView([lat, lng], zoom);
+        }
+
+        if (hasInitialPoint) {
+            setPoint(defaultLat, defaultLng, 16);
+        }
+
+        map.on('click', function (event) {
+            setPoint(event.latlng.lat, event.latlng.lng, 16);
+        });
+
+        document.getElementById('btnUseMyLocation')?.addEventListener('click', function () {
+            if (!navigator.geolocation) {
+                coordinateText.textContent = 'Browser tidak mendukung akses lokasi. Silakan pilih titik langsung di peta.';
+                return;
+            }
+            coordinateText.textContent = 'Mengambil lokasi perangkat...';
+            navigator.geolocation.getCurrentPosition(function (position) {
+                setPoint(position.coords.latitude, position.coords.longitude, 17);
+            }, function () {
+                coordinateText.textContent = 'Lokasi perangkat tidak bisa diambil. Silakan pilih titik langsung di peta.';
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+        });
+
+        document.getElementById('btnSearchMap')?.addEventListener('click', searchLocation);
+        document.getElementById('mapSearchInput')?.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                searchLocation();
+            }
+        });
+
+        function searchLocation() {
+            const input = document.getElementById('mapSearchInput');
+            const query = (input?.value || '').trim();
+            if (!query) return;
+            coordinateText.textContent = 'Mencari lokasi...';
+            fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query), {
+                headers: { 'Accept': 'application/json' }
+            })
+                .then(response => response.json())
+                .then(results => {
+                    if (!results.length) {
+                        coordinateText.textContent = 'Lokasi tidak ditemukan. Coba kata kunci lain atau tekan titik langsung di peta.';
+                        return;
+                    }
+                    setPoint(parseFloat(results[0].lat), parseFloat(results[0].lon), 16);
+                })
+                .catch(() => {
+                    coordinateText.textContent = 'Pencarian lokasi gagal. Silakan tekan titik langsung di peta.';
+                });
+        }
+    });
+</script>
+@endpush

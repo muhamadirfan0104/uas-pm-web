@@ -1,674 +1,533 @@
 @extends('layouts.pembeli')
 
-@section('title', 'Detail Pesanan - SiTahu')
+@section('title', 'Detail Pesanan - ' . $pesanan->nomor_invoice)
 
 @push('styles')
 <style>
-    .breadcrumb {
-        display: flex;
-        flex-wrap: wrap;
+    .detail-head {
+        border-radius: 30px;
+        border: 1px solid var(--line);
+        background: radial-gradient(circle at 90% 18%, rgba(200,147,53,.12), transparent 18rem), #fff;
+        box-shadow: var(--shadow-sm);
+        padding: 24px;
+    }
+    .invoice-title { font-weight: 950; letter-spacing: -.035em; }
+    .status-badge-xl {
+        display: inline-flex;
         align-items: center;
-        gap: 8px;
-        margin-bottom: 16px;
-        color: var(--muted);
+        gap: 7px;
+        border-radius: 999px;
+        padding: 9px 13px;
         font-size: 13px;
-        font-weight: 700;
+        font-weight: 950;
+        white-space: nowrap;
     }
+    .status-badge-xl.waiting { background: #fff7ed; color: #c2410c; }
+    .status-badge-xl.process { background: #eff6ff; color: #1d4ed8; }
+    .status-badge-xl.ready { background: #ecfeff; color: #0e7490; }
+    .status-badge-xl.done { background: #dcfce7; color: #15803d; }
+    .status-badge-xl.cancel { background: #fee2e2; color: #b91c1c; }
 
-    .breadcrumb a {
-        color: var(--brand-text);
-    }
-
-    .detail-hero {
-        padding: 30px;
-        margin-bottom: 22px;
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 20px;
-        align-items: center;
-        background:
-            radial-gradient(circle at top right, rgba(223, 186, 104, 0.25), transparent 32%),
-            linear-gradient(135deg, #ffffff 0%, #fff8e8 100%);
-    }
-
-    .detail-hero h1 {
-        margin: 12px 0 0;
-        color: var(--heading);
-        font-size: clamp(30px, 4.5vw, 48px);
-        line-height: 1;
-        letter-spacing: -0.075em;
-    }
-
-    .detail-hero h1 span {
-        color: var(--brand-text);
-    }
-
-    .detail-hero p {
-        margin: 12px 0 0;
-        max-width: 720px;
-        color: var(--muted);
-        line-height: 1.7;
-        font-size: 15px;
-    }
-
-    .invoice-card {
-        padding: 16px;
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.78);
+    .detail-card {
+        border-radius: 26px;
         border: 1px solid var(--line);
-        min-width: 250px;
-    }
-
-    .invoice-card span {
-        display: block;
-        color: var(--muted);
-        font-size: 12px;
-        margin-bottom: 4px;
-        font-weight: 700;
-    }
-
-    .invoice-card strong {
-        display: block;
-        color: var(--heading);
-        font-size: 18px;
-        letter-spacing: -0.035em;
-    }
-
-    .alert-box {
-        margin-bottom: 18px;
-        padding: 14px 16px;
-        border-radius: 17px;
-        font-size: 14px;
-        font-weight: 800;
-        line-height: 1.55;
-        border: 1px solid var(--line);
-    }
-
-    .alert-success {
-        background: #ecfdf5;
-        color: #15803d;
-        border-color: #bbf7d0;
-    }
-
-    .alert-error {
-        background: #fef2f2;
-        color: #b91c1c;
-        border-color: #fecaca;
-    }
-
-    .detail-layout {
-        display: grid;
-        grid-template-columns: 1fr 370px;
-        gap: 20px;
-        align-items: start;
-    }
-
-    .panel-card {
-        padding: 22px;
-    }
-
-    .panel-card h2 {
-        margin: 0 0 14px;
-        color: var(--heading);
-        font-size: 22px;
-        letter-spacing: -0.045em;
-    }
-
-    .status-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-    }
-
-    .status-box,
-    .info-box {
-        padding: 15px;
-        border-radius: 16px;
-        background: #f9fafb;
-        border: 1px solid var(--line);
-    }
-
-    .status-box span,
-    .info-box span {
-        display: block;
-        color: var(--muted);
-        font-size: 12px;
-        font-weight: 700;
-        margin-bottom: 5px;
-    }
-
-    .status-box strong,
-    .info-box strong {
-        display: block;
-        color: var(--heading);
-        font-size: 15px;
-        line-height: 1.5;
-    }
-
-    .status-box.highlight {
-        background: var(--brand-soft);
-        border-color: rgba(223, 186, 104, 0.45);
-    }
-
-    .status-box.highlight strong {
-        color: var(--brand-text);
-    }
-
-    .product-list {
-        display: grid;
-        gap: 12px;
-    }
-
-    .product-item {
-        display: grid;
-        grid-template-columns: 72px 1fr auto;
-        gap: 12px;
-        align-items: center;
-        padding: 12px;
-        border-radius: 18px;
-        background: #f9fafb;
-        border: 1px solid var(--line);
-    }
-
-    .product-img {
-        width: 72px;
-        height: 72px;
-        border-radius: 16px;
+        background: #fff;
+        box-shadow: var(--shadow-xs);
         overflow: hidden;
-        background: #ffffff;
+    }
+    .detail-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(180deg, #fff, #fffdf8);
+    }
+    .detail-card-title { font-size: 1.05rem; font-weight: 950; margin: 0; letter-spacing: -.02em; }
+    .detail-card-body { padding: 20px; }
+
+    .progress-steps {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .progress-step {
+        position: relative;
         border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 16px;
+        background: #fff;
+        min-height: 112px;
+    }
+    .progress-step.done,
+    .progress-step.active { border-color: rgba(200,147,53,.34); background: var(--brand-soft); }
+    .progress-step.cancelled { border-color: rgba(239,68,68,.25); background: #fff5f5; }
+    .step-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 14px;
         display: grid;
         place-items: center;
-        color: var(--brand-text);
-        font-size: 10px;
-        font-weight: 900;
-    }
-
-    .product-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .product-info h3 {
-        margin: 0;
-        color: var(--heading);
-        font-size: 15px;
-        line-height: 1.35;
-    }
-
-    .product-info p {
-        margin: 4px 0 0;
+        background: #f2f4f7;
         color: var(--muted);
-        font-size: 13px;
+        margin-bottom: 10px;
     }
+    .progress-step.done .step-icon,
+    .progress-step.active .step-icon { background: #fff; color: var(--brand-dark); border: 1px solid rgba(200,147,53,.22); }
+    .progress-step.cancelled .step-icon { background: #fee2e2; color: #b91c1c; }
+    .step-title { font-size: 13px; font-weight: 950; color: var(--ink); margin-bottom: 4px; }
+    .step-desc { font-size: 12px; line-height: 1.45; color: var(--muted); font-weight: 650; }
 
-    .product-subtotal {
-        text-align: right;
-        color: var(--heading);
-        font-weight: 900;
-        font-size: 14px;
+    .product-line {
+        display: grid;
+        grid-template-columns: 74px minmax(0,1fr) auto;
+        gap: 14px;
+        align-items: center;
+        padding: 14px 0;
     }
-
-    .side-card {
-        padding: 22px;
-        position: sticky;
-        top: 96px;
+    .product-line + .product-line { border-top: 1px solid var(--line); }
+    .order-product-img {
+        width: 74px;
+        height: 74px;
+        border-radius: 18px;
+        overflow: hidden;
+        background: var(--brand-soft);
+        border: 1px solid rgba(200,147,53,.18);
+        display: grid;
+        place-items: center;
+        color: var(--brand-dark);
+        text-decoration: none;
+        flex: 0 0 auto;
     }
-
+    .order-product-img img { width: 100%; height: 100%; object-fit: cover; }
+    .product-link { color: var(--ink); text-decoration: none; font-weight: 950; line-height: 1.35; }
+    .product-link:hover { color: var(--brand-dark); }
+    .address-box, .payment-box {
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: #fff;
+        padding: 16px;
+    }
+    .address-icon, .pay-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 15px;
+        display: grid;
+        place-items: center;
+        background: var(--brand-soft);
+        color: var(--brand-dark);
+        border: 1px solid rgba(200,147,53,.18);
+        flex: 0 0 auto;
+    }
+    .summary-sticky { position: sticky; top: 112px; }
     .summary-row {
         display: flex;
         justify-content: space-between;
-        gap: 12px;
-        padding: 13px 0;
+        align-items: flex-start;
+        gap: 18px;
+        padding: 12px 0;
         border-bottom: 1px solid var(--line);
-        color: var(--muted);
         font-size: 14px;
     }
-
-    .summary-row strong {
-        color: var(--heading);
-    }
-
-    .summary-total {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 16px 0 18px;
-        color: var(--heading);
-        font-weight: 900;
-        font-size: 18px;
-    }
-
-    .summary-total span:last-child {
-        color: var(--brand-text);
-    }
-
-    .payment-box {
-        margin-top: 16px;
-        padding: 15px;
-        border-radius: 16px;
-        background: var(--brand-soft);
-        border: 1px solid rgba(223, 186, 104, 0.45);
-    }
-
-    .payment-box span {
-        display: block;
-        color: var(--muted);
-        font-size: 12px;
-        font-weight: 700;
-        margin-bottom: 5px;
-    }
-
-    .payment-box strong {
-        display: block;
-        color: var(--brand-text);
-        font-size: 15px;
-        line-height: 1.5;
-    }
-
-    .action-list {
+    .summary-row span { color: var(--muted); font-weight: 750; }
+    .summary-row strong { color: var(--ink); font-weight: 950; text-align: right; }
+    .bank-mini-card {
         display: grid;
-        gap: 10px;
-        margin-top: 16px;
-    }
-
-    .action-note {
-        margin-top: 12px;
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.55;
-    }
-
-    .danger-button {
-        width: 100%;
-        min-height: 46px;
-        border: 1px solid #fecaca;
-        border-radius: 999px;
-        background: #fef2f2;
-        color: #b91c1c;
-        font-weight: 900;
-        cursor: pointer;
-        transition: 0.16s ease;
-    }
-
-    .danger-button:hover {
-        transform: translateY(-1px);
-        background: #fee2e2;
-    }
-
-    .success-button {
-        width: 100%;
-        min-height: 46px;
-        border: 1px solid #bbf7d0;
-        border-radius: 999px;
-        background: #ecfdf5;
-        color: #15803d;
-        font-weight: 900;
-        cursor: pointer;
-        transition: 0.16s ease;
-    }
-
-    .success-button:hover {
-        transform: translateY(-1px);
-        background: #dcfce7;
-    }
-
-    .info-grid {
-        display: grid;
+        grid-template-columns: 42px minmax(0,1fr) auto;
         gap: 12px;
-    }
-
-    .next-action-box {
-        padding: 16px;
+        align-items: center;
+        padding: 13px;
         border-radius: 18px;
         border: 1px solid var(--line);
-        background: #ffffff;
-        margin-bottom: 16px;
+        background: #fff;
     }
-
-    .next-action-box h3 {
-        margin: 0 0 6px;
-        color: var(--heading);
-        font-size: 15px;
-        letter-spacing: -0.03em;
-    }
-
-    .next-action-box p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.6;
-    }
-
-    @media (max-width: 940px) {
-        .detail-hero,
-        .detail-layout {
-            grid-template-columns: 1fr;
-        }
-
-        .side-card {
-            position: static;
-        }
-    }
-
-    @media (max-width: 650px) {
-        .detail-hero,
-        .panel-card,
-        .side-card {
-            padding: 20px;
-        }
-
-        .status-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .product-item {
-            grid-template-columns: 1fr;
-        }
-
-        .product-img {
-            width: 100%;
-            height: 190px;
-        }
-
-        .product-subtotal {
-            text-align: left;
-        }
+    .bank-mini-icon { width: 42px; height: 42px; border-radius: 15px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand-dark); border: 1px solid rgba(200,147,53,.18); }
+    .bank-mini-label { color: var(--muted); font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: .04em; }
+    .bank-mini-number { font-weight: 950; color: var(--ink); font-size: 1.06rem; line-height: 1.12; }
+    .proof-preview { width: 100%; max-height: 220px; object-fit: contain; border-radius: 18px; background: #fff; border: 1px solid var(--line); }
+    .proof-upload-box { padding: 15px; border-radius: 18px; background: #fffdf8; border: 1px dashed rgba(200,147,53,.42); }
+    .form-label-mini { display: block; text-transform: uppercase; letter-spacing: .035em; color: var(--muted); font-size: 12px; font-weight: 950; margin-bottom: 8px; }
+    .checkout-field { min-height: 48px; border-radius: 16px; border-color: var(--line); font-weight: 750; }
+    .order-alert { border-radius: 18px; border: 1px solid var(--line); background: #f9fafb; padding: 14px; color: var(--muted); font-size: 13px; font-weight: 700; line-height: 1.55; }
+    @media (max-width: 991.98px) { .summary-sticky { position: static; } .progress-steps { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+    @media (max-width: 575.98px) {
+        .detail-head { padding: 20px; border-radius: 24px; }
+        .detail-card-head { align-items: flex-start; flex-direction: column; }
+        .progress-steps { grid-template-columns: 1fr; }
+        .product-line { grid-template-columns: 62px minmax(0,1fr); }
+        .product-line .text-end { grid-column: 2; text-align: left !important; }
+        .order-product-img { width: 62px; height: 62px; border-radius: 16px; }
+        .bank-mini-card { grid-template-columns: 42px minmax(0,1fr); }
+        .bank-mini-card .btn { grid-column: 1 / -1; }
     }
 </style>
 @endpush
 
 @section('content')
 @php
-    $statusPesanan = ucwords(str_replace('_', ' ', $pesanan->status));
-    $statusPembayaran = ucwords(str_replace('_', ' ', $pesanan->status_pembayaran));
-    $metodePenerimaan = $pesanan->metode_pengambilan === 'kurir_toko' ? 'Kurir toko' : 'Ambil di toko';
-
-    $metodePembayaran = '-';
-    if ($pesanan->pembayaran) {
-        $metodePembayaran = $pesanan->pembayaran->metode_pembayaran === 'tunai'
-            ? 'Tunai'
-            : 'QRIS';
-    }
-
-    $bolehBatalkan = $pesanan->status === 'menunggu_pembayaran'
-        && $pesanan->status_pembayaran !== 'dibayar';
-
-    $bolehKonfirmasiDiterima = in_array($pesanan->status, ['siap_diambil', 'dalam_pengantaran'], true);
+    $payment = $pesanan->pembayaran;
+    $pengiriman = $pesanan->pengiriman;
+    $alamat = $pesanan->alamatPengiriman;
+    $statusTone = match($pesanan->status) {
+        'selesai' => 'done',
+        'dibatalkan' => 'cancel',
+        'siap_diambil', 'dalam_pengantaran' => 'ready',
+        'dibayar', 'diproses' => 'process',
+        default => 'waiting',
+    };
+    $statusIcon = match($pesanan->status) {
+        'selesai' => 'bi-check2-circle',
+        'dibatalkan' => 'bi-x-circle',
+        'siap_diambil', 'dalam_pengantaran' => 'bi-truck',
+        'dibayar', 'diproses' => 'bi-gear',
+        default => 'bi-wallet2',
+    };
+    $statusText = match($pesanan->status) {
+        'menunggu_pembayaran' => 'Belum Bayar',
+        'dibayar' => 'Pembayaran Diterima',
+        'diproses' => 'Diproses Toko',
+        'siap_diambil' => 'Siap Diambil',
+        'dalam_pengantaran' => 'Dalam Pengantaran',
+        'selesai' => 'Selesai',
+        'dibatalkan' => 'Dibatalkan',
+        default => ucwords(str_replace('_', ' ', $pesanan->status)),
+    };
+    $paymentText = match($payment?->status ?: $pesanan->status_pembayaran) {
+        'dibayar' => 'Dibayar',
+        'ditolak' => 'Ditolak',
+        'dibatalkan' => 'Dibatalkan',
+        'gagal' => 'Gagal',
+        default => 'Menunggu',
+    };
+    $bankNama = trim((string) ($pengaturan->bank_nama ?? '')) ?: 'Bank belum diatur';
+    $bankNomor = trim((string) ($pengaturan->bank_nomor_rekening ?? '')) ?: 'Nomor rekening belum diatur';
+    $bankAtasNama = trim((string) ($pengaturan->bank_atas_nama ?? '')) ?: ($pengaturan->nama ?: 'SiTahu Premium');
+    $catatanPembayaran = trim((string) ($pengaturan->info_pembayaran ?? '')) ?: 'Transfer sesuai total bayar, lalu unggah bukti transfer agar pesanan dapat diperiksa admin.';
+    $canUploadProof = $payment?->metode_pembayaran === 'transfer_bank' && in_array($payment?->status, ['menunggu_pembayaran', 'ditolak'], true);
+    $hasProof = filled($payment?->bukti_transfer);
+    $currentStep = match($pesanan->status) {
+        'menunggu_pembayaran' => 1,
+        'dibayar', 'diproses' => 2,
+        'siap_diambil', 'dalam_pengantaran' => 3,
+        'selesai' => 4,
+        default => 0,
+    };
+    $steps = [
+        1 => ['title' => 'Pesanan dibuat', 'desc' => 'Invoice berhasil dibuat.', 'icon' => 'bi-receipt-cutoff'],
+        2 => ['title' => 'Diproses toko', 'desc' => 'Pembayaran diterima atau COD diproses.', 'icon' => 'bi-gear'],
+        3 => ['title' => $pesanan->metode_pengambilan === 'kurir_toko' ? 'Dikirim' : 'Siap diambil', 'desc' => $pesanan->metode_pengambilan === 'kurir_toko' ? 'Pesanan berada dalam pengantaran.' : 'Pesanan dapat diambil di toko.', 'icon' => 'bi-truck'],
+        4 => ['title' => 'Selesai', 'desc' => 'Pesanan sudah diterima pembeli.', 'icon' => 'bi-check2-circle'],
+    ];
 @endphp
 
-<div class="breadcrumb">
-    <a href="{{ route('pembeli-web.home') }}">Beranda</a>
-    <span>/</span>
-    <a href="{{ route('pembeli-web.pesanan.index') }}">Pesanan Saya</a>
-    <span>/</span>
-    <span>{{ $pesanan->nomor_invoice }}</span>
+<div class="container py-4 py-lg-5">
+    <div class="breadcrumb-modern"><a href="{{ route('pembeli-web.pesanan.index') }}">Pesanan</a><i class="bi bi-chevron-right small"></i><span>{{ $pesanan->nomor_invoice }}</span></div>
+
+    <section class="detail-head mb-4">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3">
+            <div class="min-w-0">
+                <span class="eyebrow mb-3"><i class="bi bi-receipt"></i> Detail pesanan</span>
+                <h1 class="invoice-title h3 mb-2">{{ $pesanan->nomor_invoice }}</h1>
+                <p class="section-subtitle mb-0">Dibuat pada {{ optional($pesanan->tanggal_pesanan)->format('d M Y H:i') }}.</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                <span class="status-badge-xl {{ $statusTone }}"><i class="bi {{ $statusIcon }}"></i>{{ $statusText }}</span>
+                @if($canUploadProof)
+                    <button type="button" class="btn btn-brand px-4" data-bs-toggle="modal" data-bs-target="#uploadProofModal"><i class="bi bi-upload me-1"></i> {{ $payment?->status === 'ditolak' ? 'Upload Ulang' : 'Upload Bukti' }}</button>
+                @endif
+                <a href="{{ route('pembeli-web.pesanan.index') }}" class="btn btn-plain px-4"><i class="bi bi-arrow-left me-1"></i> Kembali</a>
+            </div>
+        </div>
+    </section>
+
+    @if($pesanan->status === 'dibatalkan')
+        <div class="alert alert-danger alert-shop mb-4"><i class="bi bi-x-circle me-2"></i> Pesanan ini sudah dibatalkan. Produk yang belum diproses dikembalikan ke stok toko.</div>
+    @elseif($payment?->status === 'ditolak')
+        <div class="alert alert-warning alert-shop mb-4"><i class="bi bi-exclamation-triangle me-2"></i> Bukti transfer ditolak. {{ $payment->catatan_admin ? 'Catatan admin: ' . $payment->catatan_admin : 'Silakan upload ulang bukti transfer yang benar.' }}</div>
+    @elseif($payment?->metode_pembayaran === 'transfer_bank' && ! $hasProof)
+        <div class="alert alert-warning alert-shop mb-4"><i class="bi bi-bank me-2"></i> Pesanan sudah dibuat. Silakan transfer dan upload bukti pembayaran agar toko dapat memeriksa pesanan.</div>
+    @endif
+
+    <div class="row g-4 align-items-start">
+        <div class="col-lg-8">
+            <div class="d-grid gap-4">
+                <section class="detail-card">
+                    <div class="detail-card-head">
+                        <div>
+                            <h2 class="detail-card-title">Status pesanan</h2>
+                            <div class="small text-muted fw-semibold mt-1">Ikuti proses pesanan sampai selesai.</div>
+                        </div>
+                    </div>
+                    <div class="detail-card-body">
+                        @if($pesanan->status === 'dibatalkan')
+                            <div class="progress-step cancelled">
+                                <div class="step-icon"><i class="bi bi-x-circle"></i></div>
+                                <div class="step-title">Pesanan dibatalkan</div>
+                                <div class="step-desc">Pesanan tidak dilanjutkan dan tidak perlu dibayar.</div>
+                            </div>
+                        @else
+                            <div class="progress-steps">
+                                @foreach($steps as $number => $step)
+                                    @php $stepState = $currentStep > $number ? 'done' : ($currentStep === $number ? 'active' : ''); @endphp
+                                    <div class="progress-step {{ $stepState }}">
+                                        <div class="step-icon"><i class="bi {{ $step['icon'] }}"></i></div>
+                                        <div class="step-title">{{ $step['title'] }}</div>
+                                        <div class="step-desc">{{ $step['desc'] }}</div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                </section>
+
+                <section class="detail-card">
+                    <div class="detail-card-head">
+                        <div>
+                            <h2 class="detail-card-title">Produk dipesan</h2>
+                            <div class="small text-muted fw-semibold mt-1">{{ $pesanan->item->count() }} jenis produk · {{ $pesanan->item->sum('jumlah') }} item.</div>
+                        </div>
+                    </div>
+                    <div class="detail-card-body pt-2">
+                        @foreach($pesanan->item as $item)
+                            @php $produk = $item->produk; $image = $produk?->gambarUtama?->url_gambar; @endphp
+                            <div class="product-line">
+                                <a href="{{ $produk ? route('pembeli-web.produk.detail', $produk) : '#' }}" class="order-product-img">
+                                    @if($image)
+                                        <img src="{{ asset('storage/' . $image) }}" alt="{{ $produk?->nama }}">
+                                    @else
+                                        <i class="bi bi-box-seam fs-4"></i>
+                                    @endif
+                                </a>
+                                <div class="min-w-0">
+                                    <a href="{{ $produk ? route('pembeli-web.produk.detail', $produk) : '#' }}" class="product-link line-clamp-1">{{ $produk?->nama ?: 'Produk SiTahu' }}</a>
+                                    <div class="small text-muted fw-semibold mt-1">{{ $item->jumlah }} item × {{ $rupiah($item->harga_satuan) }}</div>
+                                    @if($pesanan->status === 'selesai' && $produk)
+                                        @php $sudahUlas = $pesanan->ulasan->where('produk_id', $produk->id)->isNotEmpty(); @endphp
+                                        @if(! $sudahUlas)
+                                            <a href="{{ route('pembeli-web.ulasan.create', [$pesanan->nomor_invoice, $produk]) }}" class="btn btn-soft-brand btn-sm mt-2">Beri Ulasan</a>
+                                        @else
+                                            <span class="badge rounded-pill text-bg-light mt-2">Sudah diulas</span>
+                                        @endif
+                                    @endif
+                                </div>
+                                <div class="text-end fw-black">{{ $rupiah($item->subtotal) }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                </section>
+
+                <section class="detail-card">
+                    <div class="detail-card-head">
+                        <div>
+                            <h2 class="detail-card-title">Alamat dan pengambilan</h2>
+                            <div class="small text-muted fw-semibold mt-1">Informasi penerima dan metode pemenuhan pesanan.</div>
+                        </div>
+                    </div>
+                    <div class="detail-card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="address-box h-100 d-flex gap-3 align-items-start">
+                                    <div class="address-icon"><i class="bi bi-person-lines-fill"></i></div>
+                                    <div>
+                                        <div class="fw-black mb-1">Penerima</div>
+                                        @if($alamat)
+                                            <div class="text-muted fw-semibold small lh-lg">
+                                                <strong class="text-dark">{{ $alamat->nama_penerima }}</strong><br>
+                                                {{ $alamat->telepon }}<br>
+                                                @if($alamat->email_penerima){{ $alamat->email_penerima }}<br>@endif
+                                                {{ $alamat->alamat_lengkap }}
+                                            </div>
+                                        @else
+                                            <div class="text-muted fw-semibold small">Alamat penerima belum tersedia.</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="address-box h-100 d-flex gap-3 align-items-start">
+                                    <div class="address-icon"><i class="bi {{ $pesanan->metode_pengambilan === 'kurir_toko' ? 'bi-truck' : 'bi-shop' }}"></i></div>
+                                    <div>
+                                        <div class="fw-black mb-1">{{ $pesanan->metode_pengambilan === 'kurir_toko' ? 'Kurir toko' : 'Ambil di toko' }}</div>
+                                        <div class="text-muted fw-semibold small lh-lg">
+                                            @if($pesanan->metode_pengambilan === 'kurir_toko')
+                                                Pesanan dikirim ke alamat penerima dalam area layanan toko.<br>
+                                                Ongkir: <strong class="text-dark">{{ $rupiah($pesanan->biaya_pengiriman) }}</strong>
+                                            @else
+                                                Pesanan diambil langsung setelah toko menyiapkan produk.<br>
+                                                Lokasi toko: <strong class="text-dark">{{ $pengiriman?->alamat_toko ?: ($pengaturan->alamat ?: 'Belum diatur') }}</strong>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <aside class="detail-card summary-sticky">
+                <div class="detail-card-head">
+                    <div>
+                        <h2 class="detail-card-title">Pembayaran</h2>
+                        <div class="small text-muted fw-semibold mt-1">Ringkasan invoice dan status bayar.</div>
+                    </div>
+                </div>
+                <div class="detail-card-body">
+                    <div class="payment-box mb-3">
+                        <div class="d-flex gap-3 align-items-start">
+                            <div class="pay-icon"><i class="bi {{ $payment?->metode_pembayaran === 'cod' ? 'bi-cash-coin' : 'bi-bank2' }}"></i></div>
+                            <div>
+                                <div class="fw-black">{{ $payment?->metode_pembayaran === 'cod' ? 'COD' : 'Transfer Bank' }}</div>
+                                <div class="small text-muted fw-semibold">Status: {{ $paymentText }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="summary-row"><span>Subtotal produk</span><strong>{{ $rupiah($pesanan->subtotal_produk) }}</strong></div>
+                    <div class="summary-row"><span>Pengiriman</span><strong>{{ $rupiah($pesanan->biaya_pengiriman) }}</strong></div>
+                    <div class="summary-row"><span>Referensi</span><strong>{{ $payment?->referensi_pembayaran ?: '-' }}</strong></div>
+                    <div class="d-flex justify-content-between align-items-end mt-3 mb-3">
+                        <span class="fw-black">Total bayar</span>
+                        <span class="price-text h3 mb-0">{{ $rupiah($pesanan->total_bayar) }}</span>
+                    </div>
+
+                    @if($payment?->metode_pembayaran === 'transfer_bank')
+                        <div class="proof-upload-box mb-3" id="upload-bukti">
+                            <div class="fw-black mb-2"><i class="bi bi-bank text-brand me-1"></i> Rekening toko</div>
+                            <div class="bank-mini-card mb-3">
+                                <div class="bank-mini-icon"><i class="bi bi-credit-card-2-front"></i></div>
+                                <div class="min-w-0">
+                                    <div class="bank-mini-label">{{ $bankNama }}</div>
+                                    <div class="bank-mini-number js-bank-number">{{ $bankNomor }}</div>
+                                    <div class="small text-muted fw-semibold">Atas nama {{ $bankAtasNama }}</div>
+                                </div>
+                                <button type="button" class="btn btn-soft-brand btn-sm js-copy-bank" data-copy="{{ $bankNomor }}"><i class="bi bi-copy me-1"></i> Salin</button>
+                            </div>
+
+                            @if($payment?->catatan_admin)
+                                <div class="alert alert-warning py-2 px-3 small fw-semibold mb-3">Catatan admin: {{ $payment->catatan_admin }}</div>
+                            @endif
+
+                            @if($hasProof)
+                                @php $proofUrl = asset('storage/' . $payment->bukti_transfer); @endphp
+                                <div class="small text-muted fw-bold mb-2">Bukti transfer</div>
+                                @if(\Illuminate\Support\Str::endsWith(strtolower($payment->bukti_transfer), ['.jpg', '.jpeg', '.png', '.webp']))
+                                    <a href="{{ $proofUrl }}" target="_blank"><img src="{{ $proofUrl }}" alt="Bukti transfer" class="proof-preview mb-3"></a>
+                                @else
+                                    <a href="{{ $proofUrl }}" target="_blank" class="btn btn-soft-brand w-100 mb-3"><i class="bi bi-file-earmark-pdf me-1"></i> Lihat Bukti Transfer</a>
+                                @endif
+                            @else
+                                <div class="order-alert mb-3">Belum ada bukti transfer. Upload bukti setelah melakukan pembayaran.</div>
+                            @endif
+
+                            @if($canUploadProof)
+                                <button type="button" class="btn btn-brand w-100" data-bs-toggle="modal" data-bs-target="#uploadProofModal"><i class="bi bi-upload me-1"></i> {{ $hasProof ? 'Upload Ulang Bukti' : 'Upload Bukti Transfer' }}</button>
+                            @endif
+                        </div>
+                    @elseif($payment?->metode_pembayaran === 'cod')
+                        <div class="order-alert mb-3"><i class="bi bi-cash-coin text-brand me-1"></i> Pembayaran COD dilakukan saat pesanan diambil atau diterima.</div>
+                    @endif
+
+                    <div class="d-grid gap-2">
+                        @if($pesanan->status === 'menunggu_pembayaran')
+                            <form action="{{ route('pembeli-web.pesanan.cancel', $pesanan->nomor_invoice) }}" method="POST" onsubmit="return confirm('Batalkan pesanan ini?')">
+                                @csrf @method('PATCH')
+                                <button class="btn btn-plain text-danger w-100 py-3" type="submit">Batalkan Pesanan</button>
+                            </form>
+                        @endif
+                        @if(in_array($pesanan->status, ['siap_diambil', 'dalam_pengantaran'], true))
+                            <form action="{{ route('pembeli-web.pesanan.confirm-received', $pesanan->nomor_invoice) }}" method="POST" onsubmit="return confirm('Konfirmasi pesanan sudah diterima?')">
+                                @csrf @method('PATCH')
+                                <button class="btn btn-brand w-100 py-3" type="submit">Pesanan Sudah Diterima</button>
+                            </form>
+                        @endif
+                        <a href="{{ route('pembeli-web.produk') }}" class="btn btn-soft-brand w-100 py-3">Belanja Lagi</a>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
 </div>
 
-@if(session('success'))
-    <div class="alert-box alert-success">
-        {{ session('success') }}
+@if($canUploadProof)
+    <div class="modal fade" id="uploadProofModal" tabindex="-1" aria-labelledby="uploadProofModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 rounded-5 shadow-lg overflow-hidden">
+                <div class="modal-header px-4 py-3 border-0" style="background: linear-gradient(180deg, #fff8ea, #fff);">
+                    <div>
+                        <h5 class="modal-title fw-black" id="uploadProofModalLabel"><i class="bi bi-bank2 text-brand me-2"></i> Upload bukti transfer</h5>
+                        <div class="small text-muted fw-semibold mt-1">Transfer sesuai total bayar, lalu kirim bukti agar admin dapat memeriksa pembayaran.</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <form action="{{ route('pembeli-web.pesanan.bukti-transfer', $pesanan->nomor_invoice) }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body p-4">
+                        <div class="bank-mini-card mb-3">
+                            <div class="bank-mini-icon"><i class="bi bi-credit-card-2-front"></i></div>
+                            <div class="min-w-0">
+                                <div class="bank-mini-label">{{ $bankNama }}</div>
+                                <div class="bank-mini-number js-modal-bank-number">{{ $bankNomor }}</div>
+                                <div class="small text-muted fw-semibold">Atas nama {{ $bankAtasNama }}</div>
+                            </div>
+                            <button type="button" class="btn btn-soft-brand btn-sm js-copy-bank" data-copy="{{ $bankNomor }}"><i class="bi bi-copy me-1"></i> Salin</button>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-end gap-3 rounded-4 bg-white border p-3 mb-3">
+                            <span class="text-muted fw-bold">Total transfer</span>
+                            <span class="price-text h4 mb-0">{{ $rupiah($pesanan->total_bayar) }}</span>
+                        </div>
+                        <div class="proof-upload-box">
+                            <label for="bukti_transfer" class="form-label-mini">File bukti transfer</label>
+                            <input type="file" name="bukti_transfer" id="bukti_transfer" class="form-control checkout-field @error('bukti_transfer') is-invalid @enderror" accept="image/*,.pdf" required>
+                            @error('bukti_transfer')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                            <div class="small text-muted fw-semibold mt-2">Format JPG, PNG, WEBP, atau PDF. Maksimal 4 MB.</div>
+                        </div>
+                        <div class="order-alert mt-3"><i class="bi bi-info-circle text-brand me-1"></i> {{ $catatanPembayaran }}</div>
+                    </div>
+                    <div class="modal-footer px-4 py-3 border-0 bg-light-subtle">
+                        <button type="button" class="btn btn-plain" data-bs-dismiss="modal">Nanti Saja</button>
+                        <button type="submit" class="btn btn-brand px-4"><i class="bi bi-upload me-2"></i> Kirim Bukti</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 @endif
-
-@if(session('error'))
-    <div class="alert-box alert-error">
-        {{ session('error') }}
-    </div>
-@endif
-
-<section class="page-card detail-hero">
-    <div>
-        <div class="badge">Detail Pesanan</div>
-
-        <h1>
-            Pesananmu sedang <span>{{ strtolower($statusPesanan) }}</span>
-        </h1>
-
-        <p>
-            Di halaman ini kamu bisa melihat produk yang dipesan, status pembayaran,
-            informasi pengambilan atau pengantaran, serta mengonfirmasi pesanan saat sudah diterima.
-        </p>
-    </div>
-
-    <div class="invoice-card">
-        <span>Nomor invoice</span>
-        <strong>{{ $pesanan->nomor_invoice }}</strong>
-    </div>
-</section>
-
-<section class="detail-layout">
-    <div style="display: grid; gap: 20px;">
-        <div class="page-card panel-card">
-            <h2>Status pesanan</h2>
-
-            <div class="status-grid">
-                <div class="status-box highlight">
-                    <span>Status pesanan</span>
-                    <strong>{{ $statusPesanan }}</strong>
-                </div>
-
-                <div class="status-box highlight">
-                    <span>Status pembayaran</span>
-                    <strong>{{ $statusPembayaran }}</strong>
-                </div>
-
-                <div class="status-box">
-                    <span>Tanggal pesanan</span>
-                    <strong>{{ optional($pesanan->tanggal_pesanan)->format('d M Y H:i') }}</strong>
-                </div>
-
-                <div class="status-box">
-                    <span>Metode penerimaan</span>
-                    <strong>{{ $metodePenerimaan }}</strong>
-                </div>
-            </div>
-        </div>
-
-        <div class="page-card panel-card">
-            <h2>Produk yang dipesan</h2>
-
-            <div class="product-list">
-                @foreach($pesanan->item as $item)
-                    @php
-                        $produk = $item->produk;
-                        $gambar = $produk?->gambarUtama?->url_gambar;
-                    @endphp
-
-                    <div class="product-item">
-                        <div class="product-img">
-                            @if($gambar)
-                                <img src="{{ asset('storage/' . $gambar) }}" alt="{{ $produk?->nama ?? 'Produk' }}">
-                            @else
-                                TAHU
-                            @endif
-                        </div>
-
-                        <div class="product-info">
-                            <h3>{{ $produk?->nama ?? 'Produk' }}</h3>
-                            <p>
-                                {{ $item->jumlah }} × Rp {{ number_format($item->harga_satuan, 0, ',', '.') }}
-                            </p>
-                        </div>
-
-                        @php
-                            $ulasanProduk = $pesanan->ulasan
-                                ? $pesanan->ulasan->firstWhere('produk_id', $item->produk_id)
-                                : null;
-                        @endphp
-
-                        <div class="product-subtotal">
-                            Rp {{ number_format($item->subtotal, 0, ',', '.') }}
-
-                            @if($pesanan->status === 'selesai')
-                                <div style="margin-top: 10px;">
-                                    <a
-                                        href="{{ route('pembeli-web.ulasan.create', [$pesanan->nomor_invoice, $item->produk_id]) }}"
-                                        class="btn btn-outline"
-                                        style="min-height: 36px; padding: 8px 12px; font-size: 12px;"
-                                    >
-                                        {{ $ulasanProduk ? 'Edit Ulasan' : 'Beri Ulasan' }}
-                                    </a>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-
-        <div class="page-card panel-card">
-            <h2>Informasi penerimaan</h2>
-
-            <div class="info-grid">
-                @if($pesanan->metode_pengambilan === 'kurir_toko')
-                    <div class="info-box">
-                        <span>Alamat tujuan</span>
-                        <strong>
-                            {{ $pesanan->alamatPengiriman?->alamat_lengkap ?? $pesanan->pengiriman?->alamat_tujuan ?? 'Alamat tujuan belum tersedia.' }}
-                        </strong>
-                    </div>
-
-                    <div class="info-box">
-                        <span>Status pengantaran</span>
-                        <strong>
-                            {{ $pesanan->pengiriman?->status_pengiriman
-                                ? ucwords(str_replace('_', ' ', $pesanan->pengiriman->status_pengiriman))
-                                : 'Menunggu proses toko' }}
-                        </strong>
-                    </div>
-                @else
-                    <div class="info-box">
-                        <span>Alamat toko</span>
-                        <strong>{{ $pesanan->pengiriman?->alamat_toko ?? 'Alamat toko belum tersedia.' }}</strong>
-                    </div>
-
-                    <div class="info-box">
-                        <span>Informasi ambil pesanan</span>
-                        <strong>Pesanan bisa diambil setelah toko menandai pesanan siap diambil.</strong>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
-
-    <aside class="page-card side-card">
-        @if($bolehBatalkan)
-            <div class="next-action-box">
-                <h3>Pesanan masih bisa dibatalkan</h3>
-                <p>
-                    Pesanan ini belum dibayar dan belum diproses toko, jadi kamu masih bisa membatalkannya.
-                    Stok produk akan otomatis dikembalikan.
-                </p>
-            </div>
-        @elseif($bolehKonfirmasiDiterima)
-            <div class="next-action-box">
-                <h3>Pesanan sudah bisa dikonfirmasi</h3>
-                <p>
-                    Jika produk sudah kamu terima atau sudah kamu ambil di toko, klik tombol konfirmasi diterima.
-                    Setelah itu status pesanan menjadi selesai.
-                </p>
-            </div>
-        @elseif($pesanan->status === 'selesai')
-            <div class="next-action-box">
-                <h3>Pesanan selesai</h3>
-                <p>
-                    Pesanan ini sudah selesai. Setelah ini, fitur berikutnya adalah memberi ulasan produk.
-                </p>
-            </div>
-        @elseif($pesanan->status === 'dibatalkan')
-            <div class="next-action-box">
-                <h3>Pesanan dibatalkan</h3>
-                <p>
-                    Pesanan ini sudah dibatalkan dan tidak dapat diproses kembali.
-                </p>
-            </div>
-        @endif
-
-        <h2>Ringkasan bayar</h2>
-
-        <div>
-            <div class="summary-row">
-                <span>Subtotal produk</span>
-                <strong>Rp {{ number_format($pesanan->subtotal_produk, 0, ',', '.') }}</strong>
-            </div>
-
-            <div class="summary-row">
-                <span>Biaya pengantaran</span>
-                <strong>Rp {{ number_format($pesanan->biaya_pengiriman, 0, ',', '.') }}</strong>
-            </div>
-
-            <div class="summary-total">
-                <span>Total bayar</span>
-                <span>Rp {{ number_format($pesanan->total_bayar, 0, ',', '.') }}</span>
-            </div>
-        </div>
-
-        <div class="payment-box">
-            <span>Metode pembayaran</span>
-            <strong>{{ $metodePembayaran }}</strong>
-
-            @if($pesanan->pembayaran?->referensi_pembayaran)
-                <span style="margin-top: 12px;">Referensi pembayaran</span>
-                <strong>{{ $pesanan->pembayaran->referensi_pembayaran }}</strong>
-            @endif
-
-            @if($pesanan->pembayaran?->metode_pembayaran === 'qris' && $pesanan->pembayaran?->qr_code)
-                <span style="margin-top: 12px;">Kode QR / invoice</span>
-                <strong>{{ $pesanan->pembayaran->qr_code }}</strong>
-            @endif
-
-            @if($pesanan->pembayaran?->metode_pembayaran === 'tunai')
-                <span style="margin-top: 12px;">Catatan pembayaran</span>
-                <strong>Pembayaran tunai dilakukan saat pesanan diambil atau diterima.</strong>
-            @endif
-        </div>
-
-        <div class="action-list">
-            @if($bolehBatalkan)
-                <form
-                    method="POST"
-                    action="{{ route('pembeli-web.pesanan.cancel', $pesanan->nomor_invoice) }}"
-                    onsubmit="return confirm('Yakin ingin membatalkan pesanan ini? Stok produk akan dikembalikan.');"
-                >
-                    @csrf
-                    @method('PATCH')
-
-                    <button type="submit" class="danger-button">
-                        Batalkan Pesanan
-                    </button>
-                </form>
-            @endif
-
-            @if($bolehKonfirmasiDiterima)
-                <form
-                    method="POST"
-                    action="{{ route('pembeli-web.pesanan.confirm-received', $pesanan->nomor_invoice) }}"
-                    onsubmit="return confirm('Pastikan pesanan sudah kamu terima. Lanjut konfirmasi pesanan diterima?');"
-                >
-                    @csrf
-                    @method('PATCH')
-
-                    <button type="submit" class="success-button">
-                        Konfirmasi Pesanan Diterima
-                    </button>
-                </form>
-            @endif
-
-            <a href="{{ route('pembeli-web.pesanan.index') }}" class="btn btn-outline">
-                Kembali ke Pesanan Saya
-            </a>
-
-            <a href="{{ route('pembeli-web.produk') }}" class="btn btn-primary">
-                Belanja Lagi
-            </a>
-        </div>
-
-        <div class="action-note">
-            Tombol batalkan hanya muncul saat pesanan belum dibayar dan belum diproses.
-            Tombol konfirmasi diterima muncul setelah admin menandai pesanan siap diambil atau dalam pengantaran.
-        </div>
-    </aside>
-</section>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalEl = document.getElementById('uploadProofModal');
+        const shouldOpenModal = @json($errors->has('bukti_transfer')) || window.location.hash === '#upload-bukti';
+        if (shouldOpenModal && modalEl && window.bootstrap) {
+            new bootstrap.Modal(modalEl).show();
+        }
+
+        document.querySelectorAll('.js-copy-bank').forEach(function (button) {
+            button.addEventListener('click', async function () {
+                const value = button.dataset.copy || '';
+                if (!value || value.toLowerCase().includes('belum diatur')) return;
+
+                try {
+                    await navigator.clipboard.writeText(value);
+                } catch (e) {
+                    const input = document.createElement('input');
+                    input.value = value;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    input.remove();
+                }
+
+                const oldHtml = button.innerHTML;
+                button.innerHTML = '<i class="bi bi-check2 me-1"></i> Tersalin';
+                setTimeout(() => button.innerHTML = oldHtml, 1400);
+            });
+        });
+    });
+</script>
+@endpush

@@ -1,10 +1,13 @@
 @extends('layouts.pembeli')
-@section('title','Coming Soon - SiTahu')
+@section('title','Segera Hadir - SiTahu')
 @section('content')
-<div class="card card-pad" style="margin:40px 0;text-align:center">
-    <div class="mark" style="margin:0 auto 18px;width:64px;height:64px">TK</div>
-    <h1 style="margin:0;font-size:34px;letter-spacing:-.05em">Coming Soon</h1>
-    <p class="sub">Halaman web pembeli ini sudah disiapkan sebagai folder dan route, tetapi fitur utama pembeli saat ini tetap ditargetkan untuk aplikasi mobile Android.</p>
-    <a class="btn" href="{{ route('pembeli-web.home') }}">Kembali</a>
+<div class="container py-5">
+    <div class="surface-strong p-4 p-lg-5 text-center">
+        <div class="stat-icon mx-auto mb-3"><i class="bi bi-hourglass-split"></i></div>
+        <span class="eyebrow mb-3"><i class="bi bi-stars"></i> Segera hadir</span>
+        <h1 class="section-heading display-5 mb-3">Fitur ini sedang disiapkan.</h1>
+        <p class="section-subtitle mx-auto mb-4" style="max-width:640px;">Halaman ini sudah mengikuti tema pembeli SiTahu dan bisa dikembangkan untuk promo, FAQ, bantuan, atau fitur tambahan lain.</p>
+        <a class="btn btn-brand px-4 py-3" href="{{ route('pembeli-web.home') }}">Kembali ke Beranda</a>
+    </div>
 </div>
 @endsection

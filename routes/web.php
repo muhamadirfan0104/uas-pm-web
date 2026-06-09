@@ -21,6 +21,7 @@ use App\Http\Controllers\WebPembeli\CheckoutController as WebPembeliCheckoutCont
 use App\Http\Controllers\WebPembeli\HomeController as WebPembeliHomeController;
 use App\Http\Controllers\WebPembeli\KeranjangController as WebPembeliKeranjangController;
 use App\Http\Controllers\WebPembeli\PesananController as WebPembeliPesananController;
+use App\Http\Controllers\WebPembeli\ProfilController as WebPembeliProfilController;
 use App\Http\Controllers\WebPembeli\UlasanController as WebPembeliUlasanController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\KasirMiddleware;
@@ -69,11 +70,42 @@ Route::prefix('pembeli-web')
         Route::get('/produk', [WebPembeliHomeController::class, 'produk'])
             ->name('produk');
 
+        Route::get('/ulasan', [WebPembeliHomeController::class, 'ulasan'])
+            ->name('ulasan');
+
         Route::get('/produk/{produk}', [WebPembeliHomeController::class, 'detailProduk'])
             ->name('produk.detail');
 
+        Route::post('/produk/{produk}/beli-sekarang', [WebPembeliCheckoutController::class, 'buyNow'])
+            ->name('checkout.buy-now');
+
         Route::get('/coming-soon', [WebPembeliHomeController::class, 'comingSoon'])
             ->name('coming-soon');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Keranjang publik
+        |--------------------------------------------------------------------------
+        | Pembeli yang belum login tetap bisa menambahkan produk ke keranjang.
+        | Setelah login, isi keranjang session akan disinkronkan ke database.
+        */
+        Route::get('/keranjang', [WebPembeliKeranjangController::class, 'index'])
+            ->name('keranjang.index');
+
+        Route::post('/keranjang/checkout', [WebPembeliKeranjangController::class, 'checkoutSelected'])
+            ->name('keranjang.checkout');
+
+        Route::post('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'store'])
+            ->name('keranjang.store');
+
+        Route::patch('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'update'])
+            ->name('keranjang.update');
+
+        Route::delete('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'destroy'])
+            ->name('keranjang.destroy');
+
+        Route::delete('/keranjang', [WebPembeliKeranjangController::class, 'clear'])
+            ->name('keranjang.clear');
 
         /*
         |--------------------------------------------------------------------------
@@ -81,26 +113,6 @@ Route::prefix('pembeli-web')
         |--------------------------------------------------------------------------
         */
         Route::middleware([PembeliWebMiddleware::class])->group(function () {
-            /*
-            |--------------------------------------------------------------------------
-            | Keranjang
-            |--------------------------------------------------------------------------
-            */
-            Route::get('/keranjang', [WebPembeliKeranjangController::class, 'index'])
-                ->name('keranjang.index');
-
-            Route::post('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'store'])
-                ->name('keranjang.store');
-
-            Route::patch('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'update'])
-                ->name('keranjang.update');
-
-            Route::delete('/keranjang/{produk}', [WebPembeliKeranjangController::class, 'destroy'])
-                ->name('keranjang.destroy');
-
-            Route::delete('/keranjang', [WebPembeliKeranjangController::class, 'clear'])
-                ->name('keranjang.clear');
-
             /*
             |--------------------------------------------------------------------------
             | Checkout
@@ -139,6 +151,9 @@ Route::prefix('pembeli-web')
             Route::patch('/pesanan/{nomor_invoice}/batalkan', [WebPembeliPesananController::class, 'cancel'])
                 ->name('pesanan.cancel');
 
+            Route::post('/pesanan/{nomor_invoice}/bukti-transfer', [WebPembeliPesananController::class, 'uploadBuktiPembayaran'])
+                ->name('pesanan.bukti-transfer');
+
             Route::patch('/pesanan/{nomor_invoice}/diterima', [WebPembeliPesananController::class, 'confirmReceived'])
                 ->name('pesanan.confirm-received');
 
@@ -176,8 +191,14 @@ Route::prefix('pembeli-web')
             | Profil Pembeli
             |--------------------------------------------------------------------------
             */
-            Route::get('/profil', [WebPembeliHomeController::class, 'profil'])
+            Route::get('/profil', [WebPembeliProfilController::class, 'show'])
                 ->name('profil');
+
+            Route::put('/profil', [WebPembeliProfilController::class, 'update'])
+                ->name('profil.update');
+
+            Route::put('/profil/password', [WebPembeliProfilController::class, 'updatePassword'])
+                ->name('profil.password');
         });
     });
 
@@ -280,6 +301,12 @@ Route::middleware(['auth', AdminMiddleware::class])
 
         Route::patch('/pembayaran/{pembayaran}/status', [PembayaranController::class, 'updateStatus'])
             ->name('pembayaran.status');
+
+        Route::patch('/pembayaran/{pembayaran}/terima', [PembayaranController::class, 'terima'])
+            ->name('pembayaran.terima');
+
+        Route::patch('/pembayaran/{pembayaran}/tolak', [PembayaranController::class, 'tolak'])
+            ->name('pembayaran.tolak');
 
         /*
         |--------------------------------------------------------------------------

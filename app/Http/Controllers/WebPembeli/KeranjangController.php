@@ -4,58 +4,69 @@ namespace App\Http\Controllers\WebPembeli;
 
 use App\Http\Controllers\Controller;
 use App\Models\Produk;
+use App\Services\WebPembeli\KeranjangService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class KeranjangController extends Controller
 {
+    private string $selectedSessionKey = 'keranjang_web_selected';
+
+    public function __construct(private KeranjangService $keranjangService)
+    {
+    }
+
     public function index(): View
     {
-        $dataKeranjang = $this->ambilDataKeranjang();
+        $dataKeranjang = $this->keranjangService->data();
+        $productIds = $dataKeranjang['items']
+            ->map(fn ($item) => (int) $item['produk']->id)
+            ->values()
+            ->all();
+
+        $selectedProductIds = session($this->selectedSessionKey, $productIds);
+        $selectedProductIds = collect($selectedProductIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => in_array($id, $productIds, true))
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($dataKeranjang['items']->count() && ! session()->has($this->selectedSessionKey)) {
+            session([$this->selectedSessionKey => $selectedProductIds]);
+        }
 
         return view('pembeli.keranjang', [
             'items' => $dataKeranjang['items'],
             'totalItem' => $dataKeranjang['totalItem'],
             'totalBelanja' => $dataKeranjang['totalBelanja'],
+            'selectedProductIds' => $selectedProductIds,
         ]);
     }
 
-    public function store(Request $request, Produk $produk): RedirectResponse
+    public function store(Request $request, Produk $produk): JsonResponse|RedirectResponse
     {
         if (! $produk->aktif) {
-            return back()->with('error', 'Produk belum tersedia.');
+            return $this->responKeranjang($request, false, 'Produk belum tersedia.');
         }
 
         if ((int) $produk->stok <= 0) {
-            return back()->with('error', 'Stok produk sedang habis.');
+            return $this->responKeranjang($request, false, 'Stok produk sedang habis.');
         }
 
         $request->validate([
             'jumlah' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        $jumlahBaru = max(1, (int) $request->input('jumlah', 1));
-        $keranjang = session('keranjang_web', []);
+        $jumlah = max(1, (int) $request->input('jumlah', 1));
+        $this->keranjangService->tambah($produk, $jumlah);
 
-        $produkId = (string) $produk->id;
-        $jumlahLama = isset($keranjang[$produkId])
-            ? (int) $keranjang[$produkId]['jumlah']
-            : 0;
+        $this->gabungkanPilihan([$produk->id]);
 
-        $jumlahAkhir = min($jumlahLama + $jumlahBaru, (int) $produk->stok);
-
-        $keranjang[$produkId] = [
-            'produk_id' => $produk->id,
-            'jumlah' => $jumlahAkhir,
-        ];
-
-        session(['keranjang_web' => $keranjang]);
-
-        return redirect()
-            ->route('pembeli-web.keranjang.index')
-            ->with('success', $produk->nama . ' berhasil masuk keranjang.');
+        return $this->responKeranjang($request, true, $produk->nama . ' berhasil masuk keranjang.');
     }
 
     public function update(Request $request, Produk $produk): JsonResponse|RedirectResponse
@@ -65,94 +76,68 @@ class KeranjangController extends Controller
             'jumlah' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        $keranjang = session('keranjang_web', []);
-        $produkId = (string) $produk->id;
+        $berhasil = $this->keranjangService->updateJumlah(
+            $produk,
+            (string) $request->input('aksi'),
+            $request->filled('jumlah') ? (int) $request->input('jumlah') : null
+        );
 
-        if (! isset($keranjang[$produkId])) {
+        if (! $berhasil) {
             return $this->responKeranjang($request, false, 'Produk tidak ditemukan di keranjang.');
         }
-
-        $jumlahSekarang = (int) $keranjang[$produkId]['jumlah'];
-        $aksi = $request->input('aksi');
-
-        if ($aksi === 'tambah') {
-            $jumlahSekarang++;
-        }
-
-        if ($aksi === 'kurang') {
-            $jumlahSekarang--;
-        }
-
-        if ($aksi === 'set') {
-            $jumlahSekarang = (int) $request->input('jumlah', 1);
-        }
-
-        $jumlahSekarang = max(1, $jumlahSekarang);
-        $jumlahSekarang = min($jumlahSekarang, max(1, (int) $produk->stok));
-
-        $keranjang[$produkId]['jumlah'] = $jumlahSekarang;
-
-        session(['keranjang_web' => $keranjang]);
 
         return $this->responKeranjang($request, true, 'Jumlah produk berhasil diperbarui.');
     }
 
+    public function checkoutSelected(Request $request): RedirectResponse
+    {
+        $dataKeranjang = $this->keranjangService->data();
+        $cartProductIds = $dataKeranjang['items']
+            ->map(fn ($item) => (int) $item['produk']->id)
+            ->values();
+
+        $selectedProductIds = collect($request->input('selected_produk', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0 && $cartProductIds->contains($id))
+            ->unique()
+            ->values();
+
+        if ($selectedProductIds->isEmpty()) {
+            return back()->with('error', 'Pilih minimal satu produk yang ingin di-checkout.');
+        }
+
+        session([$this->selectedSessionKey => $selectedProductIds->all()]);
+        $request->session()->put('url.intended', route('pembeli-web.checkout.index'));
+
+        if (! Auth::check() || Auth::user()?->role !== 'pembeli') {
+            return back()
+                ->with('auth_modal', 'login')
+                ->with('success', 'Produk sudah dipilih. Masuk atau daftar dulu untuk melanjutkan checkout.');
+        }
+
+        return redirect()->route('pembeli-web.checkout.index');
+    }
+
     public function destroy(Request $request, Produk $produk): JsonResponse|RedirectResponse
     {
-        $keranjang = session('keranjang_web', []);
-        $produkId = (string) $produk->id;
-
-        unset($keranjang[$produkId]);
-
-        session(['keranjang_web' => $keranjang]);
+        $this->keranjangService->hapus($produk);
+        $this->hapusDariPilihan([$produk->id]);
 
         return $this->responKeranjang($request, true, 'Produk berhasil dihapus dari keranjang.');
     }
 
     public function clear(Request $request): JsonResponse|RedirectResponse
     {
-        session()->forget('keranjang_web');
+        $this->keranjangService->kosongkan();
+        $request->session()->forget($this->selectedSessionKey);
 
         return $this->responKeranjang($request, true, 'Keranjang berhasil dikosongkan.');
-    }
-
-    private function ambilDataKeranjang(): array
-    {
-        $keranjang = session('keranjang_web', []);
-
-        $items = collect($keranjang)->map(function ($item) {
-            $produk = Produk::query()
-                ->with('gambarUtama')
-                ->find($item['produk_id']);
-
-            if (! $produk || ! $produk->aktif) {
-                return null;
-            }
-
-            $jumlah = max(1, (int) $item['jumlah']);
-            $harga = (float) $produk->harga;
-            $subtotal = $jumlah * $harga;
-
-            return [
-                'produk' => $produk,
-                'jumlah' => $jumlah,
-                'harga' => $harga,
-                'subtotal' => $subtotal,
-                'stok_tersedia' => (int) $produk->stok,
-            ];
-        })->filter()->values();
-
-        return [
-            'items' => $items,
-            'totalItem' => $items->sum('jumlah'),
-            'totalBelanja' => $items->sum('subtotal'),
-        ];
     }
 
     private function responKeranjang(Request $request, bool $success, string $message): JsonResponse|RedirectResponse
     {
         if ($request->expectsJson() || $request->ajax()) {
-            $dataKeranjang = $this->ambilDataKeranjang();
+            $dataKeranjang = $this->keranjangService->data();
 
             return response()->json([
                 'success' => $success,
@@ -163,12 +148,20 @@ class KeranjangController extends Controller
                 'items' => $dataKeranjang['items']->map(function ($item) {
                     return [
                         'produk_id' => $item['produk']->id,
+                        'nama' => $item['produk']->nama,
                         'jumlah' => $item['jumlah'],
+                        'harga' => $item['harga'],
+                        'harga_format' => 'Rp ' . number_format($item['harga'], 0, ',', '.'),
                         'subtotal' => $item['subtotal'],
                         'subtotal_format' => 'Rp ' . number_format($item['subtotal'], 0, ',', '.'),
                     ];
                 })->values(),
-            ]);
+                'mini_cart_html' => view('pembeli.partials.mini-cart-dropdown', [
+                    'miniCartItems' => $dataKeranjang['items']->take(5),
+                    'miniCartTotalItem' => $dataKeranjang['totalItem'],
+                    'miniCartTotalBelanja' => $dataKeranjang['totalBelanja'],
+                ])->render(),
+            ], $success ? 200 : 422);
         }
 
         if ($success) {
@@ -176,5 +169,31 @@ class KeranjangController extends Controller
         }
 
         return back()->with('error', $message);
+    }
+
+    private function gabungkanPilihan(array $produkIds): void
+    {
+        $pilihan = collect(session($this->selectedSessionKey, []))
+            ->merge($produkIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        session([$this->selectedSessionKey => $pilihan]);
+    }
+
+    private function hapusDariPilihan(array $produkIds): void
+    {
+        $hapus = collect($produkIds)->map(fn ($id) => (int) $id)->all();
+
+        $pilihan = collect(session($this->selectedSessionKey, []))
+            ->map(fn ($id) => (int) $id)
+            ->reject(fn ($id) => in_array($id, $hapus, true))
+            ->values()
+            ->all();
+
+        session([$this->selectedSessionKey => $pilihan]);
     }
 }

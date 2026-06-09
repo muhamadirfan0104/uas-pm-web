@@ -36,6 +36,9 @@ class PengaturanTokoController extends Controller
             'radius_maksimal_km' => ['nullable', 'numeric', 'min:0'],
             'area_pengiriman' => ['nullable', 'string', 'max:1000'],
             'info_pembayaran' => ['nullable', 'string', 'max:1500'],
+            'bank_nama' => ['nullable', 'string', 'max:100'],
+            'bank_nomor_rekening' => ['nullable', 'string', 'max:60'],
+            'bank_atas_nama' => ['nullable', 'string', 'max:120'],
             'tentang' => ['nullable', 'string', 'max:2000'],
         ], [
             'nama.required' => 'Nama toko wajib diisi.',
