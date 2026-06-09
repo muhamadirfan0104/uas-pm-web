@@ -76,7 +76,7 @@ class AuthController extends Controller
 
         if ($user->role !== 'pembeli') {
             return back()
-                ->withErrors(['login' => 'Akun ini bukan akun pembeli. Gunakan halaman login admin untuk akun admin/kasir.'])
+                ->withErrors(['login' => 'Akun ini bukan akun pembeli. Gunakan halaman login admin untuk akun admin.'])
                 ->onlyInput('login')
                 ->with('auth_modal', 'login');
         }

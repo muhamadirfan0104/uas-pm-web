@@ -86,6 +86,7 @@ class CheckoutController extends Controller
             ->get();
 
         $alamatUtama = $alamatPembeli->firstWhere('utama', true) ?? $alamatPembeli->first();
+        $deliveryQuote = $this->hitungOngkirKurir($pengaturan, $alamatUtama, false);
 
         return view('pembeli.checkout', [
             'items' => $dataCheckout['items'],
@@ -97,6 +98,7 @@ class CheckoutController extends Controller
             'user' => $user,
             'alamatPembeli' => $alamatPembeli,
             'alamatUtama' => $alamatUtama,
+            'deliveryQuote' => $deliveryQuote,
         ]);
     }
 
@@ -175,10 +177,12 @@ class CheckoutController extends Controller
                     ];
                 }
 
-                $biayaPengiriman = $data['metode_pengambilan'] === 'kurir_toko'
-                    ? (float) ($pengaturan->biaya_minimum_pengiriman ?? 0)
-                    : 0;
+                $deliveryQuote = $data['metode_pengambilan'] === 'kurir_toko'
+                    ? $this->hitungOngkirKurir($pengaturan, $alamat, true)
+                    : ['jarak' => null, 'biaya' => 0];
 
+                $biayaPengiriman = (float) ($deliveryQuote['biaya'] ?? 0);
+                $jarakKm = $deliveryQuote['jarak'] ?? null;
                 $totalBayar = $subtotal + $biayaPengiriman;
 
                 $pesanan = Pesanan::create([
@@ -186,7 +190,7 @@ class CheckoutController extends Controller
                     'nomor_invoice' => 'INV-' . now()->format('YmdHis') . '-' . $user->id,
                     'tanggal_pesanan' => Carbon::now(),
                     'subtotal_produk' => $subtotal,
-                    'jarak_km' => null,
+                    'jarak_km' => $jarakKm,
                     'biaya_pengiriman' => $biayaPengiriman,
                     'total_bayar' => $totalBayar,
                     'metode_pengambilan' => $data['metode_pengambilan'],
@@ -217,7 +221,7 @@ class CheckoutController extends Controller
 
                 if ($metodePembayaran === 'cod') {
                     $pesanan->update([
-                        'status' => 'diproses',
+                        'status' => 'menunggu_konfirmasi',
                         'status_pembayaran' => 'menunggu_pembayaran',
                     ]);
                 }
@@ -246,7 +250,7 @@ class CheckoutController extends Controller
                     'alamat_tujuan' => $alamat?->alamat_lengkap,
                     'latitude_tujuan' => $alamat?->latitude,
                     'longitude_tujuan' => $alamat?->longitude,
-                    'jarak_km' => null,
+                    'jarak_km' => $jarakKm,
                     'biaya' => $biayaPengiriman,
                 ]);
 
@@ -376,6 +380,59 @@ class CheckoutController extends Controller
             'buyNowProduct' => null,
             'selectedProductIds' => $selectedProductIds->all(),
         ];
+    }
+
+    private function hitungOngkirKurir(PengaturanToko $pengaturan, ?Alamat $alamat, bool $strict = true): array
+    {
+        $tarifPerKm = max(0, (float) ($pengaturan->tarif_per_km ?? 0));
+        $minimum = max(0, (float) ($pengaturan->biaya_minimum_pengiriman ?? 0));
+        $radius = (float) ($pengaturan->radius_maksimal_km ?? 0);
+
+        if (! $alamat) {
+            if ($strict) {
+                throw new \RuntimeException('Pilih alamat penerima terlebih dahulu.');
+            }
+            return ['jarak' => null, 'biaya' => $minimum];
+        }
+
+        $storeLat = $pengaturan->latitude_toko;
+        $storeLng = $pengaturan->longitude_toko;
+        $destLat = $alamat->latitude;
+        $destLng = $alamat->longitude;
+
+        if ($storeLat === null || $storeLng === null || $destLat === null || $destLng === null) {
+            if ($strict) {
+                throw new \RuntimeException('Titik lokasi toko atau alamat penerima belum lengkap. Pilih titik lokasi di maps terlebih dahulu.');
+            }
+            return ['jarak' => null, 'biaya' => $minimum];
+        }
+
+        $jarak = $this->haversineKm((float) $storeLat, (float) $storeLng, (float) $destLat, (float) $destLng);
+
+        if ($radius > 0 && $jarak > $radius) {
+            if ($strict) {
+                throw new \RuntimeException('Alamat berada di luar radius pengiriman toko. Jarak alamat sekitar ' . number_format($jarak, 2, ',', '.') . ' km.');
+            }
+        }
+
+        $biaya = max($minimum, ceil($jarak * $tarifPerKm / 100) * 100);
+
+        return [
+            'jarak' => round($jarak, 2),
+            'biaya' => $biaya,
+        ];
+    }
+
+    private function haversineKm(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $earthRadius = 6371;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+        $a = sin($dLat / 2) ** 2
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
     }
 
 }

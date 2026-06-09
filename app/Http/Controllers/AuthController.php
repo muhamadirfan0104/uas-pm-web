@@ -60,7 +60,7 @@ class AuthController extends Controller
                 ->onlyInput('email');
         }
 
-        if ($user->role === 'pembeli') {
+        if ($user->role !== 'admin') {
             Auth::logout();
 
             $request->session()->invalidate();
@@ -68,7 +68,7 @@ class AuthController extends Controller
 
             return back()
                 ->withErrors([
-                    'email' => 'Akun pembeli tidak dapat login melalui halaman admin. Silakan gunakan login pembeli.',
+                    'email' => 'Halaman ini hanya untuk akun admin. Silakan gunakan login pembeli untuk akun pembeli.',
                 ])
                 ->onlyInput('email');
         }
@@ -92,7 +92,6 @@ class AuthController extends Controller
     {
         return match ($role) {
             'admin' => redirect()->route('admin.dashboard'),
-            'kasir' => redirect()->route('kasir.dashboard'),
             'pembeli' => redirect()->route('pembeli-web.home'),
             default => redirect()->route('login'),
         };

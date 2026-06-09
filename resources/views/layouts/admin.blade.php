@@ -609,6 +609,7 @@
 
         .c-green { color: #15803d; background: #dcfce7; }
         .c-blue { color: #1d4ed8; background: #dbeafe; }
+        .c-purple { color: #7e22ce; background: #f3e8ff; }
         .c-yellow { color: #92400e; background: #fef3c7; }
         .c-red { color: #b91c1c; background: #fee2e2; }
         .c-gray { color: #4b5563; background: #f3f4f6; }
@@ -866,6 +867,12 @@
                     <span class="sidebar-icon"><i class="bi bi-truck"></i></span>
                     <span class="sidebar-label">Pengambilan & Kirim</span>
                 </a>
+
+                <a href="{{ route('admin.semua-pesanan.index') }}"
+                   class="sidebar-link {{ request()->routeIs('admin.semua-pesanan.*') ? 'active' : '' }}">
+                    <span class="sidebar-icon"><i class="bi bi-journal-text"></i></span>
+                    <span class="sidebar-label">Semua Pesanan</span>
+                </a>
             </div>
 
             <div class="sidebar-section">
@@ -930,7 +937,7 @@
 
             <div class="sidebar-note">
                 <i class="bi bi-lightning-charge-fill me-1"></i>
-                Utamakan cek pembayaran, proses pesanan, lalu pantau stok.
+                Kerjakan dari pembayaran aktif, proses pesanan, lalu ambil/kirim.
             </div>
         </nav>
     </aside>

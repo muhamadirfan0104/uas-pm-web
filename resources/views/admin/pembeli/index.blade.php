@@ -1,106 +1,305 @@
 @extends('layouts.admin')
-@section('title', 'Data Pembeli - SiTahu')
+
+@section('title', 'Pembeli - SiTahu')
+@section('page_title', 'Pembeli')
 
 @section('content')
+@php
+    $sortOptions = [
+        'terbaru' => 'Terbaru daftar',
+        'nama' => 'Nama A-Z',
+        'belanja_terbesar' => 'Belanja terbesar',
+        'pesanan_terbanyak' => 'Pesanan terbanyak',
+        'terakhir_belanja' => 'Terakhir belanja',
+    ];
+@endphp
+
 <style>
-    /* Styling Standar E-Commerce */
-    .sc-box { border: 1px solid #e5e7eb; border-radius: 0.75rem; background: #fff; margin-bottom: 1.5rem; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
-    
-    /* Search Bar Modern */
-    .search-bar-modern { background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.75rem; transition: all 0.2s; }
-    .search-bar-modern:focus-within { background-color: #ffffff; border-color: var(--brand-color, #dfba68); box-shadow: 0 0 0 4px rgba(223, 186, 104, 0.15); }
-    .search-bar-modern input { background: transparent; border: none; box-shadow: none; outline: none; width: 100%; }
-    
-    /* Tabel Enterprise */
-    .table-enterprise th { border-bottom: 2px solid #e5e7eb; color: #6b7280; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 1rem 1.25rem; font-weight: 600; background: #fafafa; }
-    .table-enterprise td { vertical-align: middle; padding: 1rem 1.25rem; border-bottom: 1px solid #f3f4f6; color: #111827; }
-    .table-enterprise tbody tr:hover { background-color: #f9fafb; }
-    
-    /* Avatar User */
-    .avatar-user { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; font-size: 0.9rem; }
-    
-    /* Tombol Aksi */
-    .btn-action { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.5rem; transition: all 0.2s; border: 1px solid #e5e7eb; background: #fff; color: #4b5563; }
-    .btn-action:hover { background-color: #f3f4f6; color: #111827; }
+    .buyer-toolbar {
+        display: grid;
+        grid-template-columns: minmax(280px, 1fr) 220px auto auto;
+        gap: 10px;
+        align-items: end;
+    }
+    .buyer-filter-label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: .72rem;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .055em;
+    }
+    .buyer-search {
+        min-height: 42px;
+        padding: 0 13px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: #fff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .buyer-search input {
+        width: 100%;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        font-size: .88rem;
+        font-weight: 750;
+    }
+    .buyer-avatar-soft {
+        width: 42px;
+        height: 42px;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--brand), #ad7a24);
+        color: #fff;
+        font-size: .8rem;
+        font-weight: 950;
+        letter-spacing: -.03em;
+        box-shadow: 0 10px 20px rgba(200,147,53,.18);
+        flex-shrink: 0;
+    }
+    .buyer-mini-stat {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: #fff;
+        padding: 14px 15px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        min-height: 92px;
+        box-shadow: var(--shadow-soft);
+    }
+    .buyer-mini-stat .label {
+        color: var(--muted);
+        font-size: .72rem;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+    .buyer-mini-stat .value {
+        margin-top: 7px;
+        color: var(--text);
+        font-size: 1.35rem;
+        line-height: 1;
+        font-weight: 950;
+        letter-spacing: -.05em;
+    }
+    .buyer-mini-stat .icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 15px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--brand-soft);
+        color: var(--brand-dark);
+        flex-shrink: 0;
+    }
+    .buyer-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .buyer-tab {
+        border: 1px solid var(--border);
+        background: #fff;
+        color: #475467;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: .78rem;
+        font-weight: 900;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
+    .buyer-tab.active, .buyer-tab:hover {
+        color: var(--brand-dark);
+        border-color: #f1d49c;
+        background: var(--brand-soft);
+    }
+    .buyer-table td { vertical-align: middle; }
+    .buyer-name {
+        color: var(--text);
+        font-size: .92rem;
+        font-weight: 950;
+        letter-spacing: -.02em;
+    }
+    .buyer-meta {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: .76rem;
+        font-weight: 700;
+        line-height: 1.45;
+    }
+    .buyer-number {
+        color: var(--text);
+        font-size: .9rem;
+        font-weight: 950;
+    }
+    .buyer-empty {
+        padding: 46px 16px;
+        text-align: center;
+        color: var(--muted);
+        font-size: .86rem;
+        font-weight: 750;
+    }
+    @media (max-width: 1200px) {
+        .buyer-toolbar { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 680px) {
+        .buyer-toolbar { grid-template-columns: 1fr; }
+        .buyer-table th:nth-child(3), .buyer-table td:nth-child(3),
+        .buyer-table th:nth-child(4), .buyer-table td:nth-child(4) { display:none; }
+    }
 </style>
 
-<div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3 mb-4">
+<section class="hero">
     <div>
-        <h1 class="h4 fw-bold text-dark mb-1">Data Pembeli</h1>
-        <p class="text-muted small mb-0">Manajemen basis pelanggan yang terdaftar dari aplikasi mobile.</p>
+        <h1>Pembeli</h1>
+        <p>Kelola akun pelanggan, lihat aktivitas belanja, dan pantau pelanggan yang sedang punya pesanan aktif.</p>
+    </div>
+    <a href="{{ route('admin.semua-pesanan.index') }}" class="btn btn-light border fw-bold px-3">
+        <i class="bi bi-journal-text me-1 text-muted"></i>
+        Semua Pesanan
+    </a>
+</section>
+
+<div class="grid g4 mb-4">
+    <div class="buyer-mini-stat">
+        <div>
+            <div class="label">Total Pembeli</div>
+            <div class="value">{{ $stats['total'] ?? 0 }}</div>
+        </div>
+        <div class="icon"><i class="bi bi-people-fill"></i></div>
+    </div>
+    <div class="buyer-mini-stat">
+        <div>
+            <div class="label">Akun Aktif</div>
+            <div class="value">{{ $stats['aktif'] ?? 0 }}</div>
+        </div>
+        <div class="icon"><i class="bi bi-person-check-fill"></i></div>
+    </div>
+    <div class="buyer-mini-stat">
+        <div>
+            <div class="label">Pesanan Aktif</div>
+            <div class="value">{{ $stats['pesanan_aktif'] ?? 0 }}</div>
+        </div>
+        <div class="icon"><i class="bi bi-hourglass-split"></i></div>
+    </div>
+    <div class="buyer-mini-stat">
+        <div>
+            <div class="label">Total Belanja</div>
+            <div class="value" style="font-size:1rem;">{{ $rupiah($stats['total_belanja'] ?? 0) }}</div>
+        </div>
+        <div class="icon"><i class="bi bi-cash-stack"></i></div>
     </div>
 </div>
 
-<div class="sc-box">
-    <div class="bg-white border-bottom p-3 p-md-4">
-        <form id="page-filter" method="GET" class="row g-2 align-items-center">
-            <div class="col-12 col-md-6 col-lg-5">
-                <div class="search-bar-modern d-flex align-items-center px-3 py-2">
-                    <i class="bi bi-search text-muted me-2"></i>
-                    <input name="q" value="{{ request('q') }}" placeholder="Cari nama, email, atau no telepon...">
+<div class="page-card overflow-hidden">
+    <div class="p-3 p-lg-4 border-bottom bg-white">
+        <div class="buyer-tabs mb-3">
+            <a class="buyer-tab {{ $status === 'semua' ? 'active' : '' }}" href="{{ route('admin.pembeli.index', array_merge(request()->except(['page', 'aktivitas']), ['status' => 'semua'])) }}">Semua</a>
+            <a class="buyer-tab {{ $status === 'aktif' ? 'active' : '' }}" href="{{ route('admin.pembeli.index', array_merge(request()->except(['page', 'aktivitas']), ['status' => 'aktif'])) }}">Aktif</a>
+            <a class="buyer-tab {{ $status === 'nonaktif' ? 'active' : '' }}" href="{{ route('admin.pembeli.index', array_merge(request()->except(['page', 'aktivitas']), ['status' => 'nonaktif'])) }}">Nonaktif</a>
+        </div>
+
+        <form id="page-filter" method="GET" class="buyer-toolbar">
+            <input type="hidden" name="status" value="{{ $status }}">
+            <div>
+                <label class="buyer-filter-label">Cari pembeli</label>
+                <div class="buyer-search">
+                    <i class="bi bi-search text-muted"></i>
+                    <input name="q" value="{{ $search }}" placeholder="Nama, email, atau nomor HP">
                 </div>
             </div>
-            <div class="col-12 col-md-auto">
-                <button class="btn btn-dark fw-medium px-4" type="submit" style="border-radius: 0.75rem; min-height: 42px;">Cari Pembeli</button>
+            <div>
+                <label class="buyer-filter-label">Urutkan</label>
+                <select name="sort" class="form-select">
+                    @foreach($sortOptions as $value => $label)
+                        <option value="{{ $value }}" @selected($sort === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="d-grid">
+                <label class="buyer-filter-label opacity-0">Terapkan</label>
+                <button class="btn btn-brand" type="submit"><i class="bi bi-funnel me-1"></i> Terapkan</button>
+            </div>
+            <div class="d-grid">
+                <label class="buyer-filter-label opacity-0">Reset</label>
+                <a class="btn btn-light border" href="{{ route('admin.pembeli.index') }}">Reset</a>
             </div>
         </form>
     </div>
 
-    <div class="table-responsive bg-white">
-        <table class="table table-enterprise table-borderless mb-0">
+    <div class="table-wrap">
+        <table class="buyer-table mb-0">
             <thead>
                 <tr>
-                    <th class="ps-4">Profil Pembeli</th>
-                    <th>Kontak</th>
-                    <th>Performa Belanja</th>
+                    <th>Pembeli</th>
                     <th>Status</th>
-                    <th>Terdaftar</th>
-                    <th class="text-end pe-4">Aksi</th>
+                    <th class="text-center">Aktivitas</th>
+                    <th>Nilai Belanja</th>
+                    <th>Terakhir Belanja</th>
+                    <th class="text-end">Aksi</th>
                 </tr>
             </thead>
             <tbody>
             @forelse($pembeli as $user)
-                @php 
-                    $colors = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6']; 
-                    $bgColor = $colors[$user->id % count($colors)];
+                @php
+                    $lastOrder = $user->terakhir_belanja ? \Illuminate\Support\Carbon::parse($user->terakhir_belanja) : null;
                 @endphp
                 <tr>
-                    <td class="ps-4">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="avatar-user shadow-sm" style="background-color: {{ $bgColor }};">
-                                {{ strtoupper(substr($user->name, 0, 2)) }}
-                            </div>
-                            <div>
-                                <strong class="d-block text-dark mb-1" style="font-size: 0.95rem;">{{ $user->name }}</strong>
-                                <span class="text-muted small">{{ $user->email }}</span>
+                    <td>
+                        <div class="d-flex align-items-center gap-3 min-w-0">
+                            <div class="buyer-avatar-soft">{{ strtoupper(substr($user->name ?? 'PB', 0, 2)) }}</div>
+                            <div class="min-w-0">
+                                <div class="buyer-name text-truncate">{{ $user->name }}</div>
+                                <div class="buyer-meta text-truncate">
+                                    {{ $user->email }}
+                                    @if($user->telepon)
+                                        · {{ $user->telepon }}
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </td>
                     <td>
-                        <div class="text-dark fw-medium">{{ $user->telepon ?? 'Belum diset' }}</div>
+                        <span class="chip {{ $user->aktif ? 'c-green' : 'c-red' }}">{{ $user->aktif ? 'Aktif' : 'Nonaktif' }}</span>
+                    </td>
+                    <td class="text-center">
+                        <div class="buyer-number">{{ $user->pesanan_count ?? 0 }} pesanan</div>
+                        <span class="sub">{{ $user->ulasan_count ?? 0 }} ulasan · {{ $user->alamat_count ?? 0 }} alamat</span>
                     </td>
                     <td>
-                        <div class="d-flex flex-column gap-1">
-                            <span class="text-dark fw-bold">{{ $rupiah($user->total_belanja ?? 0) }}</span>
-                            <span class="text-muted small">{{ $user->pesanan_count }}x Transaksi</span>
-                        </div>
+                        <div class="buyer-number">{{ $rupiah($user->total_belanja ?? 0) }}</div>
+                        <span class="sub">Pembayaran berhasil</span>
                     </td>
                     <td>
-                        <span class="badge rounded-pill px-2 py-1 fw-medium {{ $user->aktif ? 'bg-success-subtle text-success-emphasis' : 'bg-danger-subtle text-danger-emphasis' }}">
-                            {{ $user->aktif ? 'Akun Aktif' : 'Diblokir' }}
-                        </span>
+                        @if($lastOrder)
+                            <div class="buyer-number">{{ $lastOrder->format('d/m/Y') }}</div>
+                            <span class="sub">{{ $lastOrder->format('H:i') }}</span>
+                        @else
+                            <span class="text-muted small fw-bold">Belum belanja</span>
+                        @endif
                     </td>
-                    <td>
-                        <div class="text-muted small">{{ $user->created_at->format('d M Y') }}</div>
-                    </td>
-                    <td class="text-end pe-4">
-                        <div class="d-flex justify-content-end gap-1">
-                            <a class="btn-action text-decoration-none" href="{{ route('admin.pembeli.show', $user) }}" title="Lihat Profil">
+                    <td class="text-end">
+                        <div class="actions justify-content-end">
+                            <button class="btn-action" type="button" data-bs-toggle="modal" data-bs-target="#buyerQuickModal{{ $user->id }}" title="Ringkasan">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <a class="btn-action" href="{{ route('admin.pembeli.show', $user) }}" title="Profil lengkap">
                                 <i class="bi bi-person-lines-fill"></i>
                             </a>
-                            <form method="POST" action="{{ route('admin.pembeli.toggle', $user) }}" class="d-inline" data-confirm-title="Ubah Status Pembeli" data-confirm-message="Yakin ingin mengubah status akun pembeli ini?" data-confirm-button="Ubah Status">
+                            <form method="POST" action="{{ route('admin.pembeli.toggle', $user) }}" class="inline-form" data-confirm-title="Ubah Status Pembeli" data-confirm-message="Yakin ingin mengubah status akun {{ $user->name }}?" data-confirm-button="Ubah Status">
                                 @csrf @method('PATCH')
-                                <button class="btn-action" type="submit" title="{{ $user->aktif ? 'Blokir / Nonaktifkan' : 'Aktifkan Akun' }}">
+                                <button class="btn-action" type="submit" title="{{ $user->aktif ? 'Nonaktifkan' : 'Aktifkan' }}">
                                     <i class="bi {{ $user->aktif ? 'bi-lock text-warning' : 'bi-unlock text-success' }}"></i>
                                 </button>
                             </form>
@@ -109,18 +308,56 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="text-center py-5">
-                        <i class="bi bi-people fs-1 text-muted mb-3 d-block"></i>
-                        <strong class="text-dark d-block mb-1">Belum ada pembeli terdaftar.</strong>
-                        <span class="text-muted small">Data pembeli akan muncul otomatis saat ada user registrasi.</span>
+                    <td colspan="6">
+                        <div class="buyer-empty">
+                            <i class="bi bi-people fs-1 d-block mb-2"></i>
+                            <strong class="d-block text-dark mb-1">Data pembeli tidak ditemukan.</strong>
+                            Ubah kata kunci atau filter untuk melihat data lain.
+                        </div>
                     </td>
                 </tr>
             @endforelse
             </tbody>
         </table>
     </div>
+
     @if($pembeli->hasPages())
-        <div class="bg-light border-top p-3">{{ $pembeli->links() }}</div>
+        <div class="p-3 border-top bg-white">{{ $pembeli->links() }}</div>
     @endif
 </div>
+
+@foreach($pembeli as $user)
+    @php
+        $lastOrder = $user->terakhir_belanja ? \Illuminate\Support\Carbon::parse($user->terakhir_belanja) : null;
+    @endphp
+    <div class="modal fade" id="buyerQuickModal{{ $user->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow rounded-4 overflow-hidden">
+                <div class="modal-body p-4">
+                    <div class="d-flex align-items-start gap-3 mb-3">
+                        <div class="buyer-avatar-soft" style="width:56px;height:56px;border-radius:20px;">{{ strtoupper(substr($user->name ?? 'PB', 0, 2)) }}</div>
+                        <div class="min-w-0 flex-grow-1">
+                            <h5 class="fw-black text-dark mb-1">{{ $user->name }}</h5>
+                            <div class="text-muted small fw-bold text-break">{{ $user->email }}</div>
+                            <div class="mt-2"><span class="chip {{ $user->aktif ? 'c-green' : 'c-red' }}">{{ $user->aktif ? 'Aktif' : 'Nonaktif' }}</span></div>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6"><div class="p-3 rounded-4 bg-light"><div class="small text-muted fw-bold">Pesanan</div><div class="fw-black">{{ $user->pesanan_count ?? 0 }}</div></div></div>
+                        <div class="col-6"><div class="p-3 rounded-4 bg-light"><div class="small text-muted fw-bold">Ulasan</div><div class="fw-black">{{ $user->ulasan_count ?? 0 }}</div></div></div>
+                        <div class="col-12"><div class="p-3 rounded-4 bg-light"><div class="small text-muted fw-bold">Total belanja</div><div class="fw-black">{{ $rupiah($user->total_belanja ?? 0) }}</div></div></div>
+                    </div>
+                    <div class="small text-muted fw-bold mb-1">Kontak</div>
+                    <div class="fw-bold text-dark mb-3">{{ $user->telepon ?: 'Nomor HP belum diisi' }}</div>
+                    <div class="small text-muted fw-bold mb-1">Terakhir belanja</div>
+                    <div class="fw-bold text-dark">{{ $lastOrder ? $lastOrder->format('d/m/Y H:i') : 'Belum ada pesanan' }}</div>
+                </div>
+                <div class="modal-footer border-0 bg-light p-3">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Tutup</button>
+                    <a href="{{ route('admin.pembeli.show', $user) }}" class="btn btn-brand">Buka Profil Lengkap</a>
+                </div>
+            </div>
+        </div>
+    </div>
+@endforeach
 @endsection

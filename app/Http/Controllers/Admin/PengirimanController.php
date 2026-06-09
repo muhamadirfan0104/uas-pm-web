@@ -16,7 +16,7 @@ class PengirimanController extends Controller
     public function index(Request $request): View
     {
         $query = Pengiriman::with(['pesanan.user', 'pesanan.pembayaran', 'pesanan.alamatPengiriman', 'pesanan.item.produk.gambarUtama'])
-            ->whereHas('pesanan', fn ($order) => $order->where('status', '!=', 'dibatalkan'))
+            ->whereHas('pesanan', fn ($order) => $order->whereIn('status', ['disiapkan', 'siap_diambil', 'dalam_pengantaran']))
             ->latest();
 
         if ($request->filled('q')) {
@@ -37,10 +37,9 @@ class PengirimanController extends Controller
         $tab = (string) $request->input('tab', 'semua');
         if ($tab !== 'semua') {
             match ($tab) {
-                'belum_diproses' => $query->whereNull('status_pengiriman'),
+                'belum_diproses' => $query->whereNull('status_pengiriman')->whereHas('pesanan', fn ($order) => $order->where('status', 'disiapkan')),
                 'siap_diambil' => $query->where('status_pengiriman', 'siap_diambil'),
                 'dalam_pengantaran' => $query->where('status_pengiriman', 'dalam_pengantaran'),
-                'selesai' => $query->where('status_pengiriman', 'selesai'),
                 'ambil_toko' => $query->where('metode', 'ambil_toko'),
                 'kurir_toko' => $query->where('metode', 'kurir_toko'),
                 default => null,
@@ -53,8 +52,8 @@ class PengirimanController extends Controller
 
         if ($request->filled('status')) {
             if ($request->status === 'belum_diproses') {
-                $query->whereNull('status_pengiriman');
-            } else {
+                $query->whereNull('status_pengiriman')->whereHas('pesanan', fn ($order) => $order->where('status', 'disiapkan'));
+            } elseif (in_array($request->status, ['siap_diambil', 'dalam_pengantaran'], true)) {
                 $query->where('status_pengiriman', $request->status);
             }
         }
@@ -70,13 +69,13 @@ class PengirimanController extends Controller
         $pengiriman = $query->paginate(10)->withQueryString();
         $pengaturan = PengaturanToko::utama();
 
+        $fulfillmentBase = fn () => Pengiriman::query()->whereHas('pesanan', fn ($q) => $q->whereIn('status', ['disiapkan', 'siap_diambil', 'dalam_pengantaran']));
         $stats = [
-            'belum_diproses' => Pengiriman::whereNull('status_pengiriman')->whereHas('pesanan', fn ($q) => $q->where('status', '!=', 'dibatalkan'))->count(),
-            'siap_diambil' => Pengiriman::where('status_pengiriman', 'siap_diambil')->count(),
-            'dalam_pengantaran' => Pengiriman::where('status_pengiriman', 'dalam_pengantaran')->count(),
-            'selesai' => Pengiriman::where('status_pengiriman', 'selesai')->count(),
-            'kurir_toko' => Pengiriman::where('metode', 'kurir_toko')->count(),
-            'ambil_toko' => Pengiriman::where('metode', 'ambil_toko')->count(),
+            'belum_diproses' => $fulfillmentBase()->whereNull('status_pengiriman')->whereHas('pesanan', fn ($q) => $q->where('status', 'disiapkan'))->count(),
+            'siap_diambil' => $fulfillmentBase()->where('status_pengiriman', 'siap_diambil')->count(),
+            'dalam_pengantaran' => $fulfillmentBase()->where('status_pengiriman', 'dalam_pengantaran')->count(),
+            'kurir_toko' => $fulfillmentBase()->where('metode', 'kurir_toko')->count(),
+            'ambil_toko' => $fulfillmentBase()->where('metode', 'ambil_toko')->count(),
         ];
 
         $mapLat = old('latitude_toko', $pengaturan->latitude_toko ?: -7.2575);

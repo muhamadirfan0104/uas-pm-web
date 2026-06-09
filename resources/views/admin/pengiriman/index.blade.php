@@ -11,70 +11,60 @@
 @include('admin.partials.ops-page-style')
 
 @php
-    $methodLabel = fn($method) => match($method){'ambil_toko'=>'Ambil toko','kurir_toko'=>'Kurir toko',default=>$statusLabel($method)};
+    $pickupLabel = fn($method) => match($method){'ambil_toko'=>'Ambil toko','kurir_toko'=>'Kurir toko',default=>$statusLabel($method)};
     $paymentMethodLabel = fn($method) => match($method){'transfer_bank'=>'Transfer Bank','cod'=>'COD',default=>strtoupper((string)$method)};
     $nextShip = fn($ship) => \App\Support\OrderFlow::nextShippingStatus($ship);
     $nextOrder = fn($order) => \App\Support\OrderFlow::nextOrderStatus($order);
-    $orderActionLabel = function($status, $order = null) use ($statusLabel) {
+    $shipActionLabel = function($status, $ship = null) {
         return match($status) {
-            'diproses' => 'Proses pesanan',
             'siap_diambil' => 'Siap diambil',
-            'dalam_pengantaran' => 'Mulai pengantaran',
-            'selesai' => (($order?->pembayaran?->metode_pembayaran ?? null) === 'cod') ? 'Selesai & bayar COD' : 'Selesaikan',
-            default => $statusLabel($status),
-        };
-    };
-    $shipActionLabel = function($status, $ship = null) use ($statusLabel) {
-        return match($status) {
-            'siap_diambil' => 'Tandai siap diambil',
-            'dalam_pengantaran' => 'Mulai pengantaran',
+            'dalam_pengantaran' => 'Mulai antar',
             'selesai' => (($ship?->pesanan?->pembayaran?->metode_pembayaran ?? null) === 'cod') ? 'Selesai & bayar COD' : 'Selesaikan',
-            default => $statusLabel($status),
+            default => 'Lanjut',
         };
     };
     $shipFlowText = fn($ship) => $ship?->metode === 'kurir_toko'
-        ? 'Belum bayar → Diproses → Dalam pengantaran → Selesai'
-        : 'Belum bayar → Diproses → Siap diambil → Selesai';
+        ? 'Disiapkan → Dalam pengantaran → Selesai'
+        : 'Disiapkan → Siap diambil → Selesai';
     $tab = request('tab', 'semua');
     $hasActiveFilter = request()->filled('q') || request()->filled('metode') || request()->filled('status') || request()->filled('tanggal_mulai') || request()->filled('tanggal_selesai');
 @endphp
 
-<div class="ops-page-head">
+<div class="ops-page-head compact">
     <div>
         <h1 class="ops-title">Pengambilan & Kirim</h1>
-        <p class="ops-subtitle">Pantau pesanan yang perlu disiapkan, diambil, atau dikirim. Detail alamat dibuka lewat pop up supaya tabel tetap ringan.</p>
+        <p class="ops-subtitle">Khusus operasional barang yang masih aktif: pesanan sudah disiapkan, siap diambil, atau sedang diantar. Pesanan selesai tersimpan di menu Semua Pesanan.</p>
     </div>
-    <button class="btn btn-soft-brand" type="button" data-bs-toggle="modal" data-bs-target="#modalLogistikToko"><i class="bi bi-gear me-1"></i> Pengaturan toko</button>
+    <button class="btn btn-soft-brand btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#modalLogistikToko"><i class="bi bi-gear me-1"></i> Pengaturan toko</button>
 </div>
 
 <div class="ops-tabs">
-    <a class="ops-tab {{ $tab==='semua' ? 'active' : '' }}" href="{{ route('admin.pengiriman.index') }}">Semua</a>
-    <a class="ops-tab {{ $tab==='belum_diproses' ? 'active' : '' }}" href="{{ route('admin.pengiriman.index', ['tab'=>'belum_diproses']) }}">Belum siap <b>{{ $stats['belum_diproses'] ?? 0 }}</b></a>
+    <a class="ops-tab {{ $tab==='semua' ? 'active' : '' }}" href="{{ route('admin.pengiriman.index') }}">Semua aktif</a>
+    <a class="ops-tab {{ $tab==='belum_diproses' ? 'active' : '' }}" href="{{ route('admin.pengiriman.index', ['tab'=>'belum_diproses']) }}">Siap logistik <b>{{ $stats['belum_diproses'] ?? 0 }}</b></a>
     <a class="ops-tab {{ $tab==='siap_diambil' ? 'active' : '' }}" href="{{ route('admin.pengiriman.index', ['tab'=>'siap_diambil']) }}">Siap diambil <b>{{ $stats['siap_diambil'] ?? 0 }}</b></a>
     <a class="ops-tab {{ $tab==='dalam_pengantaran' ? 'active' : '' }}" href="{{ route('admin.pengiriman.index', ['tab'=>'dalam_pengantaran']) }}">Diantar <b>{{ $stats['dalam_pengantaran'] ?? 0 }}</b></a>
-    <a class="ops-tab {{ $tab==='selesai' ? 'active' : '' }}" href="{{ route('admin.pengiriman.index', ['tab'=>'selesai']) }}">Selesai <b>{{ $stats['selesai'] ?? 0 }}</b></a>
     <a class="ops-tab {{ $tab==='kurir_toko' ? 'active' : '' }}" href="{{ route('admin.pengiriman.index', ['tab'=>'kurir_toko']) }}">Kurir toko <b>{{ $stats['kurir_toko'] ?? 0 }}</b></a>
 </div>
 
-<div class="ops-filter-card">
+<div class="ops-filter-card compact">
     <form id="page-filter" class="js-instant-filter" method="GET">
         @if($tab !== 'semua')<input type="hidden" name="tab" value="{{ $tab }}">@endif
-        <div class="ops-filter-grid shipments">
-            <div class="ops-field"><label class="ops-label">Cari data</label><div class="ops-search"><i class="bi bi-search text-muted"></i><input name="q" value="{{ request('q') }}" placeholder="Invoice, pembeli, nomor HP, atau alamat"></div></div>
+        <div class="ops-filter-grid shipping-only">
+            <div class="ops-field"><label class="ops-label">Cari</label><div class="ops-search"><i class="bi bi-search text-muted"></i><input name="q" value="{{ request('q') }}" placeholder="Invoice, penerima, HP, atau alamat"></div></div>
             <div class="ops-field"><label class="ops-label">Metode</label><select class="ops-control" name="metode"><option value="">Semua</option><option value="ambil_toko" @selected(request('metode')==='ambil_toko')>Ambil toko</option><option value="kurir_toko" @selected(request('metode')==='kurir_toko')>Kurir toko</option></select></div>
-            <div class="ops-field"><label class="ops-label">Status</label><select class="ops-control" name="status"><option value="">Semua</option><option value="belum_diproses" @selected(request('status')==='belum_diproses')>Belum siap</option>@foreach(['siap_diambil','dalam_pengantaran','selesai'] as $s)<option value="{{ $s }}" @selected(request('status')===$s)>{{ $statusLabel($s) }}</option>@endforeach</select></div>
-            <div class="ops-field"><label class="ops-label">Dari tanggal</label><input type="date" class="ops-control" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}"></div>
+            <div class="ops-field"><label class="ops-label">Status</label><select class="ops-control" name="status"><option value="">Semua</option><option value="belum_diproses" @selected(request('status')==='belum_diproses')>Siap logistik</option>@foreach(['siap_diambil','dalam_pengantaran'] as $s)<option value="{{ $s }}" @selected(request('status')===$s)>{{ $statusLabel($s) }}</option>@endforeach</select></div>
+            <div class="ops-field"><label class="ops-label">Dari</label><input type="date" class="ops-control" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}"></div>
             <div class="ops-field"><label class="ops-label">Sampai</label><input type="date" class="ops-control" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}"></div>
             <div class="ops-filter-actions"><a href="{{ route('admin.pengiriman.index') }}" class="ops-btn-reset"><i class="bi bi-x-circle"></i> Reset</a></div>
         </div>
-        @if($hasActiveFilter || $tab !== 'semua')<div class="ops-filter-note"><i class="bi bi-funnel text-brand"></i> Filter sedang aktif. <a href="{{ route('admin.pengiriman.index') }}" class="text-brand fw-black text-decoration-none">Bersihkan</a></div>@endif
+        @if($hasActiveFilter || $tab !== 'semua')<div class="ops-filter-note"><i class="bi bi-funnel text-brand"></i> Filter aktif. <a href="{{ route('admin.pengiriman.index') }}" class="text-brand fw-black text-decoration-none">Bersihkan</a></div>@endif
     </form>
 </div>
 
 @if($pengiriman->count())
     <div class="ops-table-card table-wrap">
-        <table class="table align-middle">
-            <thead><tr><th>Invoice</th><th>Pembeli</th><th>Metode</th><th>Alamat</th><th>Biaya</th><th>Status</th><th class="text-end">Aksi</th></tr></thead>
+        <table class="table align-middle ops-table-compact">
+            <thead><tr><th>Invoice</th><th>Penerima</th><th>Metode</th><th>Alamat</th><th>Ongkir</th><th>Status</th><th class="text-end">Aksi</th></tr></thead>
             <tbody>
             @foreach($pengiriman as $ship)
                 @php
@@ -82,80 +72,52 @@
                     $buyer = $order?->user;
                     $pay = $order?->pembayaran;
                     $alamat = $order?->alamatPengiriman;
-                    $initial = strtoupper(substr($buyer?->name ?? 'PB',0,2));
+                    $initial = strtoupper(substr($alamat?->nama_penerima ?: $buyer?->name ?: 'PB',0,2));
                     $next = $nextShip($ship);
-                    $orderNext = $nextOrder($order);
-                    $paidOrCod = $order && ($order->status_pembayaran === 'dibayar' || $pay?->metode_pembayaran === 'cod');
-                    $stageReady = $order && ((!$ship->status_pengiriman && $order->status === 'diproses') || ($ship->status_pengiriman && in_array($order->status, ['siap_diambil','dalam_pengantaran'], true)));
-                    $canMove = $paidOrCod && $stageReady;
                     $alamatTampil = $ship->metode === 'kurir_toko' ? ($ship->alamat_tujuan ?: $alamat?->alamat_lengkap ?: 'Alamat belum tersedia') : ($ship->alamat_toko ?: $pengaturan->alamat ?: 'Alamat toko belum diisi');
                 @endphp
                 <tr>
                     <td><button type="button" class="ops-link action-modal-btn text-start" data-bs-toggle="modal" data-bs-target="#shipDetail{{ $ship->id }}">{{ $order?->nomor_invoice ?? '-' }}</button><span class="ops-muted">{{ optional($order?->tanggal_pesanan)->format('d M Y H:i') }}</span></td>
-                    <td><div class="d-flex align-items-center gap-2 min-w-0"><span class="ops-avatar">{{ $initial }}</span><div class="min-w-0"><div class="fw-black text-truncate">{{ $buyer?->name ?? 'Pembeli' }}</div><span class="ops-muted text-truncate">{{ $buyer?->telepon ?: $buyer?->email }}</span></div></div></td>
-                    <td><div class="d-flex gap-1 flex-wrap"><span class="ops-pill"><i class="bi {{ $ship->metode === 'kurir_toko' ? 'bi-truck text-primary' : 'bi-shop text-warning' }}"></i>{{ $methodLabel($ship->metode) }}</span><span class="ops-pill"><i class="bi {{ $pay?->metode_pembayaran === 'cod' ? 'bi-cash-coin text-success' : 'bi-bank text-primary' }}"></i>{{ $paymentMethodLabel($pay?->metode_pembayaran) }}</span></div></td>
+                    <td><div class="d-flex align-items-center gap-2 min-w-0"><span class="ops-avatar">{{ $initial }}</span><div class="min-w-0"><div class="fw-black text-truncate">{{ $alamat?->nama_penerima ?: $buyer?->name ?: 'Pembeli' }}</div><span class="ops-muted text-truncate">{{ $alamat?->telepon ?: $buyer?->telepon ?: $buyer?->email }}</span></div></div></td>
+                    <td><span class="ops-pill"><i class="bi {{ $ship->metode === 'kurir_toko' ? 'bi-truck text-primary' : 'bi-shop text-warning' }}"></i>{{ $pickupLabel($ship->metode) }}</span></td>
                     <td><div class="fw-bold">{{ $ship->metode === 'kurir_toko' ? 'Alamat tujuan' : 'Alamat toko' }}</div><span class="ops-muted address-one-line">{{ $alamatTampil }}</span></td>
-                    <td><div class="fw-black">{{ $rupiah($ship->biaya) }}</div><span class="ops-muted">{{ $ship->jarak_km ? $ship->jarak_km.' km' : 'Jarak belum ada' }}</span></td>
-                    <td><span class="chip {{ $statusClass($ship->status_pengiriman ?: 'menunggu_pembayaran') }}">{{ $ship->status_pengiriman ? $statusLabel($ship->status_pengiriman) : 'Belum siap' }}</span></td>
+                    <td><div class="fw-black">{{ $rupiah($ship->biaya) }}</div><span class="ops-muted">{{ $ship->jarak_km ? $ship->jarak_km.' km' : 'Tanpa jarak' }}</span></td>
+                    <td><span class="chip {{ $statusClass($ship->status_pengiriman ?: 'disiapkan') }}">{{ $ship->status_pengiriman ? $statusLabel($ship->status_pengiriman) : 'Siap logistik' }}</span></td>
                     <td><div class="ops-actions">
-                        @if($canMove && $next)
-                            <form method="POST" action="{{ route('admin.pengiriman.status', $ship) }}" data-confirm-title="Lanjutkan alur pengambilan/kirim" data-confirm-message="{{ $shipFlowText($ship) }}. Lanjutkan {{ $order?->nomor_invoice }} ke tahap {{ $statusLabel($next) }}?" data-confirm-button="Simpan">@csrf @method('PATCH')<input type="hidden" name="status_pengiriman" value="{{ $next }}"><button class="small-btn text-brand" type="submit"><i class="bi bi-arrow-right-circle"></i> {{ $shipActionLabel($next, $ship) }}</button></form>
-                        @elseif($orderNext === 'diproses' && $paidOrCod)
-                            <form method="POST" action="{{ route('admin.pesanan.status', $order) }}" data-confirm-title="Proses pesanan" data-confirm-message="{{ $shipFlowText($ship) }}. Proses {{ $order?->nomor_invoice }} terlebih dahulu sebelum masuk tahap {{ $ship->metode === 'kurir_toko' ? 'pengantaran' : 'siap diambil' }}?" data-confirm-button="Proses">@csrf @method('PATCH')<input type="hidden" name="status" value="diproses"><button class="small-btn text-brand" type="submit"><i class="bi bi-arrow-right-circle"></i> Proses pesanan</button></form>
-                        @elseif(!$canMove)
-                            <span class="small-btn text-muted"><i class="bi bi-lock"></i> {{ !$paidOrCod ? 'Menunggu bayar' : 'Proses dulu' }}</span>
+                        @if($next)
+                            <form method="POST" action="{{ route('admin.pengiriman.status', $ship) }}" data-confirm-title="Lanjutkan logistik" data-confirm-message="{{ $shipFlowText($ship) }}. Lanjutkan {{ $order?->nomor_invoice }} ke tahap {{ $statusLabel($next) }}?" data-confirm-button="Simpan">@csrf @method('PATCH')<input type="hidden" name="status_pengiriman" value="{{ $next }}"><button class="small-btn text-brand" type="submit"><i class="bi bi-arrow-right-circle"></i> {{ $shipActionLabel($next, $ship) }}</button></form>
                         @else
-                            <span class="small-btn text-success"><i class="bi bi-check2-circle"></i> Selesai</span>
+                            <span class="small-btn text-muted"><i class="bi bi-lock"></i> Menunggu tahap</span>
                         @endif
                         <button type="button" class="small-btn" data-bs-toggle="modal" data-bs-target="#shipDetail{{ $ship->id }}"><i class="bi bi-eye"></i> Detail</button>
                     </div></td>
                 </tr>
-
-                <div class="modal fade" id="shipDetail{{ $ship->id }}" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden"><div class="modal-header bg-white border-bottom p-4"><div><h5 class="modal-title fw-black">Detail pengambilan/kirim</h5><div class="ops-muted">{{ $order?->nomor_invoice ?? '-' }} · {{ $methodLabel($ship->metode) }}</div></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body modal-body-soft p-4"><div class="row g-3"><div class="col-lg-7"><div class="detail-modal-card mb-3"><span class="detail-label">Penerima</span><div class="detail-value">{{ $alamat?->nama_penerima ?: $buyer?->name ?: '-' }}</div><div class="ops-muted">{{ $alamat?->telepon ?: $buyer?->telepon ?: '-' }} · {{ $alamat?->email_penerima ?: $buyer?->email ?: '-' }}</div></div><div class="detail-modal-card mb-3"><span class="detail-label">Alamat</span><div class="detail-value">{{ $ship->metode === 'kurir_toko' ? 'Alamat tujuan' : 'Alamat toko' }}</div><div class="ops-muted">{{ $alamatTampil }}</div></div><div class="detail-modal-card"><span class="detail-label">Produk</span><div class="detail-list">@foreach($order?->item ?? [] as $item)<div class="detail-product"><div><div class="fw-black">{{ $item->produk?->nama ?? 'Produk' }}</div><div class="ops-muted">{{ $item->jumlah }} item</div></div><strong>{{ $rupiah($item->subtotal) }}</strong></div>@endforeach</div></div></div><div class="col-lg-5"><div class="detail-modal-card mb-3"><span class="detail-label">Status</span><div class="d-flex flex-wrap gap-2"><span class="chip {{ $statusClass($ship->status_pengiriman ?: 'menunggu_pembayaran') }}">{{ $ship->status_pengiriman ? $statusLabel($ship->status_pengiriman) : 'Belum siap' }}</span><span class="chip {{ $statusClass($order?->status_pembayaran) }}">Bayar: {{ $statusLabel($order?->status_pembayaran) }}</span></div><div class="flow-mini mt-3"><i class="bi bi-diagram-3 text-brand"></i><span>{{ $shipFlowText($ship) }}</span></div>@php
-    $shipSteps = $ship->metode === 'kurir_toko' ? ['diproses','dalam_pengantaran','selesai'] : ['diproses','siap_diambil','selesai'];
-    $shipCurrent = $ship->status_pengiriman ?: ($order?->status === 'diproses' ? 'diproses' : $order?->status);
-    $shipCurrentIndex = array_search($shipCurrent, $shipSteps, true);
-@endphp
-<div class="flow-steps">
-    @foreach($shipSteps as $idx => $step)
-        @php
-            $done = $shipCurrentIndex !== false && $idx < $shipCurrentIndex;
-            $current = $shipCurrent === $step;
-            $isNextShipping = $next === $step && $canMove;
-            $isProcessButton = $step === 'diproses' && $orderNext === 'diproses' && $paidOrCod;
-        @endphp
-        @if($isNextShipping)
-            <form method="POST" action="{{ route('admin.pengiriman.status', $ship) }}" class="flow-step-form" data-confirm-title="Lanjutkan alur pengambilan/kirim" data-confirm-message="{{ $shipFlowText($ship) }}. Lanjutkan {{ $order?->nomor_invoice }} ke tahap {{ $statusLabel($step) }}?" data-confirm-button="Simpan">
-                @csrf @method('PATCH')
-                <input type="hidden" name="status_pengiriman" value="{{ $step }}">
-                <button class="flow-step action" type="submit"><i class="bi bi-arrow-right-circle"></i>{{ $shipActionLabel($step, $ship) }}</button>
-            </form>
-        @elseif($isProcessButton)
-            <form method="POST" action="{{ route('admin.pesanan.status', $order) }}" class="flow-step-form" data-confirm-title="Proses pesanan" data-confirm-message="Proses {{ $order?->nomor_invoice }} terlebih dahulu sebelum pengambilan atau pengiriman?" data-confirm-button="Proses">
-                @csrf @method('PATCH')
-                <input type="hidden" name="status" value="diproses">
-                <button class="flow-step action" type="submit"><i class="bi bi-arrow-right-circle"></i>Proses pesanan</button>
-            </form>
-        @else
-            <span class="flow-step {{ $done ? 'done' : ($current ? 'current' : 'locked') }}"><i class="bi {{ $done ? 'bi-check2-circle' : ($current ? 'bi-record-circle' : 'bi-lock') }}"></i>{{ $statusLabel($step) }}</span>
-        @endif
-    @endforeach
-</div>
-@if(! $paidOrCod)
-    <div class="flow-help">Pesanan belum bisa disiapkan karena pembayaran belum selesai. Transfer harus diterima dulu. COD dapat diproses langsung dari tombol tahap berikutnya.</div>
-@elseif($paidOrCod && ! $stageReady && $orderNext !== 'diproses' && ! in_array($order?->status, ['selesai'], true))
-    <div class="flow-help">Selesaikan tahap pesanan sebelumnya agar tombol pengambilan/kirim aktif.</div>
-@endif
-</div><div class="detail-modal-card"><span class="detail-label">Ringkasan biaya</span><div class="summary-row"><span>Subtotal produk</span><strong>{{ $rupiah($order?->subtotal_produk) }}</strong></div><div class="summary-row"><span>Ongkir</span><strong>{{ $rupiah($ship->biaya) }}</strong></div><div class="summary-row"><span>Jarak</span><strong>{{ $ship->jarak_km ? $ship->jarak_km.' km' : '-' }}</strong></div><div class="summary-row"><span>Total bayar</span><strong>{{ $rupiah($order?->total_bayar) }}</strong></div></div></div></div></div></div></div></div>
             @endforeach
             </tbody>
         </table>
     </div>
 @else
-    <div class="ops-empty"><i class="bi bi-truck fs-2 text-muted"></i><strong class="d-block mt-2">Belum ada data pengambilan/kirim</strong><span class="text-muted fw-bold small">Pesanan akan muncul setelah checkout dibuat.</span></div>
+    <div class="ops-empty"><i class="bi bi-truck fs-2 text-muted"></i><strong class="d-block mt-2">Belum ada pengambilan atau pengiriman aktif</strong><span class="text-muted fw-bold small">Pesanan muncul di sini setelah admin menandai pesanan sudah disiapkan.</span></div>
 @endif
 
-<div class="ops-footer"><div class="text-muted small fw-bold">Menampilkan {{ $pengiriman->count() }} dari {{ $pengiriman->total() }} data.</div><div>{{ $pengiriman->links() }}</div></div>
+@foreach($pengiriman as $ship)
+    @php
+        $order = $ship->pesanan;
+        $buyer = $order?->user;
+        $pay = $order?->pembayaran;
+        $alamat = $order?->alamatPengiriman;
+        $alamatTampil = $ship->metode === 'kurir_toko' ? ($ship->alamat_tujuan ?: $alamat?->alamat_lengkap ?: 'Alamat belum tersedia') : ($ship->alamat_toko ?: $pengaturan->alamat ?: 'Alamat toko belum diisi');
+        $next = $nextShip($ship);
+        $shipSteps = $ship->metode === 'kurir_toko' ? ['disiapkan','dalam_pengantaran','selesai'] : ['disiapkan','siap_diambil','selesai'];
+        $shipCurrent = $ship->status_pengiriman ?: 'disiapkan';
+        $shipCurrentIndex = array_search($shipCurrent, $shipSteps, true);
+    @endphp
+    <div class="modal fade" id="shipDetail{{ $ship->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content ops-modal"><div class="modal-header"><div><h5 class="modal-title fw-black">Detail pengambilan/kirim</h5><div class="ops-muted">{{ $order?->nomor_invoice ?? '-' }} · {{ $pickupLabel($ship->metode) }}</div></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body modal-body-soft"><div class="row g-3"><div class="col-md-7"><div class="detail-modal-card mb-3"><span class="detail-label">Penerima</span><div class="detail-value">{{ $alamat?->nama_penerima ?: $buyer?->name ?: '-' }}</div><div class="ops-muted">{{ $alamat?->telepon ?: $buyer?->telepon ?: '-' }} · {{ $alamat?->email_penerima ?: $buyer?->email ?: '-' }}</div></div><div class="detail-modal-card mb-3"><span class="detail-label">Alamat</span><div class="detail-value">{{ $ship->metode === 'kurir_toko' ? 'Alamat tujuan' : 'Alamat toko' }}</div><div class="ops-muted">{{ $alamatTampil }}</div></div><div class="detail-modal-card"><span class="detail-label">Produk</span><div class="detail-list">@foreach($order?->item ?? [] as $item)<div class="detail-product"><div><div class="fw-black">{{ $item->produk?->nama ?? 'Produk' }}</div><div class="ops-muted">{{ $item->jumlah }} item</div></div><strong>{{ $rupiah($item->subtotal) }}</strong></div>@endforeach</div></div></div><div class="col-md-5"><div class="detail-modal-card mb-3"><span class="detail-label">Alur logistik</span><div class="flow-steps">@foreach($shipSteps as $idx => $step)@php $done = $shipCurrentIndex !== false && $idx < $shipCurrentIndex; $current = $shipCurrent === $step; $isNextShipping = $next === $step; @endphp @if($isNextShipping)<form method="POST" action="{{ route('admin.pengiriman.status', $ship) }}" class="flow-step-form" data-confirm-title="Lanjutkan logistik" data-confirm-message="{{ $shipFlowText($ship) }}. Lanjutkan {{ $order?->nomor_invoice }} ke tahap {{ $statusLabel($step) }}?" data-confirm-button="Simpan">@csrf @method('PATCH')<input type="hidden" name="status_pengiriman" value="{{ $step }}"><button class="flow-step action" type="submit"><i class="bi bi-arrow-right-circle"></i>{{ $shipActionLabel($step, $ship) }}</button></form>@else<span class="flow-step {{ $done ? 'done' : ($current ? 'current' : 'locked') }}"><i class="bi {{ $done ? 'bi-check2-circle' : ($current ? 'bi-record-circle' : 'bi-lock') }}"></i>{{ $statusLabel($step) }}</span>@endif @endforeach</div></div><div class="detail-modal-card"><span class="detail-label">Ringkasan</span><div class="summary-row"><span>Metode bayar</span><strong>{{ $paymentMethodLabel($pay?->metode_pembayaran) }}</strong></div><div class="summary-row"><span>Ongkir</span><strong>{{ $rupiah($ship->biaya) }}</strong></div><div class="summary-row"><span>Jarak</span><strong>{{ $ship->jarak_km ? $ship->jarak_km.' km' : '-' }}</strong></div><div class="summary-row"><span>Total</span><strong>{{ $rupiah($order?->total_bayar) }}</strong></div></div></div></div></div></div></div>
+    </div>
+@endforeach
+
+<div class="ops-footer"><div class="text-muted small fw-bold">Menampilkan {{ $pengiriman->count() }} dari {{ $pengiriman->total() }} pengambilan/kirim aktif.</div><div>{{ $pengiriman->links() }}</div></div>
 
 <div class="modal fade" id="modalLogistikToko" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">

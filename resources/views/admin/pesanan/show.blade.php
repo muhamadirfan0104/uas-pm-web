@@ -12,18 +12,29 @@
     $payment = $pesanan->pembayaran;
     $ship = $pesanan->pengiriman;
     $alamat = $pesanan->alamatPengiriman;
-    $steps = [
-        ['key'=>'menunggu_pembayaran','label'=>'Pesanan dibuat','icon'=>'bi-receipt'],
-        ['key'=>'diproses','label'=>'Diproses toko','icon'=>'bi-box-seam'],
-        ['key'=>$pesanan->metode_pengambilan === 'kurir_toko' ? 'dalam_pengantaran' : 'siap_diambil','label'=>$pesanan->metode_pengambilan === 'kurir_toko' ? 'Dikirim' : 'Siap diambil','icon'=>$pesanan->metode_pengambilan === 'kurir_toko' ? 'bi-truck' : 'bi-shop'],
-        ['key'=>'selesai','label'=>'Selesai','icon'=>'bi-check2-circle'],
-    ];
-    $orderStatusOrder = ['menunggu_pembayaran'=>1,'diproses'=>2,'siap_diambil'=>3,'dalam_pengantaran'=>3,'selesai'=>4,'dibatalkan'=>0];
-    $currentStep = $orderStatusOrder[$pesanan->status] ?? 0;
+    $flowKeys = \App\Support\OrderFlow::steps($pesanan);
+    $steps = collect($flowKeys)->map(fn($key) => [
+        'key' => $key,
+        'label' => $statusLabel($key),
+        'icon' => match($key) {
+            'menunggu_pembayaran' => 'bi-receipt',
+            'menunggu_verifikasi' => 'bi-shield-check',
+            'menunggu_konfirmasi' => 'bi-shop',
+            'diproses' => 'bi-gear',
+            'disiapkan' => 'bi-box-seam',
+            'siap_diambil' => 'bi-shop',
+            'dalam_pengantaran' => 'bi-truck',
+            'selesai' => 'bi-check2-circle',
+            default => 'bi-circle',
+        },
+    ])->all();
+    $orderStatusOrder = array_flip($flowKeys);
+    $currentStep = isset($orderStatusOrder[$pesanan->status]) ? $orderStatusOrder[$pesanan->status] + 1 : 0;
     $next = \App\Support\OrderFlow::nextOrderStatus($pesanan);
     $actionLabel = function($status) use ($statusLabel, $payment) {
         return match($status) {
             'diproses' => 'Proses pesanan',
+            'disiapkan' => 'Siapkan pesanan',
             'siap_diambil' => 'Tandai siap diambil',
             'dalam_pengantaran' => 'Mulai pengantaran',
             'selesai' => ($payment?->metode_pembayaran === 'cod') ? 'Selesaikan & bayar COD' : 'Selesaikan pesanan',
@@ -91,7 +102,7 @@
         <div class="panel">
             <div class="panel-head"><div><h2 class="panel-title">Tindakan admin</h2><p class="panel-sub">Lanjutkan pesanan sesuai tahapnya.</p></div></div>
             <div class="panel-body action-stack">
-                @if($payment?->metode_pembayaran === 'transfer_bank' && $payment?->status === 'menunggu_pembayaran')
+                @if($payment?->metode_pembayaran === 'transfer_bank' && in_array($payment?->status, ['menunggu_pembayaran','menunggu_verifikasi'], true))
                     <a class="btn btn-soft" href="{{ route('admin.pembayaran.index', ['q'=>$pesanan->nomor_invoice]) }}"><i class="bi bi-shield-check me-1"></i> Cek pembayaran transfer</a>
                 @endif
                 @if($next)

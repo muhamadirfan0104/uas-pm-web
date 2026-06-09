@@ -12,7 +12,7 @@ class PembayaranApiController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        abort_unless(in_array($request->user()->role, ['admin', 'kasir'], true), 403);
+        abort_unless($request->user()->role === 'admin', 403);
         $query = Pembayaran::with('pesanan.user')->latest();
         if ($request->filled('status')) $query->where('status', $request->status);
         return response()->json(['success' => true, 'data' => $query->paginate(15)]);
@@ -20,7 +20,7 @@ class PembayaranApiController extends Controller
 
     public function updateStatus(Request $request, Pembayaran $pembayaran): JsonResponse
     {
-        abort_unless(in_array($request->user()->role, ['admin', 'kasir'], true), 403);
+        abort_unless($request->user()->role === 'admin', 403);
         $data = $request->validate(['status' => ['required', Rule::in(['menunggu_pembayaran','dibayar','gagal','kedaluwarsa','dibatalkan'])]]);
         $pembayaran->update(['status' => $data['status'], 'dibayar_pada' => $data['status'] === 'dibayar' ? now() : $pembayaran->dibayar_pada]);
         $pembayaran->pesanan?->update(['status_pembayaran' => $data['status'], 'status' => $data['status'] === 'dibayar' ? 'dibayar' : $pembayaran->pesanan->status]);

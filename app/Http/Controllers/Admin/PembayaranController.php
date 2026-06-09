@@ -14,8 +14,23 @@ class PembayaranController extends Controller
 {
     public function index(Request $request): View
     {
+        $activePayment = function ($query) {
+            $query->whereHas('pesanan', function ($order) {
+                $order->whereNotIn('status', ['selesai', 'dibatalkan']);
+            })->where(function ($payment) {
+                $payment->where(function ($transfer) {
+                    $transfer->where('metode_pembayaran', 'transfer_bank')
+                        ->whereIn('status', ['menunggu_pembayaran', 'menunggu_verifikasi', 'ditolak']);
+                })->orWhere(function ($cod) {
+                    $cod->where('metode_pembayaran', 'cod')
+                        ->where('status', '!=', 'dibayar');
+                });
+            });
+        };
+
         $query = Pembayaran::query()
             ->with(['pesanan.user', 'pesanan.item.produk'])
+            ->where($activePayment)
             ->latest();
 
         if ($request->filled('q')) {
@@ -37,7 +52,7 @@ class PembayaranController extends Controller
         if ($tab !== 'semua') {
             match ($tab) {
                 'perlu_dicek' => $query->where('metode_pembayaran', 'transfer_bank')
-                    ->where('status', 'menunggu_pembayaran')
+                    ->whereIn('status', ['menunggu_pembayaran', 'menunggu_verifikasi'])
                     ->whereNotNull('bukti_transfer')
                     ->where('bukti_transfer', '!=', ''),
                 'belum_upload' => $query->where('metode_pembayaran', 'transfer_bank')
@@ -45,7 +60,6 @@ class PembayaranController extends Controller
                     ->where(function ($q) {
                         $q->whereNull('bukti_transfer')->orWhere('bukti_transfer', '');
                     }),
-                'dibayar' => $query->where('status', 'dibayar'),
                 'ditolak' => $query->where('status', 'ditolak'),
                 'cod' => $query->where('metode_pembayaran', 'cod'),
                 default => null,
@@ -80,10 +94,11 @@ class PembayaranController extends Controller
 
         $pembayaran = $query->paginate(10)->withQueryString();
 
-        $base = Pembayaran::query();
+        $base = Pembayaran::query()->where($activePayment);
         $stats = [
+            'semua' => (clone $base)->count(),
             'perlu_dicek' => (clone $base)->where('metode_pembayaran', 'transfer_bank')
-                ->where('status', 'menunggu_pembayaran')
+                ->whereIn('status', ['menunggu_pembayaran', 'menunggu_verifikasi'])
                 ->whereNotNull('bukti_transfer')
                 ->where('bukti_transfer', '!=', '')
                 ->count(),
@@ -93,11 +108,9 @@ class PembayaranController extends Controller
                     $q->whereNull('bukti_transfer')->orWhere('bukti_transfer', '');
                 })
                 ->count(),
-            'dibayar' => (clone $base)->where('status', 'dibayar')->count(),
             'ditolak' => (clone $base)->where('status', 'ditolak')->count(),
             'cod' => (clone $base)->where('metode_pembayaran', 'cod')->count(),
-            'transfer' => (clone $base)->where('metode_pembayaran', 'transfer_bank')->count(),
-            'nominal_menunggu' => (clone $base)->where('status', 'menunggu_pembayaran')->sum('jumlah'),
+            'nominal_menunggu' => (clone $base)->sum('jumlah'),
         ];
 
         return view('admin.pembayaran.index', compact('pembayaran', 'stats'));
@@ -121,11 +134,11 @@ class PembayaranController extends Controller
 
             $pembayaran->pesanan?->update([
                 'status_pembayaran' => 'dibayar',
-                'status' => 'diproses',
+                'status' => 'menunggu_konfirmasi',
             ]);
         });
 
-        return back()->with('success', 'Pembayaran diterima. Pesanan masuk ke tahap diproses.');
+        return back()->with('success', 'Pembayaran diterima. Pesanan masuk ke antrean konfirmasi toko.');
     }
 
     public function tolak(Request $request, Pembayaran $pembayaran): RedirectResponse
@@ -158,7 +171,7 @@ class PembayaranController extends Controller
     public function updateStatus(Request $request, Pembayaran $pembayaran): RedirectResponse
     {
         $data = $request->validate([
-            'status' => ['required', 'in:menunggu_pembayaran,dibayar,ditolak,gagal,kedaluwarsa,dibatalkan'],
+            'status' => ['required', 'in:menunggu_pembayaran,menunggu_verifikasi,dibayar,ditolak,gagal,kedaluwarsa,dibatalkan'],
             'catatan_admin' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -176,7 +189,7 @@ class PembayaranController extends Controller
                 $pembayaran->pesanan->update([
                     'status_pembayaran' => $data['status'],
                     'status' => match ($data['status']) {
-                        'dibayar' => 'diproses',
+                        'dibayar' => 'menunggu_konfirmasi',
                         'ditolak' => 'menunggu_pembayaran',
                         'dibatalkan' => 'dibatalkan',
                         default => $pembayaran->pesanan->status,

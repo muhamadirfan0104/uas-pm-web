@@ -14,7 +14,6 @@ use App\Http\Controllers\Admin\ProdukController;
 use App\Http\Controllers\Admin\StokController;
 use App\Http\Controllers\Admin\UlasanController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\KasirController;
 use App\Http\Controllers\WebPembeli\AlamatController as WebPembeliAlamatController;
 use App\Http\Controllers\WebPembeli\AuthController as WebPembeliAuthController;
 use App\Http\Controllers\WebPembeli\CheckoutController as WebPembeliCheckoutController;
@@ -24,7 +23,6 @@ use App\Http\Controllers\WebPembeli\PesananController as WebPembeliPesananContro
 use App\Http\Controllers\WebPembeli\ProfilController as WebPembeliProfilController;
 use App\Http\Controllers\WebPembeli\UlasanController as WebPembeliUlasanController;
 use App\Http\Middleware\AdminMiddleware;
-use App\Http\Middleware\KasirMiddleware;
 use App\Http\Middleware\PembeliWebMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -204,7 +202,7 @@ Route::prefix('pembeli-web')
 
 /*
 |--------------------------------------------------------------------------
-| LOGIN ADMIN / KASIR
+| LOGIN ADMIN
 |--------------------------------------------------------------------------
 */
 Route::get('/login', [AuthController::class, 'showLogin'])
@@ -272,6 +270,14 @@ Route::middleware(['auth', AdminMiddleware::class])
 
         Route::patch('/stok/{produk}', [StokController::class, 'update'])
             ->name('stok.update');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Semua Pesanan / Arsip Invoice
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/semua-pesanan', [PesananController::class, 'semua'])
+            ->name('semua-pesanan.index');
 
         /*
         |--------------------------------------------------------------------------
@@ -388,22 +394,6 @@ Route::middleware(['auth', AdminMiddleware::class])
         })->name('not-found');
     });
 
-/*
-|--------------------------------------------------------------------------
-| KASIR
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth', KasirMiddleware::class])
-    ->prefix('kasir')
-    ->name('kasir.')
-    ->group(function () {
-        Route::get('/dashboard', [KasirController::class, 'dashboard'])
-            ->name('dashboard');
-
-        Route::fallback(function () {
-            return response()->view('errors.kasir-404', [], 404);
-        })->name('not-found');
-    });
 
 /*
 |--------------------------------------------------------------------------

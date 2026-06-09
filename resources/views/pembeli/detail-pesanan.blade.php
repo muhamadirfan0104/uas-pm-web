@@ -173,20 +173,23 @@
         'selesai' => 'done',
         'dibatalkan' => 'cancel',
         'siap_diambil', 'dalam_pengantaran' => 'ready',
-        'dibayar', 'diproses' => 'process',
+        'menunggu_konfirmasi', 'diproses', 'disiapkan' => 'process',
         default => 'waiting',
     };
     $statusIcon = match($pesanan->status) {
         'selesai' => 'bi-check2-circle',
         'dibatalkan' => 'bi-x-circle',
         'siap_diambil', 'dalam_pengantaran' => 'bi-truck',
-        'dibayar', 'diproses' => 'bi-gear',
+        'menunggu_konfirmasi', 'diproses', 'disiapkan' => 'bi-gear',
         default => 'bi-wallet2',
     };
     $statusText = match($pesanan->status) {
         'menunggu_pembayaran' => 'Belum Bayar',
+        'menunggu_verifikasi' => 'Menunggu Verifikasi',
+        'menunggu_konfirmasi' => 'Menunggu Konfirmasi Toko',
         'dibayar' => 'Pembayaran Diterima',
         'diproses' => 'Diproses Toko',
+        'disiapkan' => 'Disiapkan',
         'siap_diambil' => 'Siap Diambil',
         'dalam_pengantaran' => 'Dalam Pengantaran',
         'selesai' => 'Selesai',
@@ -198,24 +201,26 @@
         'ditolak' => 'Ditolak',
         'dibatalkan' => 'Dibatalkan',
         'gagal' => 'Gagal',
+        'menunggu_verifikasi' => 'Menunggu Verifikasi',
         default => 'Menunggu',
     };
     $bankNama = trim((string) ($pengaturan->bank_nama ?? '')) ?: 'Bank belum diatur';
     $bankNomor = trim((string) ($pengaturan->bank_nomor_rekening ?? '')) ?: 'Nomor rekening belum diatur';
     $bankAtasNama = trim((string) ($pengaturan->bank_atas_nama ?? '')) ?: ($pengaturan->nama ?: 'SiTahu Premium');
     $catatanPembayaran = trim((string) ($pengaturan->info_pembayaran ?? '')) ?: 'Transfer sesuai total bayar, lalu unggah bukti transfer agar pesanan dapat diperiksa admin.';
-    $canUploadProof = $payment?->metode_pembayaran === 'transfer_bank' && in_array($payment?->status, ['menunggu_pembayaran', 'ditolak'], true);
+    $canUploadProof = $payment?->metode_pembayaran === 'transfer_bank' && in_array($payment?->status, ['menunggu_pembayaran', 'menunggu_verifikasi', 'ditolak'], true);
     $hasProof = filled($payment?->bukti_transfer);
     $currentStep = match($pesanan->status) {
         'menunggu_pembayaran' => 1,
-        'dibayar', 'diproses' => 2,
+        'menunggu_verifikasi' => 1,
+        'menunggu_konfirmasi', 'diproses', 'disiapkan' => 2,
         'siap_diambil', 'dalam_pengantaran' => 3,
         'selesai' => 4,
         default => 0,
     };
     $steps = [
         1 => ['title' => 'Pesanan dibuat', 'desc' => 'Invoice berhasil dibuat.', 'icon' => 'bi-receipt-cutoff'],
-        2 => ['title' => 'Diproses toko', 'desc' => 'Pembayaran diterima atau COD diproses.', 'icon' => 'bi-gear'],
+        2 => ['title' => 'Diproses toko', 'desc' => 'Toko menerima pembayaran/COD dan menyiapkan pesanan.', 'icon' => 'bi-gear'],
         3 => ['title' => $pesanan->metode_pengambilan === 'kurir_toko' ? 'Dikirim' : 'Siap diambil', 'desc' => $pesanan->metode_pengambilan === 'kurir_toko' ? 'Pesanan berada dalam pengantaran.' : 'Pesanan dapat diambil di toko.', 'icon' => 'bi-truck'],
         4 => ['title' => 'Selesai', 'desc' => 'Pesanan sudah diterima pembeli.', 'icon' => 'bi-check2-circle'],
     ];

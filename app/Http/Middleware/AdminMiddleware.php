@@ -21,9 +21,6 @@ class AdminMiddleware
             return $next($request);
         }
 
-        if ($user->role === 'kasir') {
-            return redirect()->route('kasir.dashboard');
-        }
 
         Auth::logout();
         $request->session()->invalidate();

@@ -44,7 +44,7 @@ class AuthApiController extends Controller
         $data = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
-            'role' => ['nullable', Rule::in(['admin', 'kasir', 'pembeli'])],
+            'role' => ['nullable', Rule::in(['admin', 'pembeli'])],
         ]);
 
         $user = User::query()->where('email', $data['email'])->first();

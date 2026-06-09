@@ -9,9 +9,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Supaya role web bisa dipakai oleh admin dan kasir, sedangkan pembeli tetap untuk mobile.
+        // Role sistem disederhanakan: hanya admin dan pembeli.
         if (Schema::hasColumn('users', 'role')) {
-            DB::statement("ALTER TABLE users MODIFY role ENUM('admin','kasir','pembeli') NOT NULL DEFAULT 'pembeli'");
+            DB::table('users')->where('role', 'kasir')->update(['role' => 'admin']);
+            DB::statement("ALTER TABLE users MODIFY role ENUM('admin','pembeli') NOT NULL DEFAULT 'pembeli'");
         }
 
         if (Schema::hasTable('users') && ! Schema::hasColumn('users', 'aktif')) {

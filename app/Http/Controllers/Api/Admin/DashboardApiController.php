@@ -14,7 +14,7 @@ class DashboardApiController extends Controller
 {
     public function __invoke(Request $request): JsonResponse
     {
-        abort_unless(in_array($request->user()->role, ['admin', 'kasir'], true), 403);
+        abort_unless($request->user()->role === 'admin', 403);
 
         return response()->json([
             'success' => true,

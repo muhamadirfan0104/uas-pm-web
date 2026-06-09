@@ -38,9 +38,6 @@ class PembeliWebMiddleware
             return redirect()->route('admin.dashboard');
         }
 
-        if ($user->role === 'kasir') {
-            return redirect()->route('kasir.dashboard');
-        }
 
         Auth::logout();
 

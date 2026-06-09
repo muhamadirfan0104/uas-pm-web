@@ -8,6 +8,16 @@ use RuntimeException;
 
 class OrderFlow
 {
+    public const ORDER_WAITING_PAYMENT = 'menunggu_pembayaran';
+    public const ORDER_WAITING_VERIFICATION = 'menunggu_verifikasi';
+    public const ORDER_WAITING_CONFIRMATION = 'menunggu_konfirmasi';
+    public const ORDER_PROCESSING = 'diproses';
+    public const ORDER_PREPARED = 'disiapkan';
+    public const ORDER_READY_PICKUP = 'siap_diambil';
+    public const ORDER_DELIVERING = 'dalam_pengantaran';
+    public const ORDER_DONE = 'selesai';
+    public const ORDER_CANCELLED = 'dibatalkan';
+
     public static function paymentMethod(?Pesanan $order): ?string
     {
         return $order?->pembayaran?->metode_pembayaran;
@@ -18,27 +28,35 @@ class OrderFlow
         return self::paymentMethod($order) === 'cod';
     }
 
+    public static function isTransfer(?Pesanan $order): bool
+    {
+        return self::paymentMethod($order) === 'transfer_bank';
+    }
+
     public static function isPaid(?Pesanan $order): bool
     {
         return $order?->status_pembayaran === 'dibayar' || $order?->pembayaran?->status === 'dibayar';
     }
 
-    public static function canProcess(?Pesanan $order): bool
+    public static function canEnterOrderWork(?Pesanan $order): bool
     {
         return $order && (self::isCod($order) || self::isPaid($order));
     }
 
+    public static function canCancel(?Pesanan $order): bool
+    {
+        return $order && ! in_array($order->status, [self::ORDER_DONE, self::ORDER_CANCELLED], true);
+    }
+
     public static function nextOrderStatus(?Pesanan $order): ?string
     {
-        if (! $order || in_array($order->status, ['selesai', 'dibatalkan'], true)) {
+        if (! $order || in_array($order->status, [self::ORDER_DONE, self::ORDER_CANCELLED], true)) {
             return null;
         }
 
         return match ($order->status) {
-            'menunggu_pembayaran' => self::canProcess($order) ? 'diproses' : null,
-            'dibayar' => 'diproses',
-            'diproses' => $order->metode_pengambilan === 'kurir_toko' ? 'dalam_pengantaran' : 'siap_diambil',
-            'siap_diambil', 'dalam_pengantaran' => 'selesai',
+            self::ORDER_WAITING_CONFIRMATION => self::canEnterOrderWork($order) ? self::ORDER_PROCESSING : null,
+            self::ORDER_PROCESSING => self::ORDER_PREPARED,
             default => null,
         };
     }
@@ -49,45 +67,47 @@ class OrderFlow
             return null;
         }
 
+        $shipment->loadMissing('pesanan.pembayaran');
+        $order = $shipment->pesanan;
+
         if (! $shipment->status_pengiriman) {
-            return $shipment->metode === 'kurir_toko' ? 'dalam_pengantaran' : 'siap_diambil';
+            return $order?->status === self::ORDER_PREPARED
+                ? ($shipment->metode === 'kurir_toko' ? self::ORDER_DELIVERING : self::ORDER_READY_PICKUP)
+                : null;
         }
 
         return match ($shipment->status_pengiriman) {
-            'siap_diambil', 'dalam_pengantaran' => 'selesai',
+            self::ORDER_READY_PICKUP, self::ORDER_DELIVERING => self::ORDER_DONE,
             default => null,
         };
     }
 
     public static function assertOrderTransition(Pesanan $order, string $targetStatus): void
     {
+        $order->loadMissing(['pembayaran', 'pengiriman']);
+
         if ($targetStatus === $order->status) {
             return;
         }
 
-        if ($targetStatus === 'dibatalkan') {
-            if (in_array($order->status, ['selesai', 'dibatalkan'], true)) {
+        if ($targetStatus === self::ORDER_CANCELLED) {
+            if (! self::canCancel($order)) {
                 throw new RuntimeException('Pesanan yang sudah selesai atau dibatalkan tidak bisa dibatalkan lagi.');
             }
             return;
         }
 
+        if ($targetStatus === self::ORDER_WAITING_CONFIRMATION && self::isPaid($order)) {
+            return;
+        }
+
         $next = self::nextOrderStatus($order);
-
         if ($targetStatus !== $next) {
-            throw new RuntimeException('Status pesanan harus mengikuti alur: belum bayar, diproses, lalu ambil/kirim, dan selesai.');
+            throw new RuntimeException('Status pesanan harus mengikuti alur: pembayaran, konfirmasi toko, diproses, disiapkan, lalu ambil/kirim.');
         }
 
-        if (in_array($targetStatus, ['diproses', 'siap_diambil', 'dalam_pengantaran', 'selesai'], true) && ! self::canProcess($order)) {
-            throw new RuntimeException('Pesanan transfer bank belum bisa diproses sebelum pembayaran diterima. Pesanan COD boleh diproses lebih dulu dan dibayar saat selesai.');
-        }
-
-        if ($targetStatus === 'siap_diambil' && $order->metode_pengambilan !== 'ambil_toko') {
-            throw new RuntimeException('Status siap diambil hanya untuk pesanan ambil di toko.');
-        }
-
-        if ($targetStatus === 'dalam_pengantaran' && $order->metode_pengambilan !== 'kurir_toko') {
-            throw new RuntimeException('Status dalam pengantaran hanya untuk pesanan kurir toko.');
+        if (in_array($targetStatus, [self::ORDER_PROCESSING, self::ORDER_PREPARED], true) && ! self::canEnterOrderWork($order)) {
+            throw new RuntimeException('Pesanan transfer bank belum bisa diproses sebelum pembayaran diterima. Pesanan COD boleh diproses dan dibayar saat selesai.');
         }
     }
 
@@ -100,23 +120,19 @@ class OrderFlow
             throw new RuntimeException('Pesanan tidak ditemukan.');
         }
 
-        if (! self::canProcess($order)) {
-            throw new RuntimeException('Pesanan transfer bank belum bisa masuk pengambilan/kirim sebelum pembayaran diterima. Pesanan COD boleh diproses lalu dibayar saat selesai.');
+        if (! self::canEnterOrderWork($order)) {
+            throw new RuntimeException('Pesanan transfer bank belum bisa masuk pengambilan/kirim sebelum pembayaran diterima. Pesanan COD boleh lanjut dan dibayar saat selesai.');
         }
 
-        if (! $shipment->status_pengiriman && $order->status !== 'diproses') {
-            throw new RuntimeException('Pesanan harus masuk tahap diproses terlebih dahulu sebelum pengambilan atau pengiriman disiapkan.');
+        if (! $shipment->status_pengiriman && $order->status !== self::ORDER_PREPARED) {
+            throw new RuntimeException('Pesanan harus disiapkan terlebih dahulu sebelum masuk tahap pengambilan atau pengantaran.');
         }
 
-        if ($shipment->status_pengiriman && ! in_array($order->status, ['siap_diambil', 'dalam_pengantaran'], true)) {
-            throw new RuntimeException('Pesanan belum berada pada tahap pengambilan atau pengiriman yang bisa diselesaikan.');
-        }
-
-        if ($targetStatus === 'siap_diambil' && $shipment->metode !== 'ambil_toko') {
+        if ($targetStatus === self::ORDER_READY_PICKUP && $shipment->metode !== 'ambil_toko') {
             throw new RuntimeException('Status siap diambil hanya untuk pesanan ambil di toko.');
         }
 
-        if ($targetStatus === 'dalam_pengantaran' && $shipment->metode !== 'kurir_toko') {
+        if ($targetStatus === self::ORDER_DELIVERING && $shipment->metode !== 'kurir_toko') {
             throw new RuntimeException('Status dalam pengantaran hanya untuk pesanan kurir toko.');
         }
 
@@ -129,19 +145,36 @@ class OrderFlow
     public static function shippingStatusToOrderStatus(string $shippingStatus): string
     {
         return match ($shippingStatus) {
-            'siap_diambil' => 'siap_diambil',
-            'dalam_pengantaran' => 'dalam_pengantaran',
-            'selesai' => 'selesai',
-            default => 'diproses',
+            self::ORDER_READY_PICKUP => self::ORDER_READY_PICKUP,
+            self::ORDER_DELIVERING => self::ORDER_DELIVERING,
+            self::ORDER_DONE => self::ORDER_DONE,
+            default => self::ORDER_PREPARED,
         };
     }
 
     public static function steps(?Pesanan $order): array
     {
-        if ($order?->metode_pengambilan === 'kurir_toko') {
-            return ['menunggu_pembayaran', 'diproses', 'dalam_pengantaran', 'selesai'];
+        $base = [self::ORDER_WAITING_PAYMENT];
+
+        if (self::isTransfer($order)) {
+            $base[] = self::ORDER_WAITING_VERIFICATION;
         }
 
-        return ['menunggu_pembayaran', 'diproses', 'siap_diambil', 'selesai'];
+        $base = array_merge($base, [self::ORDER_WAITING_CONFIRMATION, self::ORDER_PROCESSING, self::ORDER_PREPARED]);
+
+        $base[] = $order?->metode_pengambilan === 'kurir_toko'
+            ? self::ORDER_DELIVERING
+            : self::ORDER_READY_PICKUP;
+
+        $base[] = self::ORDER_DONE;
+
+        return $base;
+    }
+
+    public static function shippingSteps(?Pengiriman $shipment): array
+    {
+        return $shipment?->metode === 'kurir_toko'
+            ? [self::ORDER_PREPARED, self::ORDER_DELIVERING, self::ORDER_DONE]
+            : [self::ORDER_PREPARED, self::ORDER_READY_PICKUP, self::ORDER_DONE];
     }
 }

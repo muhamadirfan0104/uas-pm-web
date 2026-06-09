@@ -690,7 +690,7 @@
                         <h2 class="dash-card-title">Pesanan Terbaru</h2>
                         <p class="dash-card-subtitle">Invoice dan pesanan yang baru masuk.</p>
                     </div>
-                    <a href="{{ route('admin.pesanan.index') }}" class="small-link"><i class="bi bi-arrow-right"></i> Semua Pesanan</a>
+                    <a href="{{ route('admin.semua-pesanan.index') }}" class="small-link"><i class="bi bi-arrow-right"></i> Semua Pesanan</a>
                 </div>
                 <div class="list-wrap">
                     @forelse($pesananTerbaru as $order)

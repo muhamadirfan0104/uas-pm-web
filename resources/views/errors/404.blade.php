@@ -20,7 +20,7 @@
     <div class="card">
         <div class="logo">S</div>
         <h1>Halaman tidak ditemukan</h1>
-        <p class="muted">URL yang kamu buka tidak tersedia. Jika ingin masuk ke dashboard admin/kasir, silakan login terlebih dahulu.</p>
+        <p class="muted">URL yang kamu buka tidak tersedia. Jika ingin masuk ke dashboard admin, silakan login terlebih dahulu.</p>
         <div class="actions">
             <a class="btn primary" href="{{ route('login') }}">Ke Halaman Login</a>
             <a class="btn secondary" href="{{ route('pembeli-web.home') }}">Web Pembeli</a>

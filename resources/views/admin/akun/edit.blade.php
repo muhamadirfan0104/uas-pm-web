@@ -8,7 +8,7 @@
     <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3 mb-4">
         <div>
             <h1 class="h4 fw-bold text-dark mb-1">Pengaturan Akun</h1>
-            <p class="text-muted small mb-0">Kelola profil akun admin/kasir yang sedang login.</p>
+            <p class="text-muted small mb-0">Kelola profil akun admin yang sedang login.</p>
         </div>
         <button class="btn shadow-sm fw-bold px-4 text-white d-flex align-items-center gap-2" type="submit" style="background: var(--brand-color, #dfba68);">
             <i class="bi bi-save"></i> Simpan Akun

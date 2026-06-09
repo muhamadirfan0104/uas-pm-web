@@ -29,6 +29,7 @@ class PengaturanTokoController extends Controller
             'telepon' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:150'],
             'jam_buka' => ['nullable', 'string', 'max:150'],
+            'jam_tutup' => ['nullable', 'string', 'max:150'],
             'latitude_toko' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude_toko' => ['nullable', 'numeric', 'between:-180,180'],
             'tarif_per_km' => ['nullable', 'numeric', 'min:0'],

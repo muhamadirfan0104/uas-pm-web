@@ -57,10 +57,6 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
-    public function isKasir(): bool
-    {
-        return $this->role === 'kasir';
-    }
 
     public function isPembeli(): bool
     {

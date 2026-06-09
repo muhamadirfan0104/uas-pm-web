@@ -30,17 +30,6 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        User::updateOrCreate(
-            ['email' => env('KASIR_EMAIL', 'kasir@gmail.com')],
-            [
-                'name' => env('KASIR_NAME', 'Kasir TahuKu'),
-                'telepon' => env('KASIR_PHONE', '081234567891'),
-                'password' => Hash::make(env('KASIR_PASSWORD', 'password')),
-                'role' => 'kasir',
-                'aktif' => true,
-            ]
-        );
-
         $pembeli = User::updateOrCreate(
             ['email' => env('PEMBELI_EMAIL', 'pembeli@gmail.com')],
             [
@@ -57,8 +46,11 @@ class DatabaseSeeder extends Seeder
             'telepon' => env('TOKO_TELEPON', '081234567890'),
             'email' => env('TOKO_EMAIL', 'admin@sitahu.test'),
             'alamat' => env('TOKO_ALAMAT', 'Alamat toko belum diisi'),
+            'latitude_toko' => -7.848016,
+            'longitude_toko' => 112.017829,
             'jam_buka' => '07:00',
             'jam_tutup' => '20:00',
+            'tarif_per_km' => 3000,
             'biaya_minimum_pengiriman' => 8000,
             'radius_maksimal_km' => 5,
             'info_pembayaran' => 'Transfer pembayaran ke rekening toko, lalu unggah bukti transfer saat checkout. COD tersedia untuk ambil di toko atau kurir toko.',
@@ -78,8 +70,8 @@ class DatabaseSeeder extends Seeder
             [
                 'email_penerima' => 'pembeli@gmail.com',
                 'alamat_lengkap' => 'Jl. Melati No. 12, RT 03/RW 02, Kecamatan Sukamaju, Kota Demo',
-                'latitude' => null,
-                'longitude' => null,
+                'latitude' => -7.850300,
+                'longitude' => 112.020100,
                 'utama' => true,
             ]
         );
@@ -93,8 +85,8 @@ class DatabaseSeeder extends Seeder
             [
                 'email_penerima' => 'sari@example.com',
                 'alamat_lengkap' => 'Jl. Mawar No. 8, dekat Pasar Pagi, Kecamatan Sukamaju, Kota Demo',
-                'latitude' => null,
-                'longitude' => null,
+                'latitude' => -7.842900,
+                'longitude' => 112.025700,
                 'utama' => false,
             ]
         );

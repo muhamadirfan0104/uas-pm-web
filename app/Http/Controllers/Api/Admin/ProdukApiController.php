@@ -16,7 +16,7 @@ class ProdukApiController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        abort_unless(in_array($request->user()->role, ['admin', 'kasir'], true), 403);
+        abort_unless($request->user()->role === 'admin', 403);
         $query = Produk::with('gambarUtama');
         if ($request->filled('q')) $query->where('nama', 'like', '%'.$request->q.'%');
         return response()->json(['success' => true, 'data' => $query->latest()->paginate(15)]);
@@ -31,7 +31,7 @@ class ProdukApiController extends Controller
 
     public function show(Request $request, Produk $produk): JsonResponse
     {
-        abort_unless(in_array($request->user()->role, ['admin', 'kasir'], true), 403);
+        abort_unless($request->user()->role === 'admin', 403);
         return response()->json(['success' => true, 'data' => $produk->load('gambar')]);
     }
 

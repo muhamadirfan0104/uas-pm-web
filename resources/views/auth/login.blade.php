@@ -94,7 +94,7 @@
         <!-- Informasi Tambahan (Footer Card) -->
         <div class="card-footer bg-light border-0 p-4 text-center" style="border-radius: 0 0 1.5rem 1.5rem;">
             <p class="small text-muted mb-2">
-                Akses khusus <strong>Admin</strong> dan <strong>Kasir</strong>
+                Akses khusus <strong>Admin</strong>
             </p>
             <div class="badge text-wrap lh-base fw-normal text-muted" style="background: #e9dece; font-size: 0.75rem;">
                 <i class="bi bi-info-circle me-1"></i> Akun pembeli disiapkan untuk aplikasi mobile

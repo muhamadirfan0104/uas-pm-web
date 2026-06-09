@@ -22,8 +22,8 @@ class PesananController extends Controller
         $q = trim((string) $request->query('q'));
 
         $statusGroups = [
-            'menunggu_pembayaran' => ['menunggu_pembayaran'],
-            'diproses' => ['dibayar', 'diproses'],
+            'menunggu_pembayaran' => ['menunggu_pembayaran', 'menunggu_verifikasi'],
+            'diproses' => ['menunggu_konfirmasi', 'diproses', 'disiapkan'],
             'siap_diterima' => ['siap_diambil', 'dalam_pengantaran'],
             'selesai' => ['selesai'],
             'dibatalkan' => ['dibatalkan'],
@@ -86,7 +86,7 @@ class PesananController extends Controller
     {
         $pesanan = $this->ambilPesananLogin($nomor_invoice);
 
-        if ($pesanan->status !== 'menunggu_pembayaran') {
+        if (! in_array($pesanan->status, ['menunggu_pembayaran', 'menunggu_verifikasi', 'menunggu_konfirmasi'], true)) {
             return back()->with('error', 'Pesanan tidak bisa dibatalkan karena sudah masuk proses toko.');
         }
 
@@ -141,7 +141,7 @@ class PesananController extends Controller
             return back()->with('error', 'Upload bukti hanya tersedia untuk metode transfer bank.');
         }
 
-        if (! in_array($pembayaran->status, ['menunggu_pembayaran', 'ditolak'], true)) {
+        if (! in_array($pembayaran->status, ['menunggu_pembayaran', 'menunggu_verifikasi', 'ditolak'], true)) {
             return back()->with('error', 'Bukti pembayaran tidak bisa diubah karena status pembayaran sudah diproses.');
         }
 
@@ -158,15 +158,15 @@ class PesananController extends Controller
         DB::transaction(function () use ($pesanan, $pembayaran, $path) {
             $pembayaran->update([
                 'bukti_transfer' => $path,
-                'status' => 'menunggu_pembayaran',
+                'status' => 'menunggu_verifikasi',
                 'catatan_admin' => null,
                 'dibayar_pada' => null,
                 'diverifikasi_pada' => null,
             ]);
 
             $pesanan->update([
-                'status' => 'menunggu_pembayaran',
-                'status_pembayaran' => 'menunggu_pembayaran',
+                'status' => 'menunggu_verifikasi',
+                'status_pembayaran' => 'menunggu_verifikasi',
             ]);
         });
 

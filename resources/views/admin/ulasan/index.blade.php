@@ -4,577 +4,562 @@
 @section('page_title', 'Ulasan')
 
 @section('content')
+@php
+    $ratingOptions = ['semua' => 'Semua rating', '5' => '5 bintang', '4' => '4 bintang', '3' => '3 bintang', '2' => '2 bintang', '1' => '1 bintang'];
+    $statusOptions = ['semua' => 'Semua status', 'tampil' => 'Ditampilkan', 'sembunyi' => 'Disembunyikan'];
+    $mediaOptions = ['semua' => 'Semua media', 'foto' => 'Ada foto', 'video' => 'Ada video', 'tanpa_media' => 'Tanpa media'];
+    $sortOptions = ['terbaru' => 'Terbaru', 'rating_tinggi' => 'Rating tertinggi', 'rating_rendah' => 'Rating terendah'];
+@endphp
+
 <style>
-    .review-box {
+    .review-stats {
+        display: grid;
+        grid-template-columns: 1.2fr repeat(4, minmax(0, .8fr));
+        gap: 9px;
+        margin-bottom: 16px;
+    }
+    .review-stat-card {
         border: 1px solid var(--border);
         border-radius: 18px;
         background: #fff;
-        margin-bottom: 1.5rem;
-        overflow: hidden;
+        padding: 14px 15px;
         box-shadow: var(--shadow-soft);
+        min-height: 86px;
     }
-
-    .review-metric {
-        background: #fff;
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 18px;
-        min-height: 116px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        transition: 0.18s ease;
-    }
-
-    .review-metric:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow);
-        border-color: rgba(223, 186, 104, 0.42);
-    }
-
-    .review-metric-label {
+    .review-stat-card .label {
         color: var(--muted);
-        font-size: 0.74rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-    }
-
-    .review-metric-value {
-        margin-top: 8px;
-        color: var(--text);
-        font-size: 1.75rem;
-        line-height: 1;
+        font-size: .7rem;
         font-weight: 950;
-        letter-spacing: -0.05em;
+        text-transform: uppercase;
+        letter-spacing: .055em;
     }
-
-    .review-metric-note {
-        display: inline-block;
-        margin-top: 8px;
-        font-size: 0.76rem;
-        font-weight: 850;
+    .review-stat-card .value {
+        margin-top: 7px;
+        color: var(--text);
+        font-size: 1.35rem;
+        font-weight: 950;
+        letter-spacing: -.05em;
+        line-height: 1;
     }
-
-    .review-metric-icon {
-        width: 46px;
-        height: 46px;
-        border-radius: 16px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        font-size: 1.15rem;
+    .review-filter-grid {
+        display: grid;
+        grid-template-columns: minmax(230px, 1fr) 220px 135px 150px 150px 150px auto auto;
+        gap: 10px;
+        align-items: end;
     }
-
-    .review-filter {
-        padding: 16px;
-        border-bottom: 1px solid var(--border);
-        background: #fff;
+    .review-filter-label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: .7rem;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .055em;
     }
-
     .review-search {
-        min-height: 44px;
-        padding: 0 14px;
+        min-height: 42px;
+        padding: 0 13px;
         border: 1px solid var(--border);
-        border-radius: 15px;
-        background: #f9fafb;
+        border-radius: 14px;
+        background: #fff;
         display: flex;
         align-items: center;
         gap: 10px;
-        transition: 0.16s ease;
     }
-
-    .review-search:focus-within {
-        background: #fff;
-        border-color: var(--brand);
-        box-shadow: 0 0 0 4px rgba(223, 186, 104, 0.16);
-    }
-
     .review-search input {
         width: 100%;
         border: 0;
         outline: 0;
         background: transparent;
-        color: var(--text);
-        font-size: 0.9rem;
-        font-weight: 650;
+        font-size: .78rem;
+        font-weight: 750;
     }
-
-    .review-product {
-        color: var(--text);
-        font-size: 0.92rem;
-        font-weight: 900;
-        letter-spacing: -0.02em;
+    .review-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
     }
-
-    .review-avatar {
-        width: 38px;
-        height: 38px;
-        border-radius: 999px;
+    .review-card {
+        border: 1px solid var(--border);
+        border-radius: 13px;
+        background: #fff;
+        overflow: hidden;
+        box-shadow: var(--shadow-soft);
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+    }
+    .review-card-top {
+        padding: 11px 12px;
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr) auto;
+        gap: 9px;
+        align-items: start;
+        border-bottom: 1px solid #f1f2f4;
+    }
+    .review-product-img {
+        width: 42px;
+        height: 42px;
+        border-radius: 13px;
+        object-fit: cover;
+        background: #f3f4f6;
+        border: 1px solid var(--border);
+    }
+    .review-product-empty {
+        width: 42px;
+        height: 42px;
+        border-radius: 13px;
+        display: grid;
+        place-items: center;
         background: var(--brand-soft);
         color: var(--brand-dark);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.76rem;
-        font-weight: 900;
-        flex-shrink: 0;
+        border: 1px solid #f1d49c;
     }
-
-    .rating-stars {
+    .review-title {
+        color: var(--text);
+        font-size: .84rem;
+        font-weight: 950;
+        letter-spacing: -.03em;
+        line-height: 1.25;
+    }
+    .review-sub {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: .68rem;
+        font-weight: 700;
+        line-height: 1.45;
+    }
+    .review-rating {
         display: inline-flex;
         align-items: center;
         gap: 2px;
         color: #f59e0b;
-        font-size: 0.95rem;
-        letter-spacing: 0.02em;
+        font-size: .78rem;
         white-space: nowrap;
     }
-
+    .review-card-body { padding: 11px 12px; flex: 1; }
     .review-comment {
-        max-width: 360px;
-        color: #374151;
-        font-size: 0.86rem;
+        color: #344054;
+        font-size: .78rem;
         font-weight: 650;
         line-height: 1.5;
+        min-height: 36px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
     }
-
-    .review-media-stack {
+    .review-media-row {
         display: flex;
         align-items: center;
         gap: 8px;
         flex-wrap: wrap;
+        margin-top: 12px;
     }
-
-    .review-photo {
-        width: 58px;
-        height: 58px;
-        border-radius: 16px;
-        object-fit: cover;
+    .review-media-thumb {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
         border: 1px solid var(--border);
+        object-fit: cover;
         background: #f3f4f6;
         cursor: pointer;
-        transition: 0.16s ease;
+        transition: .16s ease;
     }
-
-    .review-photo:hover {
-        transform: scale(1.04);
-        box-shadow: var(--shadow-soft);
-    }
-
-    .review-video-thumb {
-        width: 86px;
-        height: 58px;
-        border-radius: 16px;
+    .review-media-thumb:hover { transform: translateY(-1px) scale(1.03); box-shadow: var(--shadow-soft); }
+    .review-video-box {
+        width: 64px;
+        height: 44px;
+        border-radius: 12px;
         border: 1px solid var(--border);
         background: #111827;
-        object-fit: cover;
-        cursor: pointer;
-        transition: 0.16s ease;
-    }
-
-    .review-video-thumb:hover {
-        transform: scale(1.04);
-        box-shadow: var(--shadow-soft);
-    }
-
-    .review-photo-empty {
-        width: 58px;
-        height: 58px;
-        border-radius: 16px;
-        border: 1px dashed var(--border);
-        background: #f9fafb;
-        color: var(--muted);
+        color: #fff;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.15rem;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    .review-video-box video { width: 100%; height: 100%; object-fit: cover; opacity: .72; }
+    .review-video-box i { position: absolute; font-size: 1.35rem; }
+    .review-card-footer {
+        padding: 10px 12px;
+        border-top: 1px solid #f1f2f4;
+        background: #fbfcfd;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .review-empty {
+        padding: 46px 16px;
+        text-align: center;
+        color: var(--muted);
+        font-size: .78rem;
+        font-weight: 750;
+    }
+    .rating-bar {
+        display: grid;
+        grid-template-columns: 48px 1fr 34px;
+        gap: 8px;
+        align-items: center;
+        font-size: .75rem;
+        font-weight: 850;
+        color: var(--muted);
+    }
+    .rating-track {
+        height: 8px;
+        border-radius: 999px;
+        background: #f1f2f4;
+        overflow: hidden;
+    }
+    .rating-fill { height: 100%; border-radius: 999px; background: var(--brand); }
+
+    .review-rating-strip {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: #fffaf2;
+        padding: 12px;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .review-rating-mini {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
     }
 
-    .modal-review-photo {
+    .media-preview-img {
         width: 100%;
-        max-height: 72vh;
+        max-height: 76vh;
         object-fit: contain;
         border-radius: 18px;
         background: #f9fafb;
     }
-
-    .modal-review-video {
+    .media-preview-video {
         width: 100%;
-        max-height: 72vh;
+        max-height: 76vh;
         border-radius: 18px;
         background: #000;
     }
-
-    .empty-review {
-        padding: 48px 16px;
-        text-align: center;
+    @media (max-width: 1250px) {
+        .review-filter-grid { grid-template-columns: 1fr 1fr 1fr; }
+        .review-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .review-rating-strip { grid-template-columns: 1fr 1fr; }
+        .review-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
-
-    .empty-review-icon {
-        width: 58px;
-        height: 58px;
-        margin: 0 auto 12px;
-        border-radius: 18px;
-        background: #f3f4f6;
-        color: var(--muted);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.45rem;
+    @media (max-width: 900px) {
+        .review-grid { grid-template-columns: 1fr; }
     }
-
-    @media (max-width: 640px) {
-        .review-comment {
-            max-width: 220px;
-        }
-
-        .review-video-thumb {
-            width: 70px;
-        }
+    @media (max-width: 680px) {
+        .review-filter-grid, .review-stats, .review-rating-strip { grid-template-columns: 1fr; }
+        .review-card-top { grid-template-columns: 48px minmax(0, 1fr); }
+        .review-card-top .review-rating { grid-column: 2; justify-self: start; }
     }
 </style>
 
-<div class="hero">
+<section class="hero">
     <div>
         <h1>Ulasan</h1>
-        <p>
-            Moderasi ulasan produk tahu dari pembeli. Admin bisa melihat rating,
-            komentar, foto ulasan, dan video ulasan dari pembeli.
-        </p>
+        <p>Kelola penilaian pembeli, cek foto/video ulasan, dan sembunyikan komentar yang tidak layak tampil.</p>
     </div>
-
-    <a href="{{ route('admin.produk.index') }}" class="btn btn-light border fw-bold px-3">
-        <i class="bi bi-basket2 me-1 text-muted"></i>
-        Lihat Produk
+    <a href="{{ route('pembeli-web.ulasan') }}" target="_blank" rel="noopener" class="btn btn-light border fw-bold px-3">
+        <i class="bi bi-box-arrow-up-right me-1 text-muted"></i>
+        Lihat di Toko
     </a>
+</section>
+
+<div class="review-stats">
+    <div class="review-stat-card">
+        <div class="label">Rating rata-rata</div>
+        <div class="value">{{ $stats['rata_rata'] ?? 0 }} <span class="fs-6 text-warning">/ 5</span></div>
+        <div class="mt-2">
+            @for($i = 1; $i <= 5; $i++)
+                <i class="bi bi-star-fill text-warning small"></i>
+            @endfor
+        </div>
+    </div>
+    <div class="review-stat-card"><div class="label">Total ulasan</div><div class="value">{{ $stats['total'] ?? 0 }}</div></div>
+    <div class="review-stat-card"><div class="label">Ditampilkan</div><div class="value">{{ $stats['tampil'] ?? 0 }}</div></div>
+    <div class="review-stat-card"><div class="label">Foto / Video</div><div class="value">{{ $stats['foto'] ?? 0 }} / {{ $stats['video'] ?? 0 }}</div></div>
+    <div class="review-stat-card"><div class="label">Perlu perhatian</div><div class="value">{{ $stats['rating_rendah'] ?? 0 }}</div></div>
 </div>
 
-<div class="grid g4 mb-4">
-    <div class="review-metric">
-        <div>
-            <div class="review-metric-label">Rating Rata-rata</div>
-            <div class="review-metric-value">{{ $stats['rata_rata'] ?? 0 }}</div>
-            <span class="review-metric-note text-warning">Dari 5.0</span>
-        </div>
-
-        <div class="review-metric-icon bg-warning-subtle text-warning-emphasis">
-            <i class="bi bi-star-fill"></i>
-        </div>
-    </div>
-
-    <div class="review-metric">
-        <div>
-            <div class="review-metric-label">Total Ulasan</div>
-            <div class="review-metric-value">{{ $stats['total'] ?? 0 }}</div>
-            <span class="review-metric-note text-primary">Komentar pembeli</span>
-        </div>
-
-        <div class="review-metric-icon bg-primary-subtle text-primary-emphasis">
-            <i class="bi bi-chat-square-text-fill"></i>
-        </div>
-    </div>
-
-    <div class="review-metric">
-        <div>
-            <div class="review-metric-label">Ulasan Foto</div>
-            <div class="review-metric-value">{{ $stats['foto'] ?? 0 }}</div>
-            <span class="review-metric-note text-success">Dari kamera/galeri</span>
-        </div>
-
-        <div class="review-metric-icon bg-success-subtle text-success-emphasis">
-            <i class="bi bi-camera-fill"></i>
-        </div>
-    </div>
-
-    <div class="review-metric">
-        <div>
-            <div class="review-metric-label">Ulasan Video</div>
-            <div class="review-metric-value">{{ $stats['video'] ?? 0 }}</div>
-            <span class="review-metric-note text-danger">Review produk</span>
-        </div>
-
-        <div class="review-metric-icon bg-danger-subtle text-danger-emphasis">
-            <i class="bi bi-play-btn-fill"></i>
-        </div>
-    </div>
-</div>
-
-<div class="review-box">
-    <div class="review-filter">
-        <form id="page-filter" class="js-instant-filter" method="GET">
-            <div class="row g-3 align-items-center">
-                <div class="col-12 col-lg">
-                    <div class="review-search">
-                        <i class="bi bi-search text-muted"></i>
-                        <input
-                            name="q"
-                            value="{{ request('q') }}"
-                            placeholder="Cari produk, pembeli, atau komentar ulasan..."
-                        >
-                    </div>
+<div class="page-card overflow-hidden mb-4">
+    <div class="p-3 p-lg-4 border-bottom bg-white">
+        <form id="page-filter" method="GET" class="review-filter-grid">
+            <div>
+                <label class="review-filter-label">Cari ulasan</label>
+                <div class="review-search">
+                    <i class="bi bi-search text-muted"></i>
+                    <input name="q" value="{{ $search }}" placeholder="Produk, pembeli, invoice, atau komentar">
                 </div>
-
-                <div class="col-12 col-md-5 col-lg-3">
-                    <select class="form-select" name="rating">
-                        <option value="">Semua rating</option>
-
-                        @for($i = 5; $i >= 1; $i--)
-                            <option value="{{ $i }}" @selected(request('rating') == $i)>
-                                {{ $i }} Bintang
-                            </option>
-                        @endfor
-                    </select>
-                </div>
-
-                <div class="col-12 col-md-5 col-lg-3">
-                    <select class="form-select" name="status">
-                        <option value="">Semua status</option>
-                        <option value="tampil" @selected(request('status') === 'tampil')>
-                            Tampil
-                        </option>
-                        <option value="sembunyi" @selected(request('status') === 'sembunyi')>
-                            Disembunyikan
-                        </option>
-                    </select>
-                </div>
-
-                <div class="col-12 col-md-2 col-lg-1">
-                    <a href="{{ route('admin.ulasan.index') }}" class="btn btn-light border fw-bold w-100">
-                        Reset
-                    </a>
-                </div>
+            </div>
+            <div>
+                <label class="review-filter-label">Produk</label>
+                <select name="produk_id" class="form-select">
+                    <option value="semua" @selected($produkId === 'semua')>Semua produk</option>
+                    @foreach($produkList as $produkFilter)
+                        <option value="{{ $produkFilter->id }}" @selected((string) $produkId === (string) $produkFilter->id)>{{ $produkFilter->nama }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="review-filter-label">Rating</label>
+                <select name="rating" class="form-select">
+                    @foreach($ratingOptions as $value => $label)
+                        <option value="{{ $value }}" @selected($rating === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="review-filter-label">Status</label>
+                <select name="status" class="form-select">
+                    @foreach($statusOptions as $value => $label)
+                        <option value="{{ $value }}" @selected($status === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="review-filter-label">Media</label>
+                <select name="media" class="form-select">
+                    @foreach($mediaOptions as $value => $label)
+                        <option value="{{ $value }}" @selected($media === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="review-filter-label">Urutkan</label>
+                <select name="sort" class="form-select">
+                    @foreach($sortOptions as $value => $label)
+                        <option value="{{ $value }}" @selected($sort === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="d-grid">
+                <label class="review-filter-label opacity-0">Terapkan</label>
+                <button class="btn btn-brand" type="submit"><i class="bi bi-funnel me-1"></i> Terapkan</button>
+            </div>
+            <div class="d-grid">
+                <label class="review-filter-label opacity-0">Reset</label>
+                <a href="{{ route('admin.ulasan.index') }}" class="btn btn-light border">Reset</a>
             </div>
         </form>
     </div>
 
-    <div class="table-wrap">
-        <table>
-            <thead>
-            <tr>
-                <th>Produk</th>
-                <th>Pembeli</th>
-                <th>Rating</th>
-                <th>Komentar</th>
-                <th>Media</th>
-                <th>Status</th>
-                <th class="text-end">Aksi</th>
-            </tr>
-            </thead>
+    <div class="p-3 p-lg-4">
+        @php $totalRating = max(1, array_sum($ratingDistribusi ?? [])); @endphp
+        <div class="review-rating-strip">
+            @foreach($ratingDistribusi as $bintang => $jumlah)
+                <div class="review-rating-mini">
+                    <div class="fw-black text-dark small text-nowrap">{{ $bintang }} <i class="bi bi-star-fill text-warning"></i></div>
+                    <div class="rating-track flex-grow-1"><div class="rating-fill" style="width: {{ round(($jumlah / $totalRating) * 100) }}%"></div></div>
+                    <div class="text-muted small fw-black text-end">{{ $jumlah }}</div>
+                </div>
+            @endforeach
+        </div>
 
-            <tbody>
-            @forelse($ulasan as $review)
+        <div class="review-grid">
+            @forelse($ulasan as $item)
                 @php
-                    $namaPembeli = $review->user?->name ?? 'Pembeli';
-                    $initialPembeli = strtoupper(substr($namaPembeli, 0, 2));
+                    $fotoItems = collect();
+                    $videoItems = collect();
+                    if ($item->foto_ulasan) { $fotoItems->push($item->foto_ulasan); }
+                    if ($item->video_ulasan) { $videoItems->push($item->video_ulasan); }
+                    foreach ($item->media ?? [] as $mediaItem) {
+                        if ($mediaItem->jenis === 'foto') { $fotoItems->push($mediaItem->path); }
+                        if ($mediaItem->jenis === 'video') { $videoItems->push($mediaItem->path); }
+                    }
+                    $produkGambar = $item->produk?->gambarUtama?->path;
                 @endphp
-
-                <tr>
-                    <td>
-                        <div class="review-product">
-                            {{ $review->produk?->nama ?? '-' }}
-                        </div>
-                        <span class="sub">
-                            Pesanan #{{ $review->pesanan_id ?? '-' }}
-                        </span>
-                    </td>
-
-                    <td>
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="review-avatar">
-                                {{ $initialPembeli }}
-                            </div>
-
-                            <div class="min-w-0">
-                                <div class="fw-bold text-dark text-truncate">
-                                    {{ $namaPembeli }}
-                                </div>
-                                <span class="sub">
-                                    {{ $review->user?->email ?? 'Email tidak tersedia' }}
-                                </span>
-                            </div>
-                        </div>
-                    </td>
-
-                    <td>
-                        <div class="rating-stars" title="{{ $review->rating }} dari 5">
-                            @for($i = 1; $i <= 5; $i++)
-                                @if($i <= (int) $review->rating)
-                                    <i class="bi bi-star-fill"></i>
-                                @else
-                                    <i class="bi bi-star text-muted opacity-50"></i>
+                <article class="review-card">
+                    <div class="review-card-top">
+                        @if($produkGambar)
+                            <img src="{{ asset('storage/' . $produkGambar) }}" alt="{{ $item->produk->nama ?? 'Produk' }}" class="review-product-img">
+                        @else
+                            <div class="review-product-empty"><i class="bi bi-basket2-fill"></i></div>
+                        @endif
+                        <div class="min-w-0">
+                            <div class="review-title text-truncate">{{ $item->produk->nama ?? 'Produk tidak tersedia' }}</div>
+                            <div class="review-sub text-truncate">{{ $item->user->name ?? 'Pembeli' }}</div>
+                            <div class="review-sub text-truncate">
+                                {{ optional($item->created_at)->format('d/m/Y H:i') }}
+                                @if($item->pesanan)
+                                    · {{ $item->pesanan->nomor_invoice }}
                                 @endif
-                            @endfor
-                        </div>
-                        <span class="sub">{{ $review->rating }}/5</span>
-                    </td>
-
-                    <td>
-                        <div class="review-comment">
-                            {{ $review->komentar ?: 'Tidak ada komentar.' }}
-                        </div>
-                    </td>
-
-                    <td>
-                        <div class="review-media-stack">
-                            @if($review->foto_ulasan)
-                                <img
-                                    class="review-photo"
-                                    src="{{ asset('storage/' . $review->foto_ulasan) }}"
-                                    alt="Foto ulasan"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalFotoUlasan{{ $review->id }}"
-                                >
-                            @endif
-
-                            @if($review->video_ulasan)
-                                <video
-                                    class="review-video-thumb"
-                                    muted
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalVideoUlasan{{ $review->id }}"
-                                >
-                                    <source src="{{ asset('storage/' . $review->video_ulasan) }}">
-                                </video>
-                            @endif
-
-                            @if(! $review->foto_ulasan && ! $review->video_ulasan)
-                                <div class="review-photo-empty" title="Tidak ada media">
-                                    <i class="bi bi-image"></i>
-                                </div>
-                            @endif
-                        </div>
-                    </td>
-
-                    <td>
-                        <span class="chip {{ $review->ditampilkan ? 'c-green' : 'c-gray' }}">
-                            {{ $review->ditampilkan ? 'Tampil' : 'Disembunyikan' }}
-                        </span>
-                    </td>
-
-                    <td class="text-end">
-                        <div class="actions justify-content-end">
-                            <form
-                                class="inline-form"
-                                method="POST"
-                                action="{{ route('admin.ulasan.toggle', $review) }}"
-                                data-confirm-title="Ubah Status Ulasan"
-                                data-confirm-message="Yakin ingin mengubah status tampilan ulasan ini?"
-                                data-confirm-button="Ubah Status"
-                            >
-                                @csrf
-                                @method('PATCH')
-
-                                <button class="small-btn" type="submit">
-                                    @if($review->ditampilkan)
-                                        <i class="bi bi-eye-slash text-warning"></i>
-                                        Sembunyikan
-                                    @else
-                                        <i class="bi bi-eye text-success"></i>
-                                        Tampilkan
-                                    @endif
-                                </button>
-                            </form>
-
-                            <form
-                                class="inline-form"
-                                method="POST"
-                                action="{{ route('admin.ulasan.destroy', $review) }}"
-                                data-confirm-title="Hapus Ulasan"
-                                data-confirm-message="Yakin ingin menghapus ulasan ini secara permanen? Foto dan video ulasan juga akan ikut dihapus."
-                                data-confirm-button="Hapus"
-                            >
-                                @csrf
-                                @method('DELETE')
-
-                                <button class="small-btn" type="submit">
-                                    <i class="bi bi-trash text-danger"></i>
-                                    Hapus
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="7">
-                        <div class="empty-review">
-                            <div class="empty-review-icon">
-                                <i class="bi bi-chat-square-text"></i>
                             </div>
-                            <strong class="d-block text-dark mb-1">Belum ada ulasan</strong>
-                            <span class="text-muted small">
-                                Ulasan akan muncul setelah pembeli menyelesaikan pesanan dan memberi rating.
-                            </span>
                         </div>
-                    </td>
-                </tr>
+                        <div class="text-end">
+                            <div class="review-rating">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <i class="bi {{ $i <= $item->rating ? 'bi-star-fill' : 'bi-star' }}"></i>
+                                @endfor
+                            </div>
+                            <div class="mt-1"><span class="chip {{ $item->ditampilkan ? 'c-green' : 'c-gray' }}">{{ $item->ditampilkan ? 'Tampil' : 'Sembunyi' }}</span></div>
+                        </div>
+                    </div>
+                    <div class="review-card-body">
+                        <div class="review-comment">{{ $item->komentar ?: 'Pembeli hanya memberikan rating tanpa komentar.' }}</div>
+                        @if($fotoItems->isNotEmpty() || $videoItems->isNotEmpty())
+                            <div class="review-media-row">
+                                @foreach($fotoItems->take(3) as $foto)
+                                    <img src="{{ asset('storage/' . $foto) }}" alt="Foto ulasan" class="review-media-thumb js-open-media" data-type="image" data-src="{{ asset('storage/' . $foto) }}">
+                                @endforeach
+                                @foreach($videoItems->take(1) as $video)
+                                    <button type="button" class="review-video-box js-open-media" data-type="video" data-src="{{ asset('storage/' . $video) }}" aria-label="Buka video ulasan">
+                                        <video src="{{ asset('storage/' . $video) }}" muted preload="metadata"></video>
+                                        <i class="bi bi-play-circle-fill"></i>
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                    <div class="review-card-footer">
+                        <div class="actions">
+                            <button class="small-btn" type="button" data-bs-toggle="modal" data-bs-target="#reviewDetailModal{{ $item->id }}">
+                                <i class="bi bi-eye"></i> Detail
+                            </button>
+                            <form method="POST" action="{{ route('admin.ulasan.toggle', $item) }}" class="inline-form">
+                                @csrf @method('PATCH')
+                                <button type="submit" class="small-btn">
+                                    <i class="bi {{ $item->ditampilkan ? 'bi-eye-slash' : 'bi-eye' }}"></i>
+                                    {{ $item->ditampilkan ? 'Sembunyikan' : 'Tampilkan' }}
+                                </button>
+                            </form>
+                        </div>
+                        <form method="POST" action="{{ route('admin.ulasan.destroy', $item) }}" class="inline-form" data-confirm-title="Hapus Ulasan" data-confirm-message="Ulasan yang dihapus tidak bisa dikembalikan." data-confirm-button="Hapus">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="small-btn text-danger"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </div>
+                </article>
+            @empty
+                <div class="review-card" style="grid-column:1/-1;">
+                    <div class="review-empty">
+                        <i class="bi bi-chat-square-text fs-1 d-block mb-2"></i>
+                        <strong class="d-block text-dark mb-1">Ulasan tidak ditemukan.</strong>
+                        Ubah kata kunci atau filter untuk melihat ulasan lain.
+                    </div>
+                </div>
             @endforelse
-            </tbody>
-        </table>
+        </div>
     </div>
 
     @if($ulasan->hasPages())
-        <div class="p-3 border-top bg-white">
-            {{ $ulasan->links() }}
-        </div>
+        <div class="p-3 border-top bg-white">{{ $ulasan->links() }}</div>
     @endif
 </div>
 
-@foreach($ulasan as $review)
-    @if($review->foto_ulasan)
-        <div class="modal fade" id="modalFotoUlasan{{ $review->id }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                    <div class="modal-header border-0">
-                        <div>
-                            <h5 class="modal-title fw-bold">Foto Ulasan</h5>
-                            <div class="text-muted small">
-                                {{ $review->produk?->nama ?? '-' }} · {{ $review->user?->name ?? 'Pembeli' }}
+@foreach($ulasan as $item)
+    @php
+        $fotoItems = collect();
+        $videoItems = collect();
+        if ($item->foto_ulasan) { $fotoItems->push($item->foto_ulasan); }
+        if ($item->video_ulasan) { $videoItems->push($item->video_ulasan); }
+        foreach ($item->media ?? [] as $mediaItem) {
+            if ($mediaItem->jenis === 'foto') { $fotoItems->push($mediaItem->path); }
+            if ($mediaItem->jenis === 'video') { $videoItems->push($mediaItem->path); }
+        }
+    @endphp
+    <div class="modal fade" id="reviewDetailModal{{ $item->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow rounded-4 overflow-hidden">
+                <div class="modal-header border-0 bg-light">
+                    <div>
+                        <h5 class="fw-black text-dark mb-1">Detail Ulasan</h5>
+                        <div class="text-muted small fw-bold">{{ $item->pesanan->nomor_invoice ?? '-' }} · {{ optional($item->created_at)->format('d/m/Y H:i') }}</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-4 bg-light h-100">
+                                <div class="small text-muted fw-bold mb-1">Produk</div>
+                                <div class="fw-black text-dark">{{ $item->produk->nama ?? '-' }}</div>
                             </div>
                         </div>
-
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-4 bg-light h-100">
+                                <div class="small text-muted fw-bold mb-1">Pembeli</div>
+                                <div class="fw-black text-dark">{{ $item->user->name ?? '-' }}</div>
+                                <div class="small text-muted fw-bold">{{ $item->user->email ?? '-' }}</div>
+                            </div>
+                        </div>
                     </div>
-
-                    <div class="modal-body pt-0">
-                        <img
-                            class="modal-review-photo"
-                            src="{{ asset('storage/' . $review->foto_ulasan) }}"
-                            alt="Foto ulasan"
-                        >
+                    <div class="p-3 rounded-4 border mb-3">
+                        <div class="d-flex justify-content-between gap-3 flex-wrap align-items-center mb-2">
+                            <div class="review-rating fs-6">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <i class="bi {{ $i <= $item->rating ? 'bi-star-fill' : 'bi-star' }}"></i>
+                                @endfor
+                            </div>
+                            <span class="chip {{ $item->ditampilkan ? 'c-green' : 'c-gray' }}">{{ $item->ditampilkan ? 'Ditampilkan' : 'Disembunyikan' }}</span>
+                        </div>
+                        <div class="text-dark fw-bold lh-lg">{{ $item->komentar ?: 'Tidak ada komentar.' }}</div>
                     </div>
+                    @if($fotoItems->isNotEmpty() || $videoItems->isNotEmpty())
+                        <div class="fw-black text-dark mb-2">Media Ulasan</div>
+                        <div class="review-media-row">
+                            @foreach($fotoItems as $foto)
+                                <img src="{{ asset('storage/' . $foto) }}" alt="Foto ulasan" class="review-media-thumb js-open-media" data-type="image" data-src="{{ asset('storage/' . $foto) }}">
+                            @endforeach
+                            @foreach($videoItems as $video)
+                                <button type="button" class="review-video-box js-open-media" data-type="video" data-src="{{ asset('storage/' . $video) }}" aria-label="Buka video ulasan">
+                                    <video src="{{ asset('storage/' . $video) }}" muted preload="metadata"></video>
+                                    <i class="bi bi-play-circle-fill"></i>
+                                </button>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer border-0 bg-light p-3">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Tutup</button>
+                    <form method="POST" action="{{ route('admin.ulasan.toggle', $item) }}" class="inline-form">
+                        @csrf @method('PATCH')
+                        <button type="submit" class="btn btn-brand">{{ $item->ditampilkan ? 'Sembunyikan Ulasan' : 'Tampilkan Ulasan' }}</button>
+                    </form>
                 </div>
             </div>
         </div>
-    @endif
-
-    @if($review->video_ulasan)
-        <div class="modal fade" id="modalVideoUlasan{{ $review->id }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                    <div class="modal-header border-0">
-                        <div>
-                            <h5 class="modal-title fw-bold">Video Ulasan</h5>
-                            <div class="text-muted small">
-                                {{ $review->produk?->nama ?? '-' }} · {{ $review->user?->name ?? 'Pembeli' }}
-                            </div>
-                        </div>
-
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-                    </div>
-
-                    <div class="modal-body pt-0">
-                        <video class="modal-review-video" controls>
-                            <source src="{{ asset('storage/' . $review->video_ulasan) }}">
-                            Browser kamu belum mendukung video.
-                        </video>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
+    </div>
 @endforeach
+
+<div class="modal fade" id="mediaPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4 overflow-hidden bg-white">
+            <div class="modal-header border-0 bg-light">
+                <h5 class="fw-black text-dark mb-0">Media Ulasan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body p-3 text-center" id="mediaPreviewBody"></div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    document.querySelectorAll('.js-open-media').forEach((button) => {
+        button.addEventListener('click', () => {
+            const type = button.dataset.type;
+            const src = button.dataset.src;
+            const body = document.getElementById('mediaPreviewBody');
+
+            if (!body || !src) return;
+
+            body.innerHTML = type === 'video'
+                ? `<video class="media-preview-video" src="${src}" controls autoplay></video>`
+                : `<img class="media-preview-img" src="${src}" alt="Media ulasan">`;
+
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('mediaPreviewModal')).show();
+        });
+    });
+
+    document.getElementById('mediaPreviewModal')?.addEventListener('hidden.bs.modal', () => {
+        const body = document.getElementById('mediaPreviewBody');
+        if (body) body.innerHTML = '';
+    });
+</script>
+@endpush
 @endsection

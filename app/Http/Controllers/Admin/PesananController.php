@@ -13,7 +13,77 @@ use Illuminate\View\View;
 
 class PesananController extends Controller
 {
+    /**
+     * Menu Pesanan aktif.
+     * Hanya menampilkan pekerjaan toko yang harus dikonfirmasi/diproses.
+     * Pesanan selesai, batal, belum bayar, dan logistik tidak ditampilkan di sini.
+     */
     public function index(Request $request): View
+    {
+        $activeStatuses = ['menunggu_konfirmasi', 'diproses'];
+
+        $query = Pesanan::with(['user', 'pembayaran', 'pengiriman', 'alamatPengiriman', 'item.produk.gambarUtama'])
+            ->whereIn('status', $activeStatuses)
+            ->latest('tanggal_pesanan');
+
+        if ($request->filled('q')) {
+            $keyword = trim((string) $request->q);
+            $query->where(function ($q) use ($keyword) {
+                $q->where('nomor_invoice', 'like', '%' . $keyword . '%')
+                    ->orWhereHas('user', function ($user) use ($keyword) {
+                        $user->where('name', 'like', '%' . $keyword . '%')
+                            ->orWhere('email', 'like', '%' . $keyword . '%')
+                            ->orWhere('telepon', 'like', '%' . $keyword . '%');
+                    })
+                    ->orWhereHas('item.produk', fn ($produk) => $produk->where('nama', 'like', '%' . $keyword . '%'));
+            });
+        }
+
+        $tab = (string) $request->input('tab', 'semua');
+        if (! $request->filled('status') && $tab !== 'semua') {
+            match ($tab) {
+                'konfirmasi' => $query->where('status', 'menunggu_konfirmasi'),
+                'diproses' => $query->where('status', 'diproses'),
+                default => null,
+            };
+        }
+
+        if ($request->filled('status') && in_array($request->status, $activeStatuses, true)) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('metode_pengambilan')) {
+            $query->where('metode_pengambilan', $request->metode_pengambilan);
+        }
+
+        if ($request->filled('metode_pembayaran')) {
+            $query->whereHas('pembayaran', fn ($pay) => $pay->where('metode_pembayaran', $request->metode_pembayaran));
+        }
+
+        if ($request->filled('tanggal_mulai')) {
+            $query->whereDate('tanggal_pesanan', '>=', $request->tanggal_mulai);
+        }
+
+        if ($request->filled('tanggal_selesai')) {
+            $query->whereDate('tanggal_pesanan', '<=', $request->tanggal_selesai);
+        }
+
+        $pesanan = $query->paginate(10)->withQueryString();
+
+        $stats = [
+            'aktif' => Pesanan::whereIn('status', $activeStatuses)->count(),
+            'konfirmasi' => Pesanan::where('status', 'menunggu_konfirmasi')->count(),
+            'diproses' => Pesanan::where('status', 'diproses')->count(),
+        ];
+
+        return view('admin.pesanan.index', compact('pesanan', 'stats'));
+    }
+
+    /**
+     * Menu Semua Pesanan.
+     * Berfungsi sebagai arsip/master invoice seluruh status.
+     */
+    public function semua(Request $request): View
     {
         $query = Pesanan::with(['user', 'pembayaran', 'pengiriman', 'alamatPengiriman', 'item.produk.gambarUtama'])
             ->latest('tanggal_pesanan');
@@ -34,15 +104,7 @@ class PesananController extends Controller
         $tab = (string) $request->input('tab', 'semua');
         if (! $request->filled('status') && $tab !== 'semua') {
             match ($tab) {
-                'verifikasi' => $query->whereHas('pembayaran', function ($pay) {
-                    $pay->where('metode_pembayaran', 'transfer_bank')
-                        ->where('status', 'menunggu_pembayaran')
-                        ->whereNotNull('bukti_transfer')
-                        ->where('bukti_transfer', '!=', '');
-                }),
-                'belum_bayar' => $query->where('status', 'menunggu_pembayaran'),
-                'diproses' => $query->where('status', 'diproses'),
-                'ambil_kirim' => $query->whereIn('status', ['siap_diambil', 'dalam_pengantaran']),
+                'aktif' => $query->whereNotIn('status', ['selesai', 'dibatalkan']),
                 'selesai' => $query->where('status', 'selesai'),
                 'dibatalkan' => $query->where('status', 'dibatalkan'),
                 default => null,
@@ -73,26 +135,16 @@ class PesananController extends Controller
             $query->whereDate('tanggal_pesanan', '<=', $request->tanggal_selesai);
         }
 
-        $pesanan = $query->paginate(10)->withQueryString();
-
-        $statusCounts = Pesanan::selectRaw('status, COUNT(*) as total')
-            ->groupBy('status')
-            ->pluck('total', 'status');
+        $pesanan = $query->paginate(12)->withQueryString();
 
         $stats = [
-            'baru' => Pesanan::where('status', 'menunggu_pembayaran')->count(),
-            'diproses' => Pesanan::where('status', 'diproses')->count(),
-            'ambil_kirim' => Pesanan::whereIn('status', ['siap_diambil', 'dalam_pengantaran'])->count(),
+            'semua' => Pesanan::count(),
+            'aktif' => Pesanan::whereNotIn('status', ['selesai', 'dibatalkan'])->count(),
             'selesai' => Pesanan::where('status', 'selesai')->count(),
-            'perlu_verifikasi' => Pesanan::whereHas('pembayaran', function ($pay) {
-                $pay->where('metode_pembayaran', 'transfer_bank')
-                    ->where('status', 'menunggu_pembayaran')
-                    ->whereNotNull('bukti_transfer')
-                    ->where('bukti_transfer', '!=', '');
-            })->count(),
+            'dibatalkan' => Pesanan::where('status', 'dibatalkan')->count(),
         ];
 
-        return view('admin.pesanan.index', compact('pesanan', 'statusCounts', 'stats'));
+        return view('admin.pesanan.semua', compact('pesanan', 'stats'));
     }
 
     public function show(Pesanan $pesanan): View
@@ -125,8 +177,8 @@ class PesananController extends Controller
     public function updateStatus(Request $request, Pesanan $pesanan): RedirectResponse
     {
         $data = $request->validate([
-            'status' => ['required', 'in:menunggu_pembayaran,dibayar,diproses,siap_diambil,dalam_pengantaran,selesai,dibatalkan'],
-            'status_pembayaran' => ['nullable', 'in:menunggu_pembayaran,dibayar,ditolak,gagal,kedaluwarsa,dibatalkan'],
+            'status' => ['required', 'in:menunggu_pembayaran,menunggu_verifikasi,menunggu_konfirmasi,dibayar,diproses,disiapkan,siap_diambil,dalam_pengantaran,selesai,dibatalkan'],
+            'status_pembayaran' => ['nullable', 'in:menunggu_pembayaran,menunggu_verifikasi,dibayar,ditolak,gagal,kedaluwarsa,dibatalkan'],
         ]);
 
         try {

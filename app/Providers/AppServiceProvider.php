@@ -31,15 +31,30 @@ class AppServiceProvider extends ServiceProvider
         View::share('statusClass', function ($status): string {
             return match ((string) $status) {
                 'dibayar', 'selesai', 'aktif', 'masuk' => 'c-green',
-                'diproses', 'siap_diambil', 'dalam_pengantaran' => 'c-purple',
-                'menunggu_pembayaran', 'menipis' => 'c-yellow',
+                'diproses', 'disiapkan', 'siap_diambil', 'dalam_pengantaran', 'menunggu_konfirmasi' => 'c-purple',
+                'menunggu_pembayaran', 'menunggu_verifikasi', 'menipis' => 'c-yellow',
                 'gagal', 'kedaluwarsa', 'dibatalkan', 'ditolak', 'habis', 'keluar' => 'c-red',
                 default => 'c-gray',
             };
         });
 
         View::share('statusLabel', function ($status): string {
-            return ucwords(str_replace('_', ' ', (string) $status));
+            return match ((string) $status) {
+                'menunggu_pembayaran' => 'Belum bayar',
+                'menunggu_verifikasi' => 'Menunggu verifikasi',
+                'menunggu_konfirmasi' => 'Menunggu konfirmasi',
+                'diproses' => 'Diproses',
+                'disiapkan' => 'Disiapkan',
+                'siap_diambil' => 'Siap diambil',
+                'dalam_pengantaran' => 'Dalam pengantaran',
+                'selesai' => 'Selesai',
+                'dibatalkan' => 'Dibatalkan',
+                'ditolak' => 'Ditolak',
+                'dibayar' => 'Dibayar',
+                'gagal' => 'Gagal',
+                'kedaluwarsa' => 'Kedaluwarsa',
+                default => ucwords(str_replace('_', ' ', (string) $status)),
+            };
         });
     }
 }

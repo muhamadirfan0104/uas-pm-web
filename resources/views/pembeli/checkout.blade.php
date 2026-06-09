@@ -222,7 +222,9 @@
 
 @section('content')
 @php
-    $biayaKirim = (float) ($pengaturan->biaya_minimum_pengiriman ?? 0);
+    $deliveryQuote = $deliveryQuote ?? ['jarak' => null, 'biaya' => (float) ($pengaturan->biaya_minimum_pengiriman ?? 0)];
+    $biayaKirim = (float) ($deliveryQuote['biaya'] ?? ($pengaturan->biaya_minimum_pengiriman ?? 0));
+    $jarakKirim = $deliveryQuote['jarak'] ?? null;
     $initialShipping = old('metode_pengambilan') === 'kurir_toko' ? $biayaKirim : 0;
     $alamatToko = $pengaturan->alamat ?: 'Alamat toko belum diatur.';
     $bankNama = trim((string) ($pengaturan->bank_nama ?? '')) ?: 'Bank belum diatur';
@@ -233,7 +235,12 @@
     $selectedAlamat = $alamatPembeli->firstWhere('id', $selectedAlamatId) ?? $alamatUtama;
 @endphp
 
-<div class="container checkout-page py-4 py-lg-5">
+<div class="container checkout-page py-4 py-lg-5"
+     data-store-lat="{{ $pengaturan->latitude_toko }}"
+     data-store-lng="{{ $pengaturan->longitude_toko }}"
+     data-rate-per-km="{{ (float) ($pengaturan->tarif_per_km ?? 0) }}"
+     data-min-shipping="{{ (float) ($pengaturan->biaya_minimum_pengiriman ?? 0) }}"
+     data-max-radius="{{ (float) ($pengaturan->radius_maksimal_km ?? 0) }}">
     <div class="breadcrumb-modern">
         <a href="{{ route('pembeli-web.keranjang.index') }}">Keranjang</a>
         <i class="bi bi-chevron-right small"></i>
@@ -378,8 +385,20 @@
                                 <div class="checkout-option-icon"><i class="bi bi-scooter"></i></div>
                                 <div class="checkout-option-title">Kurir toko</div>
                                 <p class="checkout-option-desc">Pesanan dikirim ke alamat yang masih berada dalam area layanan toko.</p>
-                                <span class="option-note"><i class="bi bi-cash-coin"></i> {{ $rupiah($biayaKirim) }}</span>
+                                <span class="option-note"><i class="bi bi-cash-coin"></i> <span class="js-delivery-fee-label">{{ $rupiah($biayaKirim) }}</span></span>
                             </label>
+                        </div>
+
+                        <div class="address-panel js-delivery-note {{ old('metode_pengambilan') === 'kurir_toko' ? '' : 'd-none' }}">
+                            <div class="d-flex gap-2 align-items-start">
+                                <i class="bi bi-calculator text-brand mt-1"></i>
+                                <div class="small fw-semibold text-muted">
+                                    Ongkir dihitung otomatis dari titik toko ke titik alamat penerima. Estimasi jarak:
+                                    <strong class="text-dark js-distance-text">{{ $jarakKirim ? number_format((float) $jarakKirim, 2, ',', '.') . ' km' : 'pilih alamat bertitik maps' }}</strong>.
+                                    Tarif: <strong class="text-dark">{{ $rupiah($pengaturan->tarif_per_km ?? 0) }}/km</strong>, minimum <strong class="text-dark">{{ $rupiah($pengaturan->biaya_minimum_pengiriman ?? 0) }}</strong>.
+                                    <span class="d-block mt-1 js-radius-warning text-danger fw-bold" style="display:none !important;">Alamat ini berada di luar radius layanan toko.</span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="address-panel js-pickup-note">
@@ -489,6 +508,7 @@
                             </div>
 
                             <div class="summary-row"><span>Subtotal produk</span><strong>{{ $rupiah($subtotal) }}</strong></div>
+                            <div class="summary-row"><span>Jarak pengiriman</span><strong class="js-summary-distance">{{ old('metode_pengambilan') === 'kurir_toko' && $jarakKirim ? number_format((float) $jarakKirim, 2, ',', '.') . ' km' : '-' }}</strong></div>
                             <div class="summary-row"><span>Biaya pengiriman</span><strong class="js-shipping-text">{{ $rupiah($initialShipping) }}</strong></div>
                             <div class="summary-total">
                                 <span class="total-label">Total bayar</span>
@@ -528,7 +548,7 @@
                     <div class="modal-body px-4 py-0">
                         <div class="address-modal-list">
                             @foreach($alamatPembeli as $alamat)
-                                <label class="address-choice" data-address-id="{{ $alamat->id }}" data-address-name="{{ $alamat->nama_penerima }}" data-address-phone="{{ $alamat->telepon }}" data-address-email="{{ $alamat->email_penerima ?: $user->email }}" data-address-text="{{ $alamat->alamat_lengkap }}" data-address-main="{{ $alamat->utama ? '1' : '0' }}">
+                                <label class="address-choice" data-address-id="{{ $alamat->id }}" data-address-name="{{ $alamat->nama_penerima }}" data-address-phone="{{ $alamat->telepon }}" data-address-email="{{ $alamat->email_penerima ?: $user->email }}" data-address-text="{{ $alamat->alamat_lengkap }}" data-address-main="{{ $alamat->utama ? '1' : '0' }}" data-address-lat="{{ $alamat->latitude }}" data-address-lng="{{ $alamat->longitude }}">
                                     <input type="radio" class="form-check-input js-address-choice" name="alamat_modal" value="{{ $alamat->id }}" {{ (int) old('alamat_id', $alamatUtama?->id) === (int) $alamat->id ? 'checked' : '' }}>
                                     <div class="min-w-0">
                                         <div>
@@ -562,8 +582,14 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const page = document.querySelector('.checkout-page');
         const pickupNote = document.querySelector('.js-pickup-note');
+        const deliveryNote = document.querySelector('.js-delivery-note');
         const shippingText = document.querySelector('.js-shipping-text');
+        const distanceText = document.querySelector('.js-distance-text');
+        const summaryDistance = document.querySelector('.js-summary-distance');
+        const deliveryFeeLabel = document.querySelector('.js-delivery-fee-label');
+        const radiusWarning = document.querySelector('.js-radius-warning');
         const totalText = document.querySelector('.js-total-text');
         const totalTextMobile = document.querySelector('.js-total-text-mobile');
         const rupiah = value => 'Rp ' + Number(value || 0).toLocaleString('id-ID');
@@ -576,17 +602,23 @@
         const transferPanel = document.querySelector('.js-transfer-bank-panel');
         const codPanel = document.querySelector('.js-cod-payment-panel');
 
+        let selectedAddressLat = Number(document.querySelector('.js-address-choice:checked')?.closest('.address-choice')?.dataset.addressLat || 0);
+        let selectedAddressLng = Number(document.querySelector('.js-address-choice:checked')?.closest('.address-choice')?.dataset.addressLng || 0);
+
         document.querySelectorAll('.js-address-choice').forEach(function (radio) {
             radio.addEventListener('change', function () {
                 const wrapper = radio.closest('.address-choice');
                 if (!wrapper || !selectedAddressId) return;
 
                 selectedAddressId.value = wrapper.dataset.addressId || '';
+                selectedAddressLat = Number(wrapper.dataset.addressLat || 0);
+                selectedAddressLng = Number(wrapper.dataset.addressLng || 0);
                 if (selectedName) selectedName.textContent = wrapper.dataset.addressName || '';
                 if (selectedPhone) selectedPhone.textContent = wrapper.dataset.addressPhone || '';
                 if (selectedEmail) selectedEmail.textContent = wrapper.dataset.addressEmail || '';
                 if (selectedText) selectedText.textContent = wrapper.dataset.addressText || '';
                 if (selectedMain) selectedMain.style.display = wrapper.dataset.addressMain === '1' ? 'inline-flex' : 'none';
+                updateShipping();
             });
         });
 
@@ -622,14 +654,44 @@
             });
         });
 
+        function haversineKm(lat1, lng1, lat2, lng2) {
+            const toRad = deg => deg * Math.PI / 180;
+            const earth = 6371;
+            const dLat = toRad(lat2 - lat1);
+            const dLng = toRad(lng2 - lng1);
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+            return earth * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+        }
+
+        function deliveryFee() {
+            const storeLat = Number(page?.dataset.storeLat || 0);
+            const storeLng = Number(page?.dataset.storeLng || 0);
+            const rate = Number(page?.dataset.ratePerKm || 0);
+            const minFee = Number(page?.dataset.minShipping || 0);
+            const maxRadius = Number(page?.dataset.maxRadius || 0);
+            if (!storeLat || !storeLng || !selectedAddressLat || !selectedAddressLng) {
+                return { fee: minFee, distance: null };
+            }
+            const distance = haversineKm(storeLat, storeLng, selectedAddressLat, selectedAddressLng);
+            const fee = Math.max(minFee, Math.ceil((distance * rate) / 100) * 100);
+            return { fee, distance, outsideRadius: maxRadius > 0 && distance > maxRadius };
+        }
+
         function updateShipping() {
             const checked = document.querySelector('.js-shipping-choice:checked');
-            const shipping = Number(checked?.dataset.shipping || 0);
             const subtotal = Number(totalText?.dataset.subtotal || 0);
             const isDelivery = checked?.value === 'kurir_toko';
+            const quote = isDelivery ? deliveryFee() : { fee: 0, distance: null };
+            const shipping = quote.fee;
+            const distance = quote.distance;
 
             if (pickupNote) pickupNote.style.display = isDelivery ? 'none' : 'block';
+            if (deliveryNote) deliveryNote.classList.toggle('d-none', !isDelivery);
+            if (deliveryFeeLabel) deliveryFeeLabel.textContent = rupiah(shipping);
             if (shippingText) shippingText.textContent = rupiah(shipping);
+            if (distanceText) distanceText.textContent = distance ? distance.toFixed(2).replace('.', ',') + ' km' : 'pilih alamat bertitik maps';
+            if (summaryDistance) summaryDistance.textContent = isDelivery && distance ? distance.toFixed(2).replace('.', ',') + ' km' : '-';
+            if (radiusWarning) radiusWarning.style.setProperty('display', isDelivery && quote.outsideRadius ? 'block' : 'none', 'important');
             if (totalText) {
                 totalText.dataset.shipping = shipping;
                 totalText.textContent = rupiah(subtotal + shipping);
