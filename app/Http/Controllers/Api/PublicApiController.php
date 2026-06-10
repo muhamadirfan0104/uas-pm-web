@@ -85,14 +85,31 @@ class PublicApiController extends Controller
             ->paginate(10)
             ->through(fn (Ulasan $review) => [
                 'id' => $review->id,
-                'user' => $review->user?->name,
-                'rating' => $review->rating,
+                'user' => $review->user?->name ?: 'Pembeli',
+                'rating' => (int) $review->rating,
                 'komentar' => $review->komentar,
-                'foto_ulasan' => $review->foto_ulasan ? asset('storage/'.$review->foto_ulasan) : null,
+                'foto_ulasan' => $this->mediaUrl($review->foto_ulasan),
+                'video_ulasan' => $this->mediaUrl($review->video_ulasan),
                 'created_at' => $review->created_at,
             ]);
 
-        return response()->json(['success' => true, 'data' => $reviews]);
+        return response()->json([
+            'success' => true,
+            'data' => $reviews,
+        ]);
+    }
+
+    private function mediaUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return url('storage/'.ltrim($path, '/'));
     }
 
     private function productPayload(Produk $item, bool $detail = false): array

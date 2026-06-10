@@ -6,9 +6,9 @@ use App\Http\Controllers\Api\Admin\PesananApiController as AdminPesananApiContro
 use App\Http\Controllers\Api\Admin\ProdukApiController as AdminProdukApiController;
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\Pembeli\AlamatApiController;
+use App\Http\Controllers\Api\Pembeli\KeranjangApiController;
 use App\Http\Controllers\Api\Pembeli\PesananApiController;
 use App\Http\Controllers\Api\Pembeli\UlasanApiController;
-use App\Http\Controllers\Api\Pembeli\KeranjangApiController;
 use App\Http\Controllers\Api\PublicApiController;
 use App\Http\Middleware\ApiTokenMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -48,6 +48,7 @@ Route::middleware(ApiTokenMiddleware::class)->group(function () {
     Route::patch('/orders/{pesanan}/received', [PesananApiController::class, 'confirmReceived']);
 
     Route::post('/reviews', [UlasanApiController::class, 'store']);
+    Route::get('/reviews/me', [UlasanApiController::class, 'myReviews']);
 
     Route::prefix('admin')->group(function () {
         Route::get('/dashboard', DashboardApiController::class);
@@ -59,7 +60,6 @@ Route::middleware(ApiTokenMiddleware::class)->group(function () {
         Route::patch('/payments/{pembayaran}/status', [AdminPembayaranApiController::class, 'updateStatus']);
     });
 });
-
 
 Route::fallback(function () {
     return response()->json([
