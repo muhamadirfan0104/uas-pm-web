@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Admin\AkunController;
-use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\PembayaranController;
@@ -383,21 +382,6 @@ Route::middleware(['auth', AdminMiddleware::class])
 
         Route::put('/pengaturan', [PengaturanTokoController::class, 'update'])
             ->name('pengaturan.update');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Banner
-        |--------------------------------------------------------------------------
-        */
-        Route::patch('/banner/{banner}/toggle', [BannerController::class, 'toggle'])
-            ->name('banner.toggle');
-
-        Route::resource('banner', BannerController::class)
-            ->except(['show']);
-
-        Route::fallback(function () {
-            return response()->view('errors.admin-404', [], 404);
-        })->name('not-found');
     });
 
 

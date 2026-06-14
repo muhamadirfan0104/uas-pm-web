@@ -11,11 +11,16 @@ return new class extends Migration
         if (! Schema::hasTable('media_ulasan')) {
             Schema::create('media_ulasan', function (Blueprint $table) {
                 $table->id();
-                $table->foreignId('ulasan_id')->constrained('ulasan')->cascadeOnDelete();
+
+                $table->foreignId('ulasan_id')
+                    ->constrained('ulasan')
+                    ->cascadeOnDelete();
+
                 $table->enum('jenis', ['foto', 'video']);
                 $table->string('path');
                 $table->string('caption')->nullable();
                 $table->unsignedInteger('urutan')->default(0);
+
                 $table->timestamps();
 
                 $table->index(['ulasan_id', 'jenis']);

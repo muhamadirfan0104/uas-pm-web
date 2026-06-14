@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/health', [PublicApiController::class, 'health']);
 Route::get('/store', [PublicApiController::class, 'store']);
-Route::get('/banners', [PublicApiController::class, 'banners']);
+
 Route::get('/products', [PublicApiController::class, 'products']);
 Route::get('/products/{produk}', [PublicApiController::class, 'product']);
 Route::get('/products/{produk}/reviews', [PublicApiController::class, 'productReviews']);
@@ -52,10 +52,13 @@ Route::middleware(ApiTokenMiddleware::class)->group(function () {
 
     Route::prefix('admin')->group(function () {
         Route::get('/dashboard', DashboardApiController::class);
+
         Route::apiResource('/products', AdminProdukApiController::class);
+
         Route::get('/orders', [AdminPesananApiController::class, 'index']);
         Route::get('/orders/{pesanan}', [AdminPesananApiController::class, 'show']);
         Route::patch('/orders/{pesanan}/status', [AdminPesananApiController::class, 'updateStatus']);
+
         Route::get('/payments', [AdminPembayaranApiController::class, 'index']);
         Route::patch('/payments/{pembayaran}/status', [AdminPembayaranApiController::class, 'updateStatus']);
     });

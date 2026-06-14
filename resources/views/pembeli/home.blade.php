@@ -215,65 +215,29 @@
 
 <div class="container py-4 py-lg-5">
     <section class="home-banner-wrap mb-4 mb-lg-5">
-        @if($banner->count())
-            <div id="homeBannerCarousel" class="carousel slide home-banner-carousel" data-bs-ride="carousel" data-bs-interval="4500" data-bs-touch="true" data-bs-pause="hover" data-bs-wrap="true">
-                <div class="carousel-inner">
-                    @foreach($banner as $item)
-                        @php
-                            $judulBanner = trim((string) $item->judul) ?: $namaToko;
-                            $deskripsiBanner = trim((string) $item->deskripsi) ?: $tentangToko;
-                        @endphp
-                        <div class="carousel-item @if($loop->first) active @endif">
-                            <div class="home-banner-slide" style="background-image: url('{{ asset('storage/' . $item->url_gambar) }}');">
-                                <div class="home-banner-content">
-                                    <span class="eyebrow mb-3"><i class="bi bi-patch-check-fill"></i> {{ $namaToko }}</span>
-                                    <h1 class="home-banner-title">{{ $judulBanner }}</h1>
-                                    @if($deskripsiBanner)
-                                        <p class="home-banner-desc">{{ $deskripsiBanner }}</p>
-                                    @endif
-                                    <div class="home-banner-actions d-flex flex-wrap gap-2 gap-sm-3">
-                                        <a href="{{ route('pembeli-web.produk', ['stok' => 'tersedia']) }}" class="btn btn-brand btn-lg">
-                                            <i class="bi bi-shop-window me-2"></i> Belanja Sekarang
-                                        </a>
-                                        <a href="{{ $linkWa }}" target="_blank" rel="noopener" class="btn btn-light btn-lg fw-bold rounded-pill">
-                                            <i class="bi bi-whatsapp text-success me-2"></i> Hubungi Toko
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
+        <div class="home-banner-fallback">
+            <div>
+                <div class="home-banner-fallback-icon">
+                    <i class="bi bi-shop-window"></i>
                 </div>
 
-                @if($banner->count() > 1)
-                    <div class="carousel-indicators">
-                        @foreach($banner as $item)
-                            <button type="button" data-bs-target="#homeBannerCarousel" data-bs-slide-to="{{ $loop->index }}" class="@if($loop->first) active @endif" aria-current="{{ $loop->first ? 'true' : 'false' }}" aria-label="Banner {{ $loop->iteration }}"></button>
-                        @endforeach
-                    </div>
-                    <button class="carousel-control-prev home-banner-control" type="button" data-bs-target="#homeBannerCarousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Sebelumnya</span>
-                    </button>
-                    <button class="carousel-control-next home-banner-control" type="button" data-bs-target="#homeBannerCarousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Berikutnya</span>
-                    </button>
-                @endif
+                <span class="eyebrow mb-3">
+                    <i class="bi bi-patch-check-fill"></i> {{ $namaToko }}
+                </span>
+
+                <h1 class="section-heading display-5 mb-3">
+                    Tahu segar pilihan untuk kebutuhan harianmu.
+                </h1>
+
+                <p class="section-subtitle fs-5 mb-4 mx-auto" style="max-width: 620px;">
+                    {{ $tentangToko }}
+                </p>
+
+                <a href="{{ route('pembeli-web.produk', ['stok' => 'tersedia']) }}" class="btn btn-brand btn-lg px-4">
+                    <i class="bi bi-shop-window me-2"></i> Belanja Sekarang
+                </a>
             </div>
-        @else
-            <div class="home-banner-fallback">
-                <div>
-                    <div class="home-banner-fallback-icon"><i class="bi bi-image"></i></div>
-                    <span class="eyebrow mb-3"><i class="bi bi-patch-check-fill"></i> {{ $namaToko }}</span>
-                    <h1 class="section-heading display-5 mb-3">Banner toko belum tersedia.</h1>
-                    <p class="section-subtitle fs-5 mb-4 mx-auto" style="max-width: 620px;">{{ $tentangToko }}</p>
-                    <a href="{{ route('pembeli-web.produk', ['stok' => 'tersedia']) }}" class="btn btn-brand btn-lg px-4">
-                        <i class="bi bi-shop-window me-2"></i> Belanja Sekarang
-                    </a>
-                </div>
-            </div>
-        @endif
+        </div>
     </section>
 
     <section class="mb-5">

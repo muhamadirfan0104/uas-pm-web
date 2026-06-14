@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\WebPembeli;
 
 use App\Http\Controllers\Controller;
-use App\Models\Banner;
 use App\Models\PengaturanToko;
 use App\Models\Pesanan;
 use App\Models\Produk;
@@ -18,12 +17,7 @@ class HomeController extends Controller
     {
         $pengaturan = PengaturanToko::utama();
 
-        $banner = Banner::query()
-            ->where('aktif', true)
-            ->orderBy('urutan')
-            ->latest()
-            ->take(5)
-            ->get();
+        $banner = collect();
 
         $statBeranda = [
             'produk_aktif' => Produk::query()->where('aktif', true)->count(),

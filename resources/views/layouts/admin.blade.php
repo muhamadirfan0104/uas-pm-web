@@ -1320,13 +1320,6 @@
                     <span class="sidebar-icon"><i class="bi bi-boxes"></i></span>
                     <span class="sidebar-label">Stok</span>
                 </a>
-
-                <a href="{{ route('admin.banner.index') }}"
-                   data-title="Banner"
-                   class="sidebar-link {{ request()->routeIs('admin.banner.*') ? 'active' : '' }}">
-                    <span class="sidebar-icon"><i class="bi bi-images"></i></span>
-                    <span class="sidebar-label">Banner</span>
-                </a>
             </div>
 
             <div class="sidebar-section">

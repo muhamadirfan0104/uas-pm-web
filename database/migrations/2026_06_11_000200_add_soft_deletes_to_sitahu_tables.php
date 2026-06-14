@@ -19,19 +19,18 @@ return new class extends Migration
         'pengiriman',
         'ulasan',
         'media_ulasan',
-        'banner',
         'rekening_toko',
         'riwayat_stok',
     ];
 
     public function up(): void
     {
-        foreach ($this->tables as $table) {
-            if (! Schema::hasTable($table) || Schema::hasColumn($table, 'deleted_at')) {
+        foreach ($this->tables as $tableName) {
+            if (! Schema::hasTable($tableName) || Schema::hasColumn($tableName, 'deleted_at')) {
                 continue;
             }
 
-            Schema::table($table, function (Blueprint $table) {
+            Schema::table($tableName, function (Blueprint $table) {
                 $table->softDeletes();
             });
         }
@@ -39,12 +38,12 @@ return new class extends Migration
 
     public function down(): void
     {
-        foreach (array_reverse($this->tables) as $table) {
-            if (! Schema::hasTable($table) || ! Schema::hasColumn($table, 'deleted_at')) {
+        foreach (array_reverse($this->tables) as $tableName) {
+            if (! Schema::hasTable($tableName) || ! Schema::hasColumn($tableName, 'deleted_at')) {
                 continue;
             }
 
-            Schema::table($table, function (Blueprint $table) {
+            Schema::table($tableName, function (Blueprint $table) {
                 $table->dropSoftDeletes();
             });
         }
