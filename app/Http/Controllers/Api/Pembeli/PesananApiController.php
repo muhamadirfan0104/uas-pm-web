@@ -165,9 +165,13 @@ class PesananApiController extends Controller
                 'jumlah' => $total,
                 'status' => 'menunggu_pembayaran',
                 'tautan_pembayaran' => null,
-                'qr_code' => false
-                    ? 'QR-'.$pesanan->nomor_invoice
+
+                // QR ini bukan QRIS.
+                // QR ini dipakai untuk validasi pengambilan pesanan di toko.
+                'qr_code' => $data['metode_pengambilan'] === 'ambil_toko'
+                    ? url('/qr-pesanan/'.$pesanan->nomor_invoice)
                     : null,
+
                 'bukti_transfer' => null,
                 'catatan_admin' => null,
             ]);

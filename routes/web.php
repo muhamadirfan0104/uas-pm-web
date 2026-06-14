@@ -24,6 +24,7 @@ use App\Http\Controllers\WebPembeli\UlasanController as WebPembeliUlasanControll
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\PembeliWebMiddleware;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\QrPesananController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,6 +32,9 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::get('/', fn () => redirect()->route('pembeli-web.home'));
+
+Route::get('/qr-pesanan/{nomor_invoice}', [QrPesananController::class, 'show'])
+    ->name('qr.pesanan.show');
 
 /*
 |--------------------------------------------------------------------------
