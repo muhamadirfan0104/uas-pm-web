@@ -165,7 +165,7 @@
             <div>
                 <span class="eyebrow mb-3"><i class="bi bi-receipt-cutoff"></i> Pesanan saya</span>
                 <h1 class="orders-title h2 mb-2">Riwayat pesanan</h1>
-                <p class="section-subtitle mb-0">Cek pembayaran, proses toko, pengambilan, pengiriman, dan ulasan dalam satu halaman.</p>
+                <p class="section-subtitle mb-0">Daftar pesanan Anda.</p>
             </div>
             <a href="{{ route('pembeli-web.produk') }}" class="btn btn-brand px-4 py-3"><i class="bi bi-bag-plus me-2"></i> Belanja Lagi</a>
         </div>
@@ -211,20 +211,23 @@
                         'selesai' => 'done',
                         'dibatalkan' => 'cancel',
                         'siap_diambil', 'dalam_pengantaran' => 'ready',
-                        'dibayar', 'diproses' => 'process',
+                        'dibayar', 'diproses', 'disiapkan' => 'process',
                         default => 'waiting',
                     };
                     $statusIcon = match($pesanan->status) {
                         'selesai' => 'bi-check2-circle',
                         'dibatalkan' => 'bi-x-circle',
                         'siap_diambil', 'dalam_pengantaran' => 'bi-truck',
-                        'dibayar', 'diproses' => 'bi-gear',
+                        'dibayar', 'diproses', 'disiapkan' => 'bi-gear',
                         default => 'bi-wallet2',
                     };
                     $statusText = match($pesanan->status) {
                         'menunggu_pembayaran' => 'Belum Bayar',
+                        'menunggu_verifikasi' => 'Menunggu Verifikasi',
+                        'diproses' => 'Diproses Toko',
                         'dibayar' => 'Pembayaran Diterima',
                         'diproses' => 'Diproses Toko',
+                        'disiapkan' => 'Disiapkan',
                         'siap_diambil' => 'Siap Diambil',
                         'dalam_pengantaran' => 'Dalam Pengantaran',
                         'selesai' => 'Selesai',
@@ -298,13 +301,13 @@
                                 <a href="{{ route('pembeli-web.pesanan.show', $pesanan->nomor_invoice) }}#upload-bukti" class="btn btn-brand btn-sm px-3"><i class="bi bi-upload me-1"></i> {{ $payment?->status === 'ditolak' ? 'Upload Ulang' : 'Upload Bukti' }}</a>
                             @endif
                             @if($pesanan->status === 'menunggu_pembayaran')
-                                <form action="{{ route('pembeli-web.pesanan.cancel', $pesanan->nomor_invoice) }}" method="POST" onsubmit="return confirm('Batalkan pesanan ini?')">
+                                <form action="{{ route('pembeli-web.pesanan.cancel', $pesanan->nomor_invoice) }}" method="POST" data-confirm-title="Batalkan Pesanan" data-confirm-message="Yakin ingin membatalkan pesanan {{ $pesanan->nomor_invoice }}?" data-confirm-button="Batalkan">
                                     @csrf @method('PATCH')
                                     <button class="btn btn-plain btn-sm px-3 text-danger" type="submit">Batalkan</button>
                                 </form>
                             @endif
                             @if(in_array($pesanan->status, ['siap_diambil', 'dalam_pengantaran'], true))
-                                <form action="{{ route('pembeli-web.pesanan.confirm-received', $pesanan->nomor_invoice) }}" method="POST" onsubmit="return confirm('Konfirmasi pesanan sudah diterima?')">
+                                <form action="{{ route('pembeli-web.pesanan.confirm-received', $pesanan->nomor_invoice) }}" method="POST" data-confirm-title="Konfirmasi Pesanan Diterima" data-confirm-message="Konfirmasi bahwa pesanan {{ $pesanan->nomor_invoice }} telah diterima." data-confirm-button="Ya, Pesanan Diterima">
                                     @csrf @method('PATCH')
                                     <button class="btn btn-brand btn-sm px-3" type="submit">Pesanan Diterima</button>
                                 </form>
@@ -320,7 +323,7 @@
         <div class="empty-orders">
             <div class="empty-icon"><i class="bi bi-receipt"></i></div>
             <h2 class="h3 fw-black mb-2">Pesanan belum ditemukan</h2>
-            <p class="text-muted fw-semibold mb-4">{{ ($q ?? '') !== '' ? 'Coba gunakan kata kunci lain atau reset pencarian.' : 'Pesanan dari keranjang akan tampil di sini setelah checkout.' }}</p>
+            <p class="text-muted fw-semibold mb-4">{{ ($q ?? '') !== '' ? 'Data tidak ditemukan.' : 'Belum ada pesanan.' }}</p>
             <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
                 @if(($q ?? '') !== '')
                     <a href="{{ route('pembeli-web.pesanan.index', array_filter(['status' => $status ?: null])) }}" class="btn btn-plain px-4 py-3">Reset Pencarian</a>

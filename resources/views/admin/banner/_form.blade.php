@@ -23,7 +23,7 @@
             <div class="banner-form-body row g-3">
                 <div class="col-12">
                     <label class="form-label-mini">Judul banner</label>
-                    <input class="form-control" name="judul" value="{{ old('judul', $banner->judul) }}" maxlength="100" placeholder="Contoh: Tahu segar siap dipesan hari ini" required>
+                    <input class="form-control" name="judul" value="{{ old('judul', $banner->judul) }}" maxlength="100" placeholder="Judul banner" required>
                 </div>
                 <div class="col-12">
                     <label class="form-label-mini">Deskripsi singkat</label>
@@ -49,7 +49,7 @@
         <div class="banner-form-card h-100">
             <div class="banner-form-head">
                 <strong>Gambar banner</strong>
-                <span>Gunakan gambar horizontal agar tampil rapi di slider beranda.</span>
+                <span></span>
             </div>
             <div class="banner-form-body">
                 @if($banner->exists && $banner->url_gambar)

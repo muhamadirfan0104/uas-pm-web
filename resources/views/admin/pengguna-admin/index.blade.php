@@ -2,8 +2,6 @@
 
 @section('title', 'Pengguna Admin - SiTahu')
 @section('page_title', 'Pengguna Admin')
-@section('page_subtitle', 'Kelola akun admin yang dapat mengakses dashboard.')
-
 @push('styles')
 <style>
     .user-head { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:22px; border-radius:24px; border:1px solid #f1d49c; background:linear-gradient(135deg,#fff,#fff8ea); box-shadow:var(--shadow-soft); margin-bottom:16px; }
@@ -37,7 +35,7 @@
     <div>
         <span class="chip c-yellow mb-2">Akses dashboard</span>
         <h1>Pengguna admin</h1>
-        <p>Role sistem disederhanakan menjadi Admin dan Pembeli. Halaman ini hanya untuk akun admin.</p>
+        <p></p>
     </div>
     <button class="btn btn-brand" type="button" data-bs-toggle="modal" data-bs-target="#modalPenggunaCreate"><i class="bi bi-plus-lg me-1"></i>Tambah Admin</button>
 </div>
@@ -96,7 +94,7 @@
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <form method="POST" action="{{ route('admin.pengguna-admin.store') }}" class="modal-content">
             @csrf
-            <div class="modal-header"><div><h5 class="modal-title fw-black">Tambah admin</h5><div class="text-muted small fw-semibold">Buat akun baru untuk mengakses dashboard.</div></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header"><div><h5 class="modal-title fw-black">Tambah Admin</h5></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body">@include('admin.pengguna-admin._form', ['user' => new \App\Models\User(), 'mode' => 'create'])</div>
             <div class="modal-footer"><button class="btn btn-light border" type="button" data-bs-dismiss="modal">Batal</button><button class="btn btn-brand" type="submit">Simpan</button></div>
         </form>

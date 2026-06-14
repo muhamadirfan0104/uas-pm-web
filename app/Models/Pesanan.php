@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Pesanan extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'pesanan';
 
     protected $fillable = [
@@ -24,12 +27,12 @@ class Pesanan extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     public function alamatPengiriman()
     {
-        return $this->belongsTo(Alamat::class, 'alamat_pengiriman_id');
+        return $this->belongsTo(Alamat::class, 'alamat_pengiriman_id')->withTrashed();
     }
 
     public function item()
@@ -42,7 +45,7 @@ class Pesanan extends Model
         return $this->hasOne(Pembayaran::class, 'pesanan_id');
     }
 
-        public function pengiriman()
+    public function pengiriman()
     {
         return $this->hasOne(Pengiriman::class, 'pesanan_id');
     }

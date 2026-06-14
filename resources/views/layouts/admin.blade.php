@@ -1372,21 +1372,6 @@
                 </a>
             </div>
 
-            <div class="sidebar-note">
-                <i class="bi bi-lightning-charge-fill me-1"></i>
-                Kerjakan dari pembayaran aktif, proses pesanan, lalu ambil/kirim.
-            </div>
-
-            <button
-                class="sidebar-collapse-btn d-none d-lg-flex"
-                id="sidebarCollapseButton"
-                type="button"
-                title="Kecilkan / lebarkan sidebar"
-                aria-label="Kecilkan / lebarkan sidebar"
-            >
-                <i class="bi bi-chevron-left"></i>
-                <span class="sidebar-collapse-text">Kecilkan Sidebar</span>
-            </button>
         </nav>
     </aside>
 
@@ -1399,7 +1384,9 @@
 
                 <div class="topbar-title-wrap min-w-0">
                     <h6 class="topbar-title text-truncate">@yield('page_title', 'Dashboard Admin')</h6>
-                    <p class="topbar-subtitle text-truncate">@yield('page_subtitle', 'Kelola operasional toko dari pesanan sampai stok.')</p>
+                    @hasSection('page_subtitle')
+                        <p class="topbar-subtitle text-truncate">@yield('page_subtitle')</p>
+                    @endif
                 </div>
             </div>
 
@@ -1427,8 +1414,8 @@
 
                     <div class="dropdown-menu dropdown-menu-end p-0 mt-2" style="width: 330px;">
                         <div class="px-3 py-3 border-bottom">
-                            <div class="fw-bold text-dark">Pusat Pengecekan</div>
-                            <div class="text-muted small">Akses cepat untuk pekerjaan admin.</div>
+                            <div class="fw-bold text-dark">Notifikasi</div>
+                            <div class="text-muted small">Aktivitas terbaru.</div>
                         </div>
 
                         <a href="{{ route('admin.pembayaran.index') }}" class="dropdown-item p-3 text-wrap">
@@ -1456,7 +1443,7 @@
                                 <div class="text-danger"><i class="bi bi-box-seam fs-5"></i></div>
                                 <div>
                                     <div class="small fw-bold text-dark">Pantau stok</div>
-                                    <div class="text-muted" style="font-size: .75rem;">Pastikan stok produk cukup sebelum pembeli checkout.</div>
+                                    <div class="text-muted" style="font-size: .75rem;">Stok produk aktif.</div>
                                 </div>
                             </div>
                         </a>
@@ -1563,7 +1550,7 @@
                     <i class="bi bi-exclamation-triangle fs-3"></i>
                 </div>
                 <h5 class="fw-bold text-dark mb-2" id="globalConfirmTitle">Konfirmasi Tindakan</h5>
-                <p class="text-muted small mb-0" id="globalConfirmMessage">Apakah kamu yakin ingin melanjutkan tindakan ini?</p>
+                <p class="text-muted small mb-0" id="globalConfirmMessage">Lanjutkan tindakan ini?</p>
             </div>
             <div class="modal-footer border-0 bg-light p-3 justify-content-center gap-2">
                 <button type="button" class="btn btn-light border fw-bold px-4" data-bs-dismiss="modal">Batal</button>
@@ -1640,10 +1627,15 @@
             }, 450);
         };
 
-        form.querySelectorAll('input[type="search"], input[type="text"], input[type="date"], select').forEach((field) => {
+        form.querySelectorAll('input[type="search"], input[type="text"]').forEach((field) => {
             field.addEventListener('input', submitForm);
-            field.addEventListener('change', submitForm);
         });
+
+        if (form.dataset.autoSelect === 'true') {
+            form.querySelectorAll('input[type="date"], select').forEach((field) => {
+                field.addEventListener('change', submitForm);
+            });
+        }
     });
 
     document.querySelectorAll('.js-auto-toast').forEach((toastEl) => {
@@ -1706,7 +1698,7 @@
             }
 
             if (globalConfirmMessage) {
-                globalConfirmMessage.textContent = form.dataset.confirmMessage || 'Apakah kamu yakin ingin melanjutkan tindakan ini?';
+                globalConfirmMessage.textContent = form.dataset.confirmMessage || 'Lanjutkan tindakan ini?';
             }
 
             if (globalConfirmButton) {

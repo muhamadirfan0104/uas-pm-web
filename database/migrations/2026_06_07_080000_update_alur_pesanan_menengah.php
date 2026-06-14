@@ -14,7 +14,7 @@ return new class extends Migration
         }
 
         if (Schema::hasTable('pembayaran')) {
-            DB::statement("ALTER TABLE pembayaran MODIFY metode_pembayaran ENUM('qris','va','ewallet','tunai','transfer_bank','cod') NOT NULL");
+            DB::statement("ALTER TABLE pembayaran MODIFY metode_pembayaran ENUM('transfer_bank','cod') NOT NULL DEFAULT 'transfer_bank'");
             DB::statement("ALTER TABLE pembayaran MODIFY status ENUM('menunggu_pembayaran','menunggu_verifikasi','dibayar','ditolak','gagal','kedaluwarsa','dibatalkan') NOT NULL DEFAULT 'menunggu_pembayaran'");
         }
     }

@@ -24,8 +24,7 @@
 
     $statusLabel = [
         'menunggu_pembayaran' => 'Belum Bayar',
-        'dibayar' => 'Siap Diproses',
-        'diproses' => 'Diproses',
+                'diproses' => 'Diproses',
         'siap_diambil' => 'Siap Diambil',
         'dalam_pengantaran' => 'Dikirim',
         'selesai' => 'Selesai',
@@ -370,14 +369,45 @@
     .quick-desc { margin-top: 4px; color: var(--dash-muted); font-size: .72rem; line-height: 1.45; font-weight: 650; }
     .quick-count { min-width: 36px; height: 36px; padding: 0 10px; border-radius: 999px; display: grid; place-items: center; background: var(--dash-brand-soft); color: var(--dash-brand-dark); font-weight: 900; }
 
-    .chart-area { padding: 24px 20px 20px; }
-    .revenue-chart { height: 250px; display: flex; align-items: flex-end; gap: 9px; overflow-x: auto; padding: 30px 2px 0; }
-    .chart-col { min-width: 24px; flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 8px; }
-    .chart-bar { position: relative; width: 100%; max-width: 32px; min-height: 8px; border-radius: 999px 999px 8px 8px; background: linear-gradient(180deg, var(--dash-brand), #f4d894); transition: .16s ease; }
-    .chart-bar::before { content: attr(data-value); position: absolute; left: 50%; top: -30px; transform: translateX(-50%); padding: 5px 8px; border-radius: 999px; background: #111827; color: #fff; font-size: .66rem; line-height: 1; font-weight: 850; white-space: nowrap; opacity: 0; pointer-events: none; transition: .16s ease; }
-    .chart-bar:hover { transform: translateY(-4px); }
-    .chart-bar:hover::before { opacity: 1; }
-    .chart-label { color: #98a2b3; font-size: .66rem; font-weight: 800; }
+    .chart-area { padding: 18px 18px 20px; }
+    .line-chart-box {
+        position: relative;
+        min-height: 292px;
+        overflow-x: auto;
+        border-radius: 20px;
+        border: 1px solid #f2f4f7;
+        background:
+            linear-gradient(180deg, rgba(255,248,234,.72), rgba(255,255,255,.92)),
+            repeating-linear-gradient(to bottom, transparent 0, transparent 51px, rgba(148,163,184,.18) 52px);
+        padding: 12px;
+    }
+    .line-chart-svg { min-width: 760px; width: 100%; height: 270px; display: block; }
+    .line-chart-axis { stroke: rgba(102,112,133,.26); stroke-width: 1; }
+    .line-chart-grid { stroke: rgba(148,163,184,.18); stroke-width: 1; }
+    .line-chart-area { fill: rgba(200,147,53,.13); }
+    .line-chart-path { fill: none; stroke: var(--dash-brand); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 10px 14px rgba(200,147,53,.18)); }
+    .line-chart-point { fill: #fff; stroke: var(--dash-brand); stroke-width: 4; cursor: pointer; transition: .15s ease; }
+    .line-chart-point-wrap:hover .line-chart-point { r: 7; fill: var(--dash-brand); }
+    .line-chart-value { fill: var(--dash-brand-dark); font-size: 10px; font-weight: 900; text-anchor: middle; opacity: .92; pointer-events: none; }
+    .line-chart-label { fill: #98a2b3; font-size: 10px; font-weight: 800; text-anchor: middle; }
+    .line-chart-tooltip {
+        position: fixed;
+        z-index: 2000;
+        padding: 8px 10px;
+        border-radius: 12px;
+        background: #111827;
+        color: #fff;
+        font-size: .72rem;
+        line-height: 1.35;
+        font-weight: 800;
+        box-shadow: 0 14px 35px rgba(17,24,39,.24);
+        opacity: 0;
+        pointer-events: none;
+        transform: translate(-50%, -115%);
+        transition: opacity .12s ease;
+        white-space: nowrap;
+    }
+    .line-chart-tooltip.show { opacity: 1; }
 
     .list-wrap { padding: 10px 0; }
     .list-row {
@@ -567,7 +597,7 @@
                 Dashboard Admin · {{ $periodeLabel }}
             </span>
             <h1>Ringkasan operasional toko</h1>
-            <p>Cek pembayaran, pesanan, stok, dan penjualan dari satu halaman.</p>
+            <p>Ringkasan operasional toko.</p>
             <div class="dash-actions">
                 <a href="{{ route('admin.pembayaran.index') }}" class="dash-btn primary">
                     <i class="bi bi-shield-check"></i> Pembayaran
@@ -632,11 +662,11 @@
 
         <a href="{{ route('admin.pesanan.index') }}" class="work-card">
             <div class="work-top">
-                <div class="work-label">Siap Diproses</div>
+                <div class="work-label">Perlu Disiapkan</div>
                 <div class="work-icon"><i class="bi bi-box-seam-fill"></i></div>
             </div>
             <div class="work-value">{{ $siapDiproses }}</div>
-            <div class="work-note"><i class="bi bi-arrow-right-circle"></i> Pesanan sudah dibayar.</div>
+            <div class="work-note"><i class="bi bi-arrow-right-circle"></i> Pesanan sudah masuk proses.</div>
         </a>
 
         <a href="{{ route('admin.pesanan.index') }}" class="work-card">
@@ -664,22 +694,64 @@
                 <div class="dash-card-head">
                     <div>
                         <h2 class="dash-card-title">Penjualan Harian</h2>
-                        <p class="dash-card-subtitle">Pendapatan dari pembayaran berstatus dibayar selama {{ $periodeLabel }}.</p>
+                        <p class="dash-card-subtitle">{{ $periodeLabel }}</p>
                     </div>
                     <a href="{{ route('admin.laporan.index') }}" class="small-link"><i class="bi bi-bar-chart"></i> Laporan</a>
                 </div>
+                @php
+                    $chartRows = $penjualanHarian->values();
+                    $chartCount = max($chartRows->count(), 1);
+                    $svgWidth = max(760, $chartCount * 54);
+                    $svgHeight = 270;
+                    $padLeft = 42;
+                    $padRight = 28;
+                    $padTop = 34;
+                    $padBottom = 42;
+                    $plotWidth = max(1, $svgWidth - $padLeft - $padRight);
+                    $plotHeight = max(1, $svgHeight - $padTop - $padBottom);
+                    $dashboardPoints = $chartRows->map(function ($item, $index) use ($chartCount, $plotWidth, $plotHeight, $padLeft, $padTop, $maxPenjualan, $rupiah) {
+                        $total = (float) ($item['total'] ?? 0);
+                        $x = $padLeft + ($chartCount > 1 ? (($plotWidth / ($chartCount - 1)) * $index) : ($plotWidth / 2));
+                        $y = $padTop + ($plotHeight - (($total / max((float) $maxPenjualan, 1)) * $plotHeight));
+                        return [
+                            'x' => round($x, 2),
+                            'y' => round($y, 2),
+                            'label' => $item['label'],
+                            'value' => $total,
+                            'money' => $rupiah($total),
+                        ];
+                    });
+                    $linePath = $dashboardPoints->map(fn ($point, $index) => ($index === 0 ? 'M' : 'L') . $point['x'] . ' ' . $point['y'])->implode(' ');
+                    $areaPath = $dashboardPoints->isNotEmpty()
+                        ? $linePath . ' L ' . $dashboardPoints->last()['x'] . ' ' . ($svgHeight - $padBottom) . ' L ' . $dashboardPoints->first()['x'] . ' ' . ($svgHeight - $padBottom) . ' Z'
+                        : '';
+                    $labelEvery = max(1, (int) ceil($chartCount / 12));
+                    $valueEvery = max(1, (int) ceil($chartCount / 10));
+                @endphp
                 <div class="chart-area">
-                    <div class="revenue-chart">
-                        @foreach($penjualanHarian as $item)
-                            @php
-                                $total = (float) ($item['total'] ?? 0);
-                                $height = max(8, round(($total / $maxPenjualan) * 100));
-                            @endphp
-                            <div class="chart-col">
-                                <div class="chart-bar" style="height: {{ $height }}%;" data-value="{{ $rupiah($total) }}"></div>
-                                <div class="chart-label">{{ $item['label'] }}</div>
-                            </div>
-                        @endforeach
+                    <div class="line-chart-box js-line-chart">
+                        <svg class="line-chart-svg" viewBox="0 0 {{ $svgWidth }} {{ $svgHeight }}" role="img" aria-label="Grafik garis penjualan harian">
+                            @for($i = 0; $i <= 4; $i++)
+                                @php $gridY = $padTop + (($plotHeight / 4) * $i); @endphp
+                                <line class="line-chart-grid" x1="{{ $padLeft }}" y1="{{ $gridY }}" x2="{{ $svgWidth - $padRight }}" y2="{{ $gridY }}"></line>
+                            @endfor
+                            <line class="line-chart-axis" x1="{{ $padLeft }}" y1="{{ $svgHeight - $padBottom }}" x2="{{ $svgWidth - $padRight }}" y2="{{ $svgHeight - $padBottom }}"></line>
+                            @if($areaPath)
+                                <path class="line-chart-area" d="{{ $areaPath }}"></path>
+                                <path class="line-chart-path" d="{{ $linePath }}"></path>
+                            @endif
+                            @foreach($dashboardPoints as $index => $point)
+                                <g class="line-chart-point-wrap" data-label="{{ $point['label'] }}" data-value="{{ $point['money'] }}">
+                                    @if($point['value'] > 0 && $index % $valueEvery === 0)
+                                        <text class="line-chart-value" x="{{ $point['x'] }}" y="{{ max(12, $point['y'] - 13) }}">{{ $point['money'] }}</text>
+                                    @endif
+                                    <circle class="line-chart-point" cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="5"></circle>
+                                    @if($index % $labelEvery === 0 || $index === $chartCount - 1)
+                                        <text class="line-chart-label" x="{{ $point['x'] }}" y="{{ $svgHeight - 17 }}">{{ $point['label'] }}</text>
+                                    @endif
+                                </g>
+                            @endforeach
+                        </svg>
                     </div>
                 </div>
             </section>
@@ -688,7 +760,7 @@
                 <div class="dash-card-head">
                     <div>
                         <h2 class="dash-card-title">Pesanan Terbaru</h2>
-                        <p class="dash-card-subtitle">Invoice dan pesanan yang baru masuk.</p>
+                        <p class="dash-card-subtitle">Daftar terbaru.</p>
                     </div>
                     <a href="{{ route('admin.semua-pesanan.index') }}" class="small-link"><i class="bi bi-arrow-right"></i> Semua Pesanan</a>
                 </div>
@@ -732,7 +804,7 @@
                 <div class="dash-card-head">
                     <div>
                         <h2 class="dash-card-title">Ringkasan Bisnis</h2>
-                        <p class="dash-card-subtitle">Angka inti untuk membaca kondisi toko.</p>
+                        <p class="dash-card-subtitle">Indikator toko.</p>
                     </div>
                 </div>
                 <div class="kpi-grid">
@@ -767,7 +839,7 @@
                 <div class="dash-card-head">
                     <div>
                         <h2 class="dash-card-title">Tindakan Cepat</h2>
-                        <p class="dash-card-subtitle">Shortcut untuk pekerjaan yang paling sering dilakukan admin.</p>
+                        <p class="dash-card-subtitle">Akses cepat operasional.</p>
                     </div>
                 </div>
                 <div class="quick-action-grid">
@@ -799,7 +871,7 @@
             <div class="dash-card-head">
                 <div>
                     <h2 class="dash-card-title">Status Pesanan</h2>
-                    <p class="dash-card-subtitle">Dipakai untuk melihat posisi pesanan dari belum bayar sampai selesai.</p>
+                    <p class="dash-card-subtitle">Status operasional pesanan.</p>
                 </div>
                 <a href="{{ route('admin.pesanan.index') }}" class="small-link"><i class="bi bi-receipt"></i> Pesanan</a>
             </div>
@@ -879,7 +951,7 @@
             <div class="dash-card-head">
                 <div>
                     <h2 class="dash-card-title">Stok Perlu Tindakan</h2>
-                    <p class="dash-card-subtitle">Produk habis atau sudah menyentuh batas minimum.</p>
+                    <p class="dash-card-subtitle">Stok membutuhkan perhatian.</p>
                 </div>
                 <a href="{{ route('admin.stok.index') }}" class="small-link"><i class="bi bi-box-seam"></i> Stok</a>
             </div>
@@ -966,3 +1038,24 @@
     </div>
 </div>
 @endsection
+
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tooltip = document.createElement('div');
+        tooltip.className = 'line-chart-tooltip';
+        document.body.appendChild(tooltip);
+
+        document.querySelectorAll('.line-chart-point-wrap').forEach((point) => {
+            point.addEventListener('mousemove', (event) => {
+                tooltip.innerHTML = `<strong>${point.dataset.value || 'Rp 0'}</strong><br><span>${point.dataset.label || ''}</span>`;
+                tooltip.style.left = event.clientX + 'px';
+                tooltip.style.top = event.clientY + 'px';
+                tooltip.classList.add('show');
+            });
+            point.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+        });
+    });
+</script>
+@endpush

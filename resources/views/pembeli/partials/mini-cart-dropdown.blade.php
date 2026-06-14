@@ -49,7 +49,7 @@
         <div class="mini-cart-empty">
             <div class="mini-cart-empty-icon"><i class="bi bi-bag"></i></div>
             <h6 class="fw-black mb-1">Keranjang masih kosong</h6>
-            <p class="text-muted mb-3 small fw-semibold">Pilih produk terlebih dahulu, lalu lihat ringkasannya di sini.</p>
+            <p class="text-muted mb-3 small fw-semibold">Keranjang kosong.</p>
             <a href="{{ route('pembeli-web.produk') }}" class="btn btn-brand px-4">Belanja Sekarang</a>
         </div>
     @endif

@@ -84,27 +84,36 @@ class StokController extends Controller
             'catatan' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $stokAwal = $produk->stok;
+        DB::transaction(function () use ($produk, $data) {
+            $produkTerkunci = Produk::query()
+                ->whereKey($produk->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ($data['tipe'] === 'tambah') {
-            $produk->stok += $data['jumlah'];
-            $perubahan = $data['jumlah'];
-        } elseif ($data['tipe'] === 'kurang') {
-            $produk->stok = max(0, $produk->stok - $data['jumlah']);
-            $perubahan = -min($stokAwal, $data['jumlah']);
-        } else {
-            $produk->stok = $data['jumlah'];
-            $perubahan = $produk->stok - $stokAwal;
-        }
+            $stokAwal = max(0, (int) $produkTerkunci->stok);
 
-        $produk->save();
+            if ($data['tipe'] === 'tambah') {
+                $stokBaru = $stokAwal + (int) $data['jumlah'];
+                $perubahan = (int) $data['jumlah'];
+            } elseif ($data['tipe'] === 'kurang') {
+                $stokBaru = max(0, $stokAwal - (int) $data['jumlah']);
+                $perubahan = -min($stokAwal, (int) $data['jumlah']);
+            } else {
+                $stokBaru = max(0, (int) $data['jumlah']);
+                $perubahan = $stokBaru - $stokAwal;
+            }
 
-        RiwayatStok::create([
-            'produk_id' => $produk->id,
-            'perubahan' => $perubahan,
-            'tipe' => $data['tipe'],
-            'catatan' => $data['catatan'] ?? null,
-        ]);
+            $produkTerkunci->update([
+                'stok' => $stokBaru,
+            ]);
+
+            RiwayatStok::create([
+                'produk_id' => $produkTerkunci->id,
+                'perubahan' => $perubahan,
+                'tipe' => $data['tipe'],
+                'catatan' => $data['catatan'] ?? null,
+            ]);
+        });
 
         return back()->with('success', 'Stok berhasil diperbarui.');
     }

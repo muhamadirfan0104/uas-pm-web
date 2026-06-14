@@ -155,6 +155,9 @@ Route::prefix('pembeli-web')
             Route::patch('/pesanan/{nomor_invoice}/diterima', [WebPembeliPesananController::class, 'confirmReceived'])
                 ->name('pesanan.confirm-received');
 
+            Route::get('/pesanan/{nomor_invoice}/invoice', [WebPembeliPesananController::class, 'invoice'])
+                ->name('pesanan.invoice');
+
             Route::get('/pesanan/{nomor_invoice}', [WebPembeliPesananController::class, 'show'])
                 ->name('pesanan.show');
 
@@ -364,8 +367,11 @@ Route::middleware(['auth', AdminMiddleware::class])
         Route::get('/laporan', [LaporanController::class, 'index'])
             ->name('laporan.index');
 
-        Route::get('/laporan/export-csv', [LaporanController::class, 'exportCsv'])
-            ->name('laporan.export.csv');
+        Route::get('/laporan/export-excel', [LaporanController::class, 'exportExcel'])
+            ->name('laporan.export.excel');
+
+        Route::get('/laporan/export-pdf', [LaporanController::class, 'exportPdf'])
+            ->name('laporan.export.pdf');
 
         /*
         |--------------------------------------------------------------------------

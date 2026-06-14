@@ -12,8 +12,8 @@
     $nextStatus = fn($order) => \App\Support\OrderFlow::nextOrderStatus($order);
     $actionLabel = function($status, $order = null) {
         return match($status) {
-            'diproses' => 'Proses',
-            'disiapkan' => 'Siapkan',
+            'diproses' => 'Siapkan',
+            'disiapkan' => 'Masuk ambil/kirim',
             'siap_diambil' => 'Siap diambil',
             'dalam_pengantaran' => 'Kirim',
             'selesai' => (($order?->pembayaran?->metode_pembayaran ?? null) === 'cod') ? 'Selesai & bayar COD' : 'Selesaikan',
@@ -21,8 +21,8 @@
         };
     };
     $flowText = fn($order) => $order?->metode_pengambilan === 'kurir_toko'
-        ? 'Bayar/COD → Konfirmasi → Diproses → Disiapkan → Dalam pengantaran → Selesai'
-        : 'Bayar/COD → Konfirmasi → Diproses → Disiapkan → Siap diambil → Selesai';
+        ? 'Bayar/COD → Diproses → Disiapkan → Dalam pengantaran → Selesai'
+        : 'Bayar/COD → Diproses → Disiapkan → Siap diambil → Selesai';
     $tab = request('tab', 'semua');
     $hasActiveFilter = request()->filled('q') || request()->filled('status') || request()->filled('metode_pengambilan') || request()->filled('metode_pembayaran') || request()->filled('tanggal_mulai') || request()->filled('tanggal_selesai');
 @endphp
@@ -30,29 +30,28 @@
 <div class="ops-page-head compact">
     <div>
         <h1 class="ops-title">Pesanan</h1>
-        <p class="ops-subtitle">Menu ini hanya menampilkan pesanan aktif yang harus dikerjakan toko: konfirmasi pesanan dan proses persiapan. Pesanan selesai, batal, belum bayar, dan tahap ambil/kirim dipindah ke menu masing-masing.</p>
+        <p class="ops-subtitle">Pesanan aktif.</p>
     </div>
 </div>
 
 <div class="ops-tabs">
     <a class="ops-tab {{ $tab==='semua' && !request()->filled('status') ? 'active' : '' }}" href="{{ route('admin.pesanan.index') }}">Semua aktif <b>{{ $stats['aktif'] ?? 0 }}</b></a>
-    <a class="ops-tab {{ $tab==='konfirmasi' || request('status')==='menunggu_konfirmasi' ? 'active' : '' }}" href="{{ route('admin.pesanan.index', ['tab'=>'konfirmasi']) }}">Konfirmasi <b>{{ $stats['konfirmasi'] ?? 0 }}</b></a>
     <a class="ops-tab {{ $tab==='diproses' || request('status')==='diproses' ? 'active' : '' }}" href="{{ route('admin.pesanan.index', ['tab'=>'diproses']) }}">Diproses <b>{{ $stats['diproses'] ?? 0 }}</b></a>
     <a class="ops-tab" href="{{ route('admin.pengiriman.index') }}">Lihat ambil/kirim <i class="bi bi-arrow-right"></i></a>
     <a class="ops-tab" href="{{ route('admin.semua-pesanan.index') }}">Semua Pesanan <i class="bi bi-journal-text"></i></a>
 </div>
 
 <div class="ops-filter-card compact">
-    <form id="page-filter" class="js-instant-filter" method="GET">
+    <form id="page-filter" method="GET">
         @if($tab !== 'semua')<input type="hidden" name="tab" value="{{ $tab }}">@endif
         <div class="ops-filter-grid order-only">
             <div class="ops-field"><label class="ops-label">Cari</label><div class="ops-search"><i class="bi bi-search text-muted"></i><input name="q" value="{{ request('q') }}" placeholder="Invoice, pembeli, HP, atau produk"></div></div>
-            <div class="ops-field"><label class="ops-label">Status</label><select class="ops-control" name="status"><option value="">Semua aktif</option>@foreach(['menunggu_konfirmasi','diproses'] as $s)<option value="{{ $s }}" @selected(request('status')===$s)>{{ $statusLabel($s) }}</option>@endforeach</select></div>
+            <div class="ops-field"><label class="ops-label">Status</label><select class="ops-control" name="status"><option value="">Semua aktif</option><option value="diproses" @selected(request('status')==='diproses')>{{ $statusLabel('diproses') }}</option></select></div>
             <div class="ops-field"><label class="ops-label">Metode ambil</label><select class="ops-control" name="metode_pengambilan"><option value="">Semua</option><option value="ambil_toko" @selected(request('metode_pengambilan')==='ambil_toko')>Ambil toko</option><option value="kurir_toko" @selected(request('metode_pengambilan')==='kurir_toko')>Kurir toko</option></select></div>
             <div class="ops-field"><label class="ops-label">Bayar</label><select class="ops-control" name="metode_pembayaran"><option value="">Semua</option><option value="transfer_bank" @selected(request('metode_pembayaran')==='transfer_bank')>Transfer</option><option value="cod" @selected(request('metode_pembayaran')==='cod')>COD</option></select></div>
             <div class="ops-field"><label class="ops-label">Dari</label><input type="date" class="ops-control" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}"></div>
             <div class="ops-field"><label class="ops-label">Sampai</label><input type="date" class="ops-control" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}"></div>
-            <div class="ops-filter-actions"><a href="{{ route('admin.pesanan.index') }}" class="ops-btn-reset"><i class="bi bi-x-circle"></i> Reset</a></div>
+            <div class="ops-filter-actions"><button class="ops-btn-apply" type="submit"><i class="bi bi-funnel"></i> Terapkan</button><a href="{{ route('admin.pesanan.index') }}" class="ops-btn-reset"><i class="bi bi-x-circle"></i> Reset</a></div>
         </div>
         @if($hasActiveFilter || $tab !== 'semua')<div class="ops-filter-note"><i class="bi bi-funnel text-brand"></i> Filter aktif. <a href="{{ route('admin.pesanan.index') }}" class="text-brand fw-black text-decoration-none">Bersihkan</a></div>@endif
     </form>
@@ -82,7 +81,7 @@
                     <td><div class="d-flex align-items-center gap-2 min-w-0"><span class="ops-avatar">{{ $initial }}</span><div class="min-w-0"><div class="fw-black text-truncate">{{ $buyer?->name ?? 'Pembeli' }}</div><span class="ops-muted text-truncate">{{ $buyer?->telepon ?: $buyer?->email }}</span></div></div></td>
                     <td><div class="d-flex align-items-center gap-2 min-w-0">@if($img)<img src="{{ $img }}" class="ops-cover" alt="{{ $firstProduct?->nama }}">@else<span class="ops-cover-fallback"><i class="bi bi-box-seam"></i></span>@endif<div class="min-w-0"><div class="fw-black text-truncate">{{ $firstProduct?->nama ?? 'Produk' }}</div><span class="ops-muted">{{ $order->item->sum('jumlah') }} item{{ $moreCount ? ' · +'.$moreCount.' produk' : '' }}</span></div></div></td>
                     <td><span class="ops-pill"><i class="bi {{ $order->metode_pengambilan === 'kurir_toko' ? 'bi-truck text-primary' : 'bi-shop text-warning' }}"></i>{{ $pickupLabel($order->metode_pengambilan) }}</span></td>
-                    <td><div class="d-flex flex-column gap-1 align-items-start"><span class="chip {{ $statusClass($order->status) }}">{{ $statusLabel($order->status) }}</span>@if($needsTransferReview)<span class="chip c-yellow">Cek di pembayaran</span>@endif</div></td>
+                    <td><div class="d-flex flex-column gap-1 align-items-start"><span class="chip {{ $statusClass($order->status) }}">{{ $statusLabel($order->status) }}</span>@if($needsTransferReview)<span class="chip c-yellow">Pembayaran</span>@endif</div></td>
                     <td class="fw-black">{{ $rupiah($order->total_bayar) }}</td>
                     <td><div class="ops-actions">
                         @if($next && ! $needsTransferReview)
@@ -143,7 +142,7 @@
                                     @endforeach
                                 </div>
                                 @if($pay?->metode_pembayaran === 'transfer_bank' && in_array($pay->status, ['menunggu_pembayaran','menunggu_verifikasi'], true))
-                                    <div class="flow-help">Transfer bank harus diterima di menu Pembayaran. Setelah sah, pesanan masuk Konfirmasi dan bisa diproses di sini.</div>
+                                    <div class="flow-help"></div>
                                 @endif
                             </div>
                             <div class="detail-modal-card mb-3"><span class="detail-label">Pembayaran</span><div class="summary-row"><span>Metode</span><strong>{{ $paymentMethodLabel($pay?->metode_pembayaran) }}</strong></div><div class="summary-row"><span>Status</span><strong>{{ $statusLabel($order->status_pembayaran) }}</strong></div><div class="summary-row"><span>Subtotal</span><strong>{{ $rupiah($order->subtotal_produk) }}</strong></div><div class="summary-row"><span>Ongkir</span><strong>{{ $rupiah($order->biaya_pengiriman) }}</strong></div><div class="summary-row"><span>Total</span><strong>{{ $rupiah($order->total_bayar) }}</strong></div></div>

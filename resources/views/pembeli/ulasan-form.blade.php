@@ -39,7 +39,7 @@
             <section class="surface-strong p-4 p-lg-5">
                 <span class="eyebrow mb-2"><i class="bi bi-star-fill"></i> Penilaian produk</span>
                 <h2 class="section-heading display-6 mb-3">Bagikan pengalaman Anda.</h2>
-                <p class="section-subtitle mb-4">Pilih rating, tulis komentar, dan tambahkan foto/video jika ada.</p>
+                <p class="section-subtitle mb-4"></p>
 
                 <form action="{{ route('pembeli-web.ulasan.store', [$pesanan->nomor_invoice, $produk]) }}" method="POST" enctype="multipart/form-data" class="d-grid gap-4">
                     @csrf
@@ -54,10 +54,10 @@
                     </div>
                     <div>
                         <label class="form-label fw-bold">Komentar</label>
-                        <textarea name="komentar" rows="5" class="form-control" style="border-radius:18px;" placeholder="Contoh: Produk segar, pengemasan rapi, dan rasanya enak...">{{ old('komentar', $ulasan?->komentar) }}</textarea>
+                        <textarea name="komentar" rows="5" class="form-control" style="border-radius:18px;" placeholder="Tulis ulasan">{{ old('komentar', $ulasan?->komentar) }}</textarea>
                     </div>
                     <div class="media-help">
-                        <i class="bi bi-images me-1"></i> Anda bisa menambahkan beberapa foto dan video sekaligus. Maksimal 5 foto dan 2 video untuk satu ulasan.
+                        <i class="bi bi-images me-1"></i> 
                     </div>
 
                     @php
@@ -109,12 +109,12 @@
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Foto ulasan <span class="text-muted fw-semibold">opsional</span></label>
                             <input type="file" name="foto_ulasan[]" accept="image/*" class="form-control" style="border-radius:16px;" multiple>
-                            <div class="small text-muted fw-semibold mt-2">Bisa pilih beberapa foto sekaligus.</div>
+                            <div class="small text-muted fw-semibold mt-2"></div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Video ulasan <span class="text-muted fw-semibold">opsional</span></label>
                             <input type="file" name="video_ulasan[]" accept="video/*" class="form-control" style="border-radius:16px;" multiple>
-                            <div class="small text-muted fw-semibold mt-2">Bisa pilih sampai dua video.</div>
+                            <div class="small text-muted fw-semibold mt-2"></div>
                         </div>
                     </div>
                     <div class="d-flex flex-wrap gap-2">

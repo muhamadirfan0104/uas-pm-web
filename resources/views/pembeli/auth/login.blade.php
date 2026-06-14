@@ -26,12 +26,12 @@
                     <div class="position-relative" style="z-index:1;">
                         <span class="badge rounded-pill mb-3" style="background: rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.18);">Akun pembeli</span>
                         <h1 class="section-heading text-white display-6 mb-3">Masuk untuk melanjutkan pesanan.</h1>
-                        <p class="mb-0" style="color: rgba(255,255,255,.78); line-height: 1.75;">Keranjang yang sudah Anda isi sebelum login akan otomatis masuk ke akun pembeli setelah berhasil masuk.</p>
+                        
                     </div>
                     <div>
-                        <div class="auth-benefit"><i class="bi bi-bag-check"></i><div><div class="fw-bold">Keranjang tersimpan</div><small style="color:rgba(255,255,255,.72);">Produk pilihan tetap aman setelah login.</small></div></div>
-                        <div class="auth-benefit"><i class="bi bi-receipt"></i><div><div class="fw-bold">Riwayat pesanan</div><small style="color:rgba(255,255,255,.72);">Pantau status pembayaran, pengambilan, dan pengiriman.</small></div></div>
-                        <div class="auth-benefit"><i class="bi bi-chat-heart"></i><div><div class="fw-bold">Beri ulasan</div><small style="color:rgba(255,255,255,.72);">Nilai produk setelah pesanan selesai.</small></div></div>
+                        <div class="auth-benefit"><i class="bi bi-bag-check"></i><div><div class="fw-bold">Keranjang</div></div></div>
+                        <div class="auth-benefit"><i class="bi bi-receipt"></i><div><div class="fw-bold">Riwayat Pesanan</div></div></div>
+                        <div class="auth-benefit"><i class="bi bi-chat-heart"></i><div><div class="fw-bold">Ulasan</div></div></div>
                     </div>
                 </div>
             </div>
@@ -40,14 +40,14 @@
                     <div class="mb-4">
                         <a href="{{ route('pembeli-web.home') }}" class="text-decoration-none text-brand fw-bold"><i class="bi bi-arrow-left me-1"></i> Kembali ke beranda</a>
                         <h2 class="section-heading h1 mt-3 mb-2">Selamat datang kembali.</h2>
-                        <p class="text-muted mb-0">Gunakan email atau nomor HP yang terdaftar sebagai pembeli.</p>
+                        <p class="text-muted mb-0"></p>
                     </div>
 
                     <form action="{{ route('pembeli-web.login.post') }}" method="POST" class="d-grid gap-3">
                         @csrf
                         <div>
                             <label for="login" class="form-label fw-bold">Email atau Nomor HP</label>
-                            <input id="login" type="text" name="login" value="{{ old('login') }}" class="form-control auth-field @error('login') is-invalid @enderror" placeholder="contoh@email.com / 08123456789" required autofocus>
+                            <input id="login" type="text" name="login" value="{{ old('login') }}" class="form-control auth-field @error('login') is-invalid @enderror" placeholder="Email atau nomor HP" required autofocus>
                             @error('login')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div>
@@ -71,7 +71,7 @@
                     </div>
 
                     <div class="alert alert-light border mt-4 mb-0 rounded-4 small text-muted fw-semibold">
-                        <i class="bi bi-info-circle text-brand me-1"></i> Halaman ini khusus untuk pembeli yang ingin berbelanja dan memantau pesanan.
+                        <i class="bi bi-info-circle text-brand me-1"></i> 
                     </div>
                 </div>
             </div>

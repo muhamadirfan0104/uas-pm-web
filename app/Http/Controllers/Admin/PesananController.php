@@ -15,12 +15,12 @@ class PesananController extends Controller
 {
     /**
      * Menu Pesanan aktif.
-     * Hanya menampilkan pekerjaan toko yang harus dikonfirmasi/diproses.
+     * Hanya menampilkan pekerjaan toko yang harus didiproses/disiapkan.
      * Pesanan selesai, batal, belum bayar, dan logistik tidak ditampilkan di sini.
      */
     public function index(Request $request): View
     {
-        $activeStatuses = ['menunggu_konfirmasi', 'diproses'];
+        $activeStatuses = ['diproses'];
 
         $query = Pesanan::with(['user', 'pembayaran', 'pengiriman', 'alamatPengiriman', 'item.produk.gambarUtama'])
             ->whereIn('status', $activeStatuses)
@@ -42,7 +42,6 @@ class PesananController extends Controller
         $tab = (string) $request->input('tab', 'semua');
         if (! $request->filled('status') && $tab !== 'semua') {
             match ($tab) {
-                'konfirmasi' => $query->where('status', 'menunggu_konfirmasi'),
                 'diproses' => $query->where('status', 'diproses'),
                 default => null,
             };
@@ -72,7 +71,6 @@ class PesananController extends Controller
 
         $stats = [
             'aktif' => Pesanan::whereIn('status', $activeStatuses)->count(),
-            'konfirmasi' => Pesanan::where('status', 'menunggu_konfirmasi')->count(),
             'diproses' => Pesanan::where('status', 'diproses')->count(),
         ];
 
@@ -177,8 +175,8 @@ class PesananController extends Controller
     public function updateStatus(Request $request, Pesanan $pesanan): RedirectResponse
     {
         $data = $request->validate([
-            'status' => ['required', 'in:menunggu_pembayaran,menunggu_verifikasi,menunggu_konfirmasi,diproses,disiapkan,siap_diambil,dalam_pengantaran,selesai,dibatalkan'],
-            'status_pembayaran' => ['nullable', 'in:menunggu_pembayaran,menunggu_verifikasi,dibayar,ditolak,gagal,kedaluwarsa,dibatalkan'],
+            'status' => ['required', 'in:diproses,disiapkan,siap_diambil,dalam_pengantaran,selesai,dibatalkan'],
+            'status_pembayaran' => ['nullable', 'in:menunggu_pembayaran,menunggu_verifikasi,dibayar,ditolak,dibatalkan'],
         ]);
 
         try {

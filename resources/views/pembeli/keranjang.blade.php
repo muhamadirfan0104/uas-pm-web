@@ -166,7 +166,7 @@
         <div class="empty-cart-box p-4 p-lg-5 text-center">
             <div class="stat-icon mx-auto mb-3"><i class="bi bi-bag-x"></i></div>
             <h2 class="h3 fw-bold">Keranjang masih kosong.</h2>
-            <p class="text-muted mb-4">Pilih produk dari katalog, lalu tambahkan ke keranjang. Anda bisa melakukannya tanpa login terlebih dahulu.</p>
+            <p class="text-muted mb-4">Keranjang masih kosong.</p>
             <a href="{{ route('pembeli-web.produk', ['stok' => 'tersedia']) }}" class="btn btn-brand px-4 py-3">Mulai Belanja</a>
         </div>
     @endif

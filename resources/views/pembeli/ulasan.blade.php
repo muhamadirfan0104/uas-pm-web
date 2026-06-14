@@ -130,7 +130,7 @@
         <div class="surface p-5 text-center">
             <i class="bi bi-chat-square-text fs-1 text-brand"></i>
             <h2 class="h4 fw-bold mt-3">Belum ada ulasan yang sesuai.</h2>
-            <p class="text-muted mb-4">Coba ubah kata kunci atau filter yang sedang digunakan.</p>
+            <p class="text-muted mb-4">Data tidak ditemukan.</p>
             <a href="{{ route('pembeli-web.ulasan') }}" class="btn btn-soft-brand px-4">Lihat Semua Ulasan</a>
         </div>
     @endif

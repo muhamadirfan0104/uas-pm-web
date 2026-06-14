@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MediaUlasan extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'media_ulasan';
 
     protected $fillable = [
@@ -22,6 +25,6 @@ class MediaUlasan extends Model
 
     public function ulasan()
     {
-        return $this->belongsTo(Ulasan::class, 'ulasan_id');
+        return $this->belongsTo(Ulasan::class, 'ulasan_id')->withTrashed();
     }
 }

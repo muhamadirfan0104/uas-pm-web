@@ -173,20 +173,19 @@
         'selesai' => 'done',
         'dibatalkan' => 'cancel',
         'siap_diambil', 'dalam_pengantaran' => 'ready',
-        'menunggu_konfirmasi', 'diproses', 'disiapkan' => 'process',
+        'diproses', 'disiapkan' => 'process',
         default => 'waiting',
     };
     $statusIcon = match($pesanan->status) {
         'selesai' => 'bi-check2-circle',
         'dibatalkan' => 'bi-x-circle',
         'siap_diambil', 'dalam_pengantaran' => 'bi-truck',
-        'menunggu_konfirmasi', 'diproses', 'disiapkan' => 'bi-gear',
+        'diproses', 'disiapkan' => 'bi-gear',
         default => 'bi-wallet2',
     };
     $statusText = match($pesanan->status) {
         'menunggu_pembayaran' => 'Belum Bayar',
         'menunggu_verifikasi' => 'Menunggu Verifikasi',
-        'menunggu_konfirmasi' => 'Menunggu Konfirmasi Toko',
         'dibayar' => 'Pembayaran Diterima',
         'diproses' => 'Diproses Toko',
         'disiapkan' => 'Disiapkan',
@@ -204,16 +203,25 @@
         'menunggu_verifikasi' => 'Menunggu Verifikasi',
         default => 'Menunggu',
     };
-    $bankNama = trim((string) ($pengaturan->bank_nama ?? '')) ?: 'Bank belum diatur';
-    $bankNomor = trim((string) ($pengaturan->bank_nomor_rekening ?? '')) ?: 'Nomor rekening belum diatur';
-    $bankAtasNama = trim((string) ($pengaturan->bank_atas_nama ?? '')) ?: ($pengaturan->nama ?: 'SiTahu Premium');
-    $catatanPembayaran = trim((string) ($pengaturan->info_pembayaran ?? '')) ?: 'Transfer sesuai total bayar, lalu unggah bukti transfer agar pesanan dapat diperiksa admin.';
+    $rekeningList = \App\Models\RekeningToko::daftarAktif();
+    if ($rekeningList->isEmpty()) {
+        $rekeningList = collect([(object) [
+            'nama_bank' => trim((string) ($pengaturan->bank_nama ?? '')) ?: 'Bank belum diatur',
+            'nomor_rekening' => trim((string) ($pengaturan->bank_nomor_rekening ?? '')) ?: 'Nomor rekening belum diatur',
+            'atas_nama' => trim((string) ($pengaturan->bank_atas_nama ?? '')) ?: ($pengaturan->nama ?: 'SiTahu Premium'),
+        ]]);
+    }
+    $rekeningUtama = $rekeningList->first();
+    $bankNama = $rekeningUtama->nama_bank;
+    $bankNomor = $rekeningUtama->nomor_rekening;
+    $bankAtasNama = $rekeningUtama->atas_nama;
+    $catatanPembayaran = trim((string) ($pengaturan->info_pembayaran ?? '')) ?: 'Transfer sesuai total pembayaran.';
     $canUploadProof = $payment?->metode_pembayaran === 'transfer_bank' && in_array($payment?->status, ['menunggu_pembayaran', 'menunggu_verifikasi', 'ditolak'], true);
     $hasProof = filled($payment?->bukti_transfer);
     $currentStep = match($pesanan->status) {
         'menunggu_pembayaran' => 1,
         'menunggu_verifikasi' => 1,
-        'menunggu_konfirmasi', 'diproses', 'disiapkan' => 2,
+        'diproses', 'disiapkan' => 2,
         'siap_diambil', 'dalam_pengantaran' => 3,
         'selesai' => 4,
         default => 0,
@@ -224,6 +232,9 @@
         3 => ['title' => $pesanan->metode_pengambilan === 'kurir_toko' ? 'Dikirim' : 'Siap diambil', 'desc' => $pesanan->metode_pengambilan === 'kurir_toko' ? 'Pesanan berada dalam pengantaran.' : 'Pesanan dapat diambil di toko.', 'icon' => 'bi-truck'],
         4 => ['title' => 'Selesai', 'desc' => 'Pesanan sudah diterima pembeli.', 'icon' => 'bi-check2-circle'],
     ];
+    $storeMapsUrl = ($pengaturan->latitude_toko && $pengaturan->longitude_toko)
+        ? 'https://www.google.com/maps?q=' . $pengaturan->latitude_toko . ',' . $pengaturan->longitude_toko
+        : null;
 @endphp
 
 <div class="container py-4 py-lg-5">
@@ -234,13 +245,16 @@
             <div class="min-w-0">
                 <span class="eyebrow mb-3"><i class="bi bi-receipt"></i> Detail pesanan</span>
                 <h1 class="invoice-title h3 mb-2">{{ $pesanan->nomor_invoice }}</h1>
-                <p class="section-subtitle mb-0">Dibuat pada {{ optional($pesanan->tanggal_pesanan)->format('d M Y H:i') }}.</p>
+                <p class="section-subtitle mb-0">{{ optional($pesanan->tanggal_pesanan)->format('d M Y H:i') }}</p>
             </div>
             <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
                 <span class="status-badge-xl {{ $statusTone }}"><i class="bi {{ $statusIcon }}"></i>{{ $statusText }}</span>
                 @if($canUploadProof)
                     <button type="button" class="btn btn-brand px-4" data-bs-toggle="modal" data-bs-target="#uploadProofModal"><i class="bi bi-upload me-1"></i> {{ $payment?->status === 'ditolak' ? 'Upload Ulang' : 'Upload Bukti' }}</button>
                 @endif
+                <a href="{{ route('pembeli-web.pesanan.invoice', $pesanan->nomor_invoice) }}" target="_blank" rel="noopener" class="btn btn-soft-brand px-4">
+                    <i class="bi bi-printer me-1"></i> Cetak Struk
+                </a>
                 <a href="{{ route('pembeli-web.pesanan.index') }}" class="btn btn-plain px-4"><i class="bi bi-arrow-left me-1"></i> Kembali</a>
             </div>
         </div>
@@ -249,9 +263,9 @@
     @if($pesanan->status === 'dibatalkan')
         <div class="alert alert-danger alert-shop mb-4"><i class="bi bi-x-circle me-2"></i> Pesanan ini sudah dibatalkan. Produk yang belum diproses dikembalikan ke stok toko.</div>
     @elseif($payment?->status === 'ditolak')
-        <div class="alert alert-warning alert-shop mb-4"><i class="bi bi-exclamation-triangle me-2"></i> Bukti transfer ditolak. {{ $payment->catatan_admin ? 'Catatan admin: ' . $payment->catatan_admin : 'Silakan upload ulang bukti transfer yang benar.' }}</div>
+        <div class="alert alert-warning alert-shop mb-4"><i class="bi bi-exclamation-triangle me-2"></i> Bukti transfer ditolak. {{ $payment->catatan_admin ?: 'Upload ulang bukti transfer.' }}</div>
     @elseif($payment?->metode_pembayaran === 'transfer_bank' && ! $hasProof)
-        <div class="alert alert-warning alert-shop mb-4"><i class="bi bi-bank me-2"></i> Pesanan sudah dibuat. Silakan transfer dan upload bukti pembayaran agar toko dapat memeriksa pesanan.</div>
+        <div class="alert alert-warning alert-shop mb-4"><i class="bi bi-bank me-2"></i> Menunggu bukti pembayaran.</div>
     @endif
 
     <div class="row g-4 align-items-start">
@@ -361,6 +375,9 @@
                                             @else
                                                 Pesanan diambil langsung setelah toko menyiapkan produk.<br>
                                                 Lokasi toko: <strong class="text-dark">{{ $pengiriman?->alamat_toko ?: ($pengaturan->alamat ?: 'Belum diatur') }}</strong>
+                                                @if($storeMapsUrl)
+                                                    <br><a href="{{ $storeMapsUrl }}" target="_blank" rel="noopener" class="btn btn-soft-brand btn-sm px-3 mt-2"><i class="bi bi-map me-1"></i>Buka di Google Maps</a>
+                                                @endif
                                             @endif
                                         </div>
                                     </div>
@@ -402,18 +419,22 @@
                     @if($payment?->metode_pembayaran === 'transfer_bank')
                         <div class="proof-upload-box mb-3" id="upload-bukti">
                             <div class="fw-black mb-2"><i class="bi bi-bank text-brand me-1"></i> Rekening toko</div>
-                            <div class="bank-mini-card mb-3">
-                                <div class="bank-mini-icon"><i class="bi bi-credit-card-2-front"></i></div>
-                                <div class="min-w-0">
-                                    <div class="bank-mini-label">{{ $bankNama }}</div>
-                                    <div class="bank-mini-number js-bank-number">{{ $bankNomor }}</div>
-                                    <div class="small text-muted fw-semibold">Atas nama {{ $bankAtasNama }}</div>
-                                </div>
-                                <button type="button" class="btn btn-soft-brand btn-sm js-copy-bank" data-copy="{{ $bankNomor }}"><i class="bi bi-copy me-1"></i> Salin</button>
+                            <div class="d-grid gap-2 mb-3">
+                                @foreach($rekeningList as $rekening)
+                                    <div class="bank-mini-card">
+                                        <div class="bank-mini-icon"><i class="bi bi-credit-card-2-front"></i></div>
+                                        <div class="min-w-0">
+                                            <div class="bank-mini-label">{{ $rekening->nama_bank }}</div>
+                                            <div class="bank-mini-number js-bank-number">{{ $rekening->nomor_rekening }}</div>
+                                            <div class="small text-muted fw-semibold">Atas nama {{ $rekening->atas_nama }}</div>
+                                        </div>
+                                        <button type="button" class="btn btn-soft-brand btn-sm js-copy-bank" data-copy="{{ $rekening->nomor_rekening }}"><i class="bi bi-copy me-1"></i> Salin</button>
+                                    </div>
+                                @endforeach
                             </div>
 
                             @if($payment?->catatan_admin)
-                                <div class="alert alert-warning py-2 px-3 small fw-semibold mb-3">Catatan admin: {{ $payment->catatan_admin }}</div>
+                                <div class="alert alert-warning py-2 px-3 small fw-semibold mb-3">Catatan: {{ $payment->catatan_admin }}</div>
                             @endif
 
                             @if($hasProof)
@@ -438,13 +459,13 @@
 
                     <div class="d-grid gap-2">
                         @if($pesanan->status === 'menunggu_pembayaran')
-                            <form action="{{ route('pembeli-web.pesanan.cancel', $pesanan->nomor_invoice) }}" method="POST" onsubmit="return confirm('Batalkan pesanan ini?')">
+                            <form action="{{ route('pembeli-web.pesanan.cancel', $pesanan->nomor_invoice) }}" method="POST" data-confirm-title="Batalkan Pesanan" data-confirm-message="Yakin ingin membatalkan pesanan {{ $pesanan->nomor_invoice }}?" data-confirm-button="Batalkan">
                                 @csrf @method('PATCH')
                                 <button class="btn btn-plain text-danger w-100 py-3" type="submit">Batalkan Pesanan</button>
                             </form>
                         @endif
                         @if(in_array($pesanan->status, ['siap_diambil', 'dalam_pengantaran'], true))
-                            <form action="{{ route('pembeli-web.pesanan.confirm-received', $pesanan->nomor_invoice) }}" method="POST" onsubmit="return confirm('Konfirmasi pesanan sudah diterima?')">
+                            <form action="{{ route('pembeli-web.pesanan.confirm-received', $pesanan->nomor_invoice) }}" method="POST" data-confirm-title="Konfirmasi Pesanan Diterima" data-confirm-message="Konfirmasi bahwa pesanan {{ $pesanan->nomor_invoice }} telah diterima." data-confirm-button="Ya, Pesanan Diterima">
                                 @csrf @method('PATCH')
                                 <button class="btn btn-brand w-100 py-3" type="submit">Pesanan Sudah Diterima</button>
                             </form>
@@ -464,21 +485,25 @@
                 <div class="modal-header px-4 py-3 border-0" style="background: linear-gradient(180deg, #fff8ea, #fff);">
                     <div>
                         <h5 class="modal-title fw-black" id="uploadProofModalLabel"><i class="bi bi-bank2 text-brand me-2"></i> Upload bukti transfer</h5>
-                        <div class="small text-muted fw-semibold mt-1">Transfer sesuai total bayar, lalu kirim bukti agar admin dapat memeriksa pembayaran.</div>
+                        <div class="small text-muted fw-semibold mt-1">Transfer sesuai total pembayaran.</div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
                 <form action="{{ route('pembeli-web.pesanan.bukti-transfer', $pesanan->nomor_invoice) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-body p-4">
-                        <div class="bank-mini-card mb-3">
-                            <div class="bank-mini-icon"><i class="bi bi-credit-card-2-front"></i></div>
-                            <div class="min-w-0">
-                                <div class="bank-mini-label">{{ $bankNama }}</div>
-                                <div class="bank-mini-number js-modal-bank-number">{{ $bankNomor }}</div>
-                                <div class="small text-muted fw-semibold">Atas nama {{ $bankAtasNama }}</div>
-                            </div>
-                            <button type="button" class="btn btn-soft-brand btn-sm js-copy-bank" data-copy="{{ $bankNomor }}"><i class="bi bi-copy me-1"></i> Salin</button>
+                        <div class="d-grid gap-2 mb-3">
+                            @foreach($rekeningList as $rekening)
+                                <div class="bank-mini-card">
+                                    <div class="bank-mini-icon"><i class="bi bi-credit-card-2-front"></i></div>
+                                    <div class="min-w-0">
+                                        <div class="bank-mini-label">{{ $rekening->nama_bank }}</div>
+                                        <div class="bank-mini-number js-modal-bank-number">{{ $rekening->nomor_rekening }}</div>
+                                        <div class="small text-muted fw-semibold">Atas nama {{ $rekening->atas_nama }}</div>
+                                    </div>
+                                    <button type="button" class="btn btn-soft-brand btn-sm js-copy-bank" data-copy="{{ $rekening->nomor_rekening }}"><i class="bi bi-copy me-1"></i> Salin</button>
+                                </div>
+                            @endforeach
                         </div>
                         <div class="d-flex justify-content-between align-items-end gap-3 rounded-4 bg-white border p-3 mb-3">
                             <span class="text-muted fw-bold">Total transfer</span>

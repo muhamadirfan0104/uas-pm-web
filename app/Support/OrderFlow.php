@@ -10,7 +10,6 @@ class OrderFlow
 {
     public const ORDER_WAITING_PAYMENT = 'menunggu_pembayaran';
     public const ORDER_WAITING_VERIFICATION = 'menunggu_verifikasi';
-    public const ORDER_WAITING_CONFIRMATION = 'menunggu_konfirmasi';
     public const ORDER_PROCESSING = 'diproses';
     public const ORDER_PREPARED = 'disiapkan';
     public const ORDER_READY_PICKUP = 'siap_diambil';
@@ -73,10 +72,6 @@ class OrderFlow
         }
 
         return match ($order->status) {
-            self::ORDER_WAITING_CONFIRMATION => self::canEnterOrderWork($order)
-                ? self::ORDER_PROCESSING
-                : null,
-
             self::ORDER_PROCESSING => self::ORDER_PREPARED,
 
             self::ORDER_PREPARED => $order->metode_pengambilan === 'kurir_toko'
@@ -132,14 +127,10 @@ class OrderFlow
             return;
         }
 
-        if ($targetStatus === self::ORDER_WAITING_CONFIRMATION && self::isPaid($order)) {
-            return;
-        }
-
         $next = self::nextOrderStatus($order);
 
         if ($targetStatus !== $next) {
-            throw new RuntimeException('Status pesanan harus mengikuti alur: menunggu konfirmasi, diproses, disiapkan, siap diambil atau dalam pengantaran, lalu selesai.');
+            throw new RuntimeException('Status pesanan harus mengikuti alur: diproses, disiapkan, siap diambil atau dalam pengantaran, lalu selesai.');
         }
 
         if (
@@ -210,7 +201,6 @@ class OrderFlow
         }
 
         $base = array_merge($base, [
-            self::ORDER_WAITING_CONFIRMATION,
             self::ORDER_PROCESSING,
             self::ORDER_PREPARED,
         ]);

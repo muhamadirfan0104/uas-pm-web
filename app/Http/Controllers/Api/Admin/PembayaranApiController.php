@@ -21,7 +21,7 @@ class PembayaranApiController extends Controller
     public function updateStatus(Request $request, Pembayaran $pembayaran): JsonResponse
     {
         abort_unless($request->user()->role === 'admin', 403);
-        $data = $request->validate(['status' => ['required', Rule::in(['menunggu_pembayaran','dibayar','gagal','kedaluwarsa','dibatalkan'])]]);
+        $data = $request->validate(['status' => ['required', Rule::in(['menunggu_pembayaran','menunggu_verifikasi','dibayar','ditolak','dibatalkan'])]]);
         $pembayaran->update(['status' => $data['status'], 'dibayar_pada' => $data['status'] === 'dibayar' ? now() : $pembayaran->dibayar_pada]);
         $pembayaran->pesanan?->update(['status_pembayaran' => $data['status'], 'status' => $data['status'] === 'dibayar' ? 'dibayar' : $pembayaran->pesanan->status]);
         return response()->json(['success' => true, 'message' => 'Status pembayaran diperbarui.', 'data' => $pembayaran->fresh('pesanan')]);

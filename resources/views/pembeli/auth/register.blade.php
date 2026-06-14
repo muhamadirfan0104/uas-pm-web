@@ -26,12 +26,12 @@
                     <div class="position-relative" style="z-index:1;">
                         <span class="badge rounded-pill mb-3" style="background: rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.18);">Daftar pembeli</span>
                         <h1 class="section-heading text-white display-6 mb-3">Akun baru untuk belanja lebih mudah.</h1>
-                        <p class="mb-0" style="color: rgba(255,255,255,.78); line-height: 1.75;">Setelah daftar, Anda langsung masuk sebagai pembeli dan produk di keranjang tetap aman untuk dilanjutkan ke checkout.</p>
+                        
                     </div>
                     <div>
-                        <div class="benefit-row"><i class="bi bi-person-check"></i><div><div class="fw-bold">Checkout lebih cepat</div><small style="color:rgba(255,255,255,.72);">Data kontak tersimpan untuk pesanan berikutnya.</small></div></div>
-                        <div class="benefit-row"><i class="bi bi-geo-alt"></i><div><div class="fw-bold">Simpan alamat</div><small style="color:rgba(255,255,255,.72);">Mudah memilih alamat saat memakai kurir toko.</small></div></div>
-                        <div class="benefit-row"><i class="bi bi-stars"></i><div><div class="fw-bold">Ulas produk</div><small style="color:rgba(255,255,255,.72);">Bagikan pengalaman setelah pesanan selesai.</small></div></div>
+                        <div class="benefit-row"><i class="bi bi-person-check"></i><div><div class="fw-bold">Checkout</div></div></div>
+                        <div class="benefit-row"><i class="bi bi-geo-alt"></i><div><div class="fw-bold">Alamat</div></div></div>
+                        <div class="benefit-row"><i class="bi bi-stars"></i><div><div class="fw-bold">Ulasan</div></div></div>
                     </div>
                 </div>
             </div>
@@ -40,7 +40,7 @@
                     <div class="mb-4">
                         <a href="{{ route('pembeli-web.home') }}" class="text-decoration-none text-brand fw-bold"><i class="bi bi-arrow-left me-1"></i> Kembali ke beranda</a>
                         <h2 class="section-heading h1 mt-3 mb-2">Buat akun pembeli.</h2>
-                        <p class="text-muted mb-0">Isi data dengan benar agar proses checkout dan konfirmasi pesanan lebih lancar.</p>
+                        <p class="text-muted mb-0"></p>
                     </div>
 
                     <form action="{{ route('pembeli-web.register.post') }}" method="POST" class="d-grid gap-3">

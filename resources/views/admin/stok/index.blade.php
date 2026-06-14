@@ -42,7 +42,7 @@
     <div>
         <span class="chip c-yellow mb-3"><i class="bi bi-boxes"></i> Kontrol stok</span>
         <h1>Stok produk</h1>
-        <p>Pantau stok aktual dan perbarui pergerakan barang dari satu halaman.</p>
+        <p>Data stok produk.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap justify-content-lg-end">
         <a href="{{ route('admin.produk.index') }}" class="btn btn-light border"><i class="bi bi-basket2 me-1"></i> Katalog Produk</a>
@@ -180,7 +180,7 @@
             <div class="modal-header border-0 px-4 pt-4">
                 <div>
                     <h5 class="modal-title fw-black">Riwayat pergerakan stok</h5>
-                    <p class="text-muted small mb-0">Lihat catatan stok masuk, stok keluar, dan penyesuaian.</p>
+                    <p class="text-muted small mb-0">Mutasi stok.</p>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
@@ -230,7 +230,7 @@
                                     <strong>{{ $log->produk->nama ?? 'Produk dihapus' }}</strong>
                                     <span class="text-muted small">{{ $log->created_at?->format('d M Y H:i') }}</span>
                                 </div>
-                                <div class="text-muted small mt-1">{{ $log->catatan ?: 'Tidak ada catatan tambahan.' }}</div>
+                                <div class="text-muted small mt-1">{{ $log->catatan ?: '-' }}</div>
                             </div>
                             <div class="text-end fw-black {{ $log->perubahan < 0 ? 'text-danger' : 'text-success' }}">
                                 {{ $log->perubahan > 0 ? '+' : '' }}{{ $log->perubahan }}
@@ -281,7 +281,7 @@
                     </div>
                     <div>
                         <label class="form-label small fw-bold text-muted">Catatan</label>
-                        <textarea class="form-control" name="catatan" rows="3" placeholder="Contoh: restock pagi, koreksi opname, produk rusak, dan lainnya"></textarea>
+                        <textarea class="form-control" name="catatan" rows="3" placeholder="Catatan stok"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-0 bg-light px-4 py-3">

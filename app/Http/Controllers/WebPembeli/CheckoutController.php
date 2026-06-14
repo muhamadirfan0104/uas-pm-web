@@ -55,7 +55,7 @@ class CheckoutController extends Controller
 
         return redirect()
             ->route('pembeli-web.keranjang.index')
-            ->with('success', $produk->nama . ' sudah dipilih. Lanjutkan checkout dari keranjang.');
+            ->with('success', $produk->nama . ' sudah dipilih. Lanjutkan checkout.');
     }
 
     public function index(Request $request): View|RedirectResponse
@@ -68,12 +68,12 @@ class CheckoutController extends Controller
 
                 return redirect()
                     ->route('pembeli-web.produk')
-                    ->with('error', 'Produk yang dipilih sudah tidak tersedia. Pilih produk lain terlebih dahulu.');
+                    ->with('error', 'Produk tidak tersedia.');
             }
 
             return redirect()
                 ->route('pembeli-web.keranjang.index')
-                ->with('error', 'Keranjang masih kosong. Pilih produk dulu ya.');
+                ->with('error', 'Keranjang masih kosong.');
         }
 
         $pengaturan = PengaturanToko::utama();
@@ -109,7 +109,7 @@ class CheckoutController extends Controller
         if ($dataCheckout['items']->isEmpty()) {
             return redirect()
                 ->route($dataCheckout['checkoutMode'] === 'buy_now' ? 'pembeli-web.produk' : 'pembeli-web.keranjang.index')
-                ->with('error', 'Tidak ada produk yang bisa di-checkout. Pilih produk terlebih dahulu.');
+                ->with('error', 'Tidak ada produk untuk checkout.');
         }
 
         $data = $request->validate([
@@ -119,9 +119,9 @@ class CheckoutController extends Controller
             'catatan' => ['nullable', 'string', 'max:500'],
             'setuju' => ['accepted'],
         ], [
-            'alamat_id.required' => 'Pilih alamat penerima terlebih dahulu.',
+            'alamat_id.required' => 'Alamat penerima wajib dipilih.',
             'alamat_id.exists' => 'Alamat yang dipilih tidak valid.',
-            'setuju.accepted' => 'Kamu perlu menyetujui pesanan sebelum checkout.',
+            'setuju.accepted' => 'Persetujuan pesanan wajib dicentang.',
         ]);
 
         try {
@@ -130,7 +130,7 @@ class CheckoutController extends Controller
                 $user = Auth::user();
 
                 if (! $user || $user->role !== 'pembeli') {
-                    throw new \RuntimeException('Silakan login sebagai pembeli dulu.');
+                    throw new \RuntimeException('Login pembeli diperlukan.');
                 }
 
                 $user->update([
@@ -221,7 +221,7 @@ class CheckoutController extends Controller
 
                 if ($metodePembayaran === 'cod') {
                     $pesanan->update([
-                        'status' => 'menunggu_konfirmasi',
+                        'status' => 'diproses',
                         'status_pembayaran' => 'menunggu_pembayaran',
                     ]);
                 }
@@ -282,7 +282,7 @@ class CheckoutController extends Controller
         } catch (\Throwable $e) {
             return back()
                 ->withInput()
-                ->with('error', $e->getMessage() ?: 'Checkout gagal. Coba ulangi lagi ya.');
+                ->with('error', $e->getMessage() ?: 'Checkout gagal.');
         }
     }
 
@@ -386,11 +386,9 @@ class CheckoutController extends Controller
     {
         $tarifPerKm = max(0, (float) ($pengaturan->tarif_per_km ?? 0));
         $minimum = max(0, (float) ($pengaturan->biaya_minimum_pengiriman ?? 0));
-        $radius = (float) ($pengaturan->radius_maksimal_km ?? 0);
-
         if (! $alamat) {
             if ($strict) {
-                throw new \RuntimeException('Pilih alamat penerima terlebih dahulu.');
+                throw new \RuntimeException('Alamat penerima wajib dipilih.');
             }
             return ['jarak' => null, 'biaya' => $minimum];
         }
@@ -402,20 +400,13 @@ class CheckoutController extends Controller
 
         if ($storeLat === null || $storeLng === null || $destLat === null || $destLng === null) {
             if ($strict) {
-                throw new \RuntimeException('Titik lokasi toko atau alamat penerima belum lengkap. Pilih titik lokasi di maps terlebih dahulu.');
+                throw new \RuntimeException('Titik lokasi belum lengkap.');
             }
             return ['jarak' => null, 'biaya' => $minimum];
         }
 
         $jarak = $this->haversineKm((float) $storeLat, (float) $storeLng, (float) $destLat, (float) $destLng);
-
-        if ($radius > 0 && $jarak > $radius) {
-            if ($strict) {
-                throw new \RuntimeException('Alamat berada di luar radius pengiriman toko. Jarak alamat sekitar ' . number_format($jarak, 2, ',', '.') . ' km.');
-            }
-        }
-
-        $biaya = max($minimum, ceil($jarak * $tarifPerKm / 100) * 100);
+$biaya = max($minimum, ceil($jarak * $tarifPerKm / 100) * 100);
 
         return [
             'jarak' => round($jarak, 2),

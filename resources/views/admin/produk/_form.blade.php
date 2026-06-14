@@ -23,7 +23,7 @@
             <div class="product-form-body row g-3">
                 <div class="col-12">
                     <label class="form-label-mini">Nama produk</label>
-                    <input class="form-control" name="nama" value="{{ old('nama', $produk->nama) }}" placeholder="Contoh: Tahu Sumedang Mini 25 pcs" required>
+                    <input class="form-control" name="nama" value="{{ old('nama', $produk->nama) }}" placeholder="Nama produk" required>
                 </div>
                 <div class="col-12">
                     <label class="form-label-mini">Deskripsi produk</label>
@@ -51,7 +51,7 @@
         <div class="product-form-card h-100">
             <div class="product-form-head">
                 <strong>Foto utama</strong>
-                <span>Gunakan foto produk yang jelas agar katalog terlihat profesional.</span>
+                <span></span>
             </div>
             <div class="product-form-body">
                 @if($produk->exists && $produk->gambarUtama)
@@ -79,7 +79,7 @@
         <div class="product-form-card">
             <div class="product-form-head">
                 <strong>Harga dan satuan jual</strong>
-                <span>Informasi ini dipakai untuk katalog, keranjang, dan checkout pembeli.</span>
+                <span></span>
             </div>
             <div class="product-form-body row g-3">
                 <div class="col-md-6">
@@ -115,16 +115,16 @@
         <div class="product-form-card">
             <div class="product-form-head">
                 <strong>Penyimpanan dan penyajian</strong>
-                <span>Gunakan kalimat singkat yang membantu pembeli memahami produk.</span>
+                <span></span>
             </div>
             <div class="product-form-body row g-3">
                 <div class="col-md-6">
                     <label class="form-label-mini">Saran penyimpanan</label>
-                    <input class="form-control" name="saran_penyimpanan" value="{{ old('saran_penyimpanan', $produk->saran_penyimpanan) }}" placeholder="Contoh: Simpan di chiller agar tetap segar">
+                    <input class="form-control" name="saran_penyimpanan" value="{{ old('saran_penyimpanan', $produk->saran_penyimpanan) }}" placeholder="Saran penyimpanan">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label-mini">Saran penyajian</label>
-                    <input class="form-control" name="saran_penyajian" value="{{ old('saran_penyajian', $produk->saran_penyajian) }}" placeholder="Contoh: Cocok digoreng atau dimasak berkuah">
+                    <input class="form-control" name="saran_penyajian" value="{{ old('saran_penyajian', $produk->saran_penyajian) }}" placeholder="Saran penyajian">
                 </div>
             </div>
         </div>

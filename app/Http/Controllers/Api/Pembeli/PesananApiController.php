@@ -62,7 +62,7 @@ class PesananApiController extends Controller
             'items.*.jumlah' => ['required', 'integer', 'min:1'],
             'metode_pengambilan' => ['required', Rule::in(['ambil_toko', 'kurir_toko'])],
             'alamat_pengiriman_id' => ['nullable', 'exists:alamat,id'],
-            'metode_pembayaran' => ['required', Rule::in(['cod', 'transfer_bank', 'tunai', 'qris'])],
+            'metode_pembayaran' => ['required', Rule::in(['cod', 'transfer_bank'])],
         ]);
 
         $user = $request->user();
@@ -115,12 +115,6 @@ class PesananApiController extends Controller
 
                 $tarifPerKm = (float) ($store->tarif_per_km ?? 0);
                 $biayaMinimum = (float) ($store->biaya_minimum_pengiriman ?? 0);
-                $radiusMaksimal = (float) ($store->radius_maksimal_km ?? 0);
-
-                if ($radiusMaksimal > 0 && $jarakKm > $radiusMaksimal) {
-                    abort(422, 'Alamat berada di luar radius layanan kurir toko.');
-                }
-
                 $ongkirHitung = $jarakKm * $tarifPerKm;
                 $ongkir = max($ongkirHitung, $biayaMinimum);
             }
@@ -128,8 +122,8 @@ class PesananApiController extends Controller
             $total = $subtotal + $ongkir;
             $metodePembayaran = $data['metode_pembayaran'];
 
-            $statusPesanan = in_array($metodePembayaran, ['cod', 'tunai'], true)
-                ? 'menunggu_konfirmasi'
+            $statusPesanan = $metodePembayaran === 'cod'
+                ? 'diproses'
                 : 'menunggu_pembayaran';
 
             $pesanan = Pesanan::create([
@@ -171,7 +165,7 @@ class PesananApiController extends Controller
                 'jumlah' => $total,
                 'status' => 'menunggu_pembayaran',
                 'tautan_pembayaran' => null,
-                'qr_code' => $metodePembayaran === 'qris'
+                'qr_code' => false
                     ? 'QR-'.$pesanan->nomor_invoice
                     : null,
                 'bukti_transfer' => null,
@@ -210,7 +204,7 @@ class PesananApiController extends Controller
         $data = $request->validate([
             'metode_pengambilan' => ['required', Rule::in(['ambil_toko', 'kurir_toko'])],
             'alamat_pengiriman_id' => ['nullable', 'exists:alamat,id'],
-            'metode_pembayaran' => ['required', Rule::in(['cod', 'transfer_bank', 'tunai', 'qris'])],
+            'metode_pembayaran' => ['required', Rule::in(['cod', 'transfer_bank'])],
             'setuju_pesanan' => ['nullable'],
         ]);
 
@@ -247,7 +241,7 @@ class PesananApiController extends Controller
     {
         abort_unless($pesanan->user_id === $request->user()->id, 403);
 
-        if (! in_array($pesanan->status, ['menunggu_pembayaran', 'menunggu_verifikasi', 'menunggu_konfirmasi'], true)) {
+        if (! in_array($pesanan->status, ['menunggu_pembayaran', 'menunggu_verifikasi'], true)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Pesanan tidak bisa dibatalkan karena sudah masuk proses toko.',
@@ -316,7 +310,7 @@ class PesananApiController extends Controller
 
             $isBayarDiTempat = in_array(
                 $pesanan->pembayaran?->metode_pembayaran,
-                ['cod', 'tunai'],
+                ['cod'],
                 true
             );
 
@@ -337,7 +331,7 @@ class PesananApiController extends Controller
                     'dibayar_pada' => now(),
                     'diverifikasi_pada' => now(),
                     'catatan_admin' => $pesanan->pembayaran->catatan_admin
-                        ?: 'Pembayaran COD/Tunai dikonfirmasi saat pembeli menerima pesanan.',
+                        ?: 'Pembayaran COD dikonfirmasi saat pembeli menerima pesanan.',
                 ]);
             }
         });

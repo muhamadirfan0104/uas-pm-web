@@ -9,7 +9,6 @@
 @php
     $methodLabel = fn($method) => match($method) {
         'transfer_bank' => 'Transfer Bank',
-        'cod' => 'COD',
         default => strtoupper((string) $method),
     };
 
@@ -28,7 +27,7 @@
         <h1 class="ops-title">Pembayaran</h1>
         <p class="ops-subtitle">
             Menu ini menampilkan pembayaran yang masih perlu tindakan:
-            transfer belum upload, transfer perlu verifikasi, transfer ditolak, dan COD aktif.
+            transfer belum upload, transfer perlu verifikasi, dan transfer yang ditolak. COD tidak tampil di menu ini.
         </p>
     </div>
 </div>
@@ -49,14 +48,10 @@
     <a class="ops-tab {{ $tab === 'ditolak' ? 'active' : '' }}" href="{{ route('admin.pembayaran.index', ['tab' => 'ditolak']) }}">
         Ditolak <b>{{ $stats['ditolak'] ?? 0 }}</b>
     </a>
-
-    <a class="ops-tab {{ $tab === 'cod' ? 'active' : '' }}" href="{{ route('admin.pembayaran.index', ['tab' => 'cod']) }}">
-        COD <b>{{ $stats['cod'] ?? 0 }}</b>
-    </a>
 </div>
 
 <div class="ops-filter-card compact">
-    <form id="page-filter" class="js-instant-filter" method="GET">
+    <form id="page-filter" method="GET">
         @if($tab !== 'semua')
             <input type="hidden" name="tab" value="{{ $tab }}">
         @endif
@@ -87,7 +82,6 @@
                 <select class="ops-control" name="metode">
                     <option value="">Semua</option>
                     <option value="transfer_bank" @selected(request('metode') === 'transfer_bank')>Transfer</option>
-                    <option value="cod" @selected(request('metode') === 'cod')>COD</option>
                 </select>
             </div>
 
@@ -111,6 +105,7 @@
             </div>
 
             <div class="ops-filter-actions">
+                <button class="ops-btn-apply" type="submit"><i class="bi bi-funnel"></i> Terapkan</button>
                 <a href="{{ route('admin.pembayaran.index') }}" class="ops-btn-reset">
                     <i class="bi bi-x-circle"></i> Reset
                 </a>
@@ -188,8 +183,8 @@
 
                         <td>
                             <span class="ops-pill">
-                                <i class="bi {{ $pay->metode_pembayaran === 'cod' ? 'bi-cash-coin text-success' : 'bi-bank text-primary' }}"></i>
-                                {{ $methodLabel($pay->metode_pembayaran) }}
+                                <i class="bi bi-bank text-primary"></i>
+                                Transfer Bank
                             </span>
 
                             <span class="ops-muted">
@@ -241,34 +236,6 @@
                                 >
                                     <i class="bi bi-eye"></i> Detail
                                 </button>
-
-                                @if(in_array($pay->metode_pembayaran, ['cod', 'tunai'], true) && $order)
-                                    <a
-                                        href="{{ route('admin.pesanan.show', $order) }}"
-                                        class="small-btn"
-                                    >
-                                        <i class="bi bi-arrow-right-circle"></i> Kelola Pesanan
-                                    </a>
-
-                                    @if($pay->status !== 'dibayar')
-                                        <form
-                                            method="POST"
-                                            action="{{ route('admin.pembayaran.status', $pay) }}"
-                                            data-confirm-title="Tandai Pembayaran COD/Tunai"
-                                            data-confirm-message="Tandai pembayaran invoice {{ $order->nomor_invoice }} sebagai dibayar?"
-                                            data-confirm-button="Tandai Dibayar"
-                                        >
-                                            @csrf
-                                            @method('PATCH')
-
-                                            <input type="hidden" name="status" value="dibayar">
-
-                                            <button type="submit" class="small-btn text-success">
-                                                <i class="bi bi-check-circle"></i> Tandai Dibayar
-                                            </button>
-                                        </form>
-                                    @endif
-                                @endif
                             </div>
                         </td>
                     </tr>
@@ -310,49 +277,6 @@
                 </div>
 
                 <div class="modal-body modal-body-soft">
-                    @if(in_array($pay->metode_pembayaran, ['cod', 'tunai'], true))
-                    <div class="alert alert-warning rounded-4 fw-bold mb-3">
-                        <i class="bi bi-cash-coin me-1"></i>
-                        Pembayaran COD/Tunai belum perlu diverifikasi di awal. Lanjutkan pesanan melalui tombol
-                        <strong>Kelola Pesanan</strong>. Pembayaran akan menjadi <strong>Dibayar</strong>
-                        ketika pesanan selesai atau pembeli mengonfirmasi pesanan diterima.
-                        Jika pesanan lama sudah selesai tetapi pembayaran masih belum bayar,
-                        admin dapat menekan tombol <strong>Tandai Dibayar</strong>.
-                    </div>
-
-                    <div class="d-flex gap-2 flex-wrap mb-3">
-                        @if($order)
-                            <a
-                                href="{{ route('admin.pesanan.show', $order) }}"
-                                class="btn btn-brand rounded-4 fw-bold"
-                            >
-                                <i class="bi bi-arrow-right-circle me-1"></i>
-                                Kelola Pesanan COD/Tunai
-                            </a>
-                        @endif
-
-                        @if($pay->status !== 'dibayar')
-                            <form
-                                method="POST"
-                                action="{{ route('admin.pembayaran.status', $pay) }}"
-                                data-confirm-title="Tandai Pembayaran COD/Tunai"
-                                data-confirm-message="Tandai pembayaran invoice {{ $order?->nomor_invoice ?? '-' }} sebagai dibayar?"
-                                data-confirm-button="Tandai Dibayar"
-                            >
-                                @csrf
-                                @method('PATCH')
-
-                                <input type="hidden" name="status" value="dibayar">
-
-                                <button type="submit" class="btn btn-success rounded-4 fw-bold">
-                                    <i class="bi bi-check-circle me-1"></i>
-                                    Tandai Dibayar
-                                </button>
-                            </form>
-                        @endif
-                    </div>
-                @endif
-
                     <div class="row g-3">
                         <div class="col-md-6">
                             <div class="ops-info-box">
@@ -515,7 +439,7 @@
 
                     <div class="modal-body">
                         <p class="fw-bold mb-3">
-                            Pesanan akan masuk ke tahap menunggu konfirmasi toko.
+                            Pesanan otomatis masuk ke tahap diproses.
                         </p>
 
                         <label class="form-label-modern">Catatan admin</label>
@@ -553,7 +477,7 @@
                             rows="4"
                             class="form-control form-control-modern"
                             required
-                            placeholder="Contoh: nominal tidak sesuai atau gambar kurang jelas"
+                            placeholder="Catatan penolakan"
                         ></textarea>
                     </div>
 

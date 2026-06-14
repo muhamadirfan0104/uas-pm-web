@@ -22,38 +22,21 @@ class PembayaranController extends Controller
         | 1. Transfer belum upload bukti.
         | 2. Transfer sudah upload dan perlu dicek.
         | 3. Transfer ditolak.
-        | 4. COD/Tunai yang belum dibayar.
-        |
-        | Catatan penting:
-        | Jangan exclude pesanan selesai, karena bisa saja ada data lama:
-        | pesanan sudah selesai tapi pembayaran COD/Tunai masih belum dibayar.
-        | Kasus seperti itu tetap harus muncul di menu Pembayaran supaya bisa dibereskan.
+        | Menu Pembayaran operasional khusus transfer bank.
+        | COD tidak ditampilkan di sini karena dibayar saat ambil/kirim.
+        | Arsip COD tetap ada di Semua Pesanan dan Laporan Pembayaran.
         */
         $activePayment = function ($query) {
             $query
+                ->where('metode_pembayaran', 'transfer_bank')
                 ->whereHas('pesanan', function ($order) {
-                    $order->where('status', '!=', 'dibatalkan');
+                    $order->whereNotIn('status', ['selesai', 'dibatalkan']);
                 })
-                ->where(function ($payment) {
-                    $payment
-                        ->where(function ($transfer) {
-                            $transfer
-                                ->where('metode_pembayaran', 'transfer_bank')
-                                ->whereIn('status', [
-                                    'menunggu_pembayaran',
-                                    'menunggu_verifikasi',
-                                    'ditolak',
-                                ]);
-                        })
-                        ->orWhere(function ($cod) {
-                            $cod
-                                ->whereIn('metode_pembayaran', [
-                                    'cod',
-                                    'tunai',
-                                ])
-                                ->where('status', '!=', 'dibayar');
-                        });
-                });
+                ->whereIn('status', [
+                    'menunggu_pembayaran',
+                    'menunggu_verifikasi',
+                    'ditolak',
+                ]);
         };
 
         $query = Pembayaran::query()
@@ -108,13 +91,6 @@ class PembayaranController extends Controller
                 'ditolak' => $query
                     ->where('status', 'ditolak'),
 
-                'cod' => $query
-                    ->whereIn('metode_pembayaran', [
-                        'cod',
-                        'tunai',
-                    ])
-                    ->where('status', '!=', 'dibayar'),
-
                 default => null,
             };
         }
@@ -126,14 +102,7 @@ class PembayaranController extends Controller
         if ($request->filled('metode')) {
             $metode = $request->metode;
 
-            if ($metode === 'cod') {
-                $query->whereIn('metode_pembayaran', [
-                    'cod',
-                    'tunai',
-                ]);
-            } else {
-                $query->where('metode_pembayaran', $metode);
-            }
+            $query->where('metode_pembayaran', $metode);
         }
 
         if ($request->filled('bukti')) {
@@ -190,14 +159,6 @@ class PembayaranController extends Controller
                 ->where('status', 'ditolak')
                 ->count(),
 
-            'cod' => (clone $base)
-                ->whereIn('metode_pembayaran', [
-                    'cod',
-                    'tunai',
-                ])
-                ->where('status', '!=', 'dibayar')
-                ->count(),
-
             'nominal_menunggu' => (clone $base)
                 ->sum('jumlah'),
         ];
@@ -227,12 +188,12 @@ class PembayaranController extends Controller
             if ($pembayaran->pesanan) {
                 $pembayaran->pesanan->update([
                     'status_pembayaran' => 'dibayar',
-                    'status' => 'menunggu_konfirmasi',
+                    'status' => 'diproses',
                 ]);
             }
         });
 
-        return back()->with('success', 'Pembayaran diterima. Pesanan masuk ke antrean konfirmasi toko.');
+        return back()->with('success', 'Pembayaran diterima. Pesanan otomatis masuk ke tahap diproses.');
     }
 
     public function tolak(Request $request, Pembayaran $pembayaran): RedirectResponse
@@ -240,7 +201,7 @@ class PembayaranController extends Controller
         $data = $request->validate([
             'catatan_admin' => ['required', 'string', 'max:500'],
         ], [
-            'catatan_admin.required' => 'Catatan penolakan wajib diisi agar pembeli tahu alasan upload ulang.',
+            'catatan_admin.required' => 'Catatan penolakan wajib diisi.',
         ]);
 
         DB::transaction(function () use ($pembayaran, $data) {
@@ -267,7 +228,7 @@ class PembayaranController extends Controller
     public function updateStatus(Request $request, Pembayaran $pembayaran): RedirectResponse
     {
         $data = $request->validate([
-            'status' => ['required', 'in:menunggu_pembayaran,menunggu_verifikasi,dibayar,ditolak,gagal,kedaluwarsa,dibatalkan'],
+            'status' => ['required', 'in:menunggu_pembayaran,menunggu_verifikasi,dibayar,ditolak,dibatalkan'],
             'catatan_admin' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -293,8 +254,8 @@ class PembayaranController extends Controller
                 $pembayaran->pesanan->update([
                     'status_pembayaran' => $status,
                     'status' => match ($status) {
-                        'dibayar' => $statusPesananSekarang === 'menunggu_pembayaran'
-                            ? 'menunggu_konfirmasi'
+                        'dibayar' => in_array($statusPesananSekarang, ['menunggu_pembayaran', 'menunggu_verifikasi'], true)
+                            ? 'diproses'
                             : $statusPesananSekarang,
 
                         'ditolak' => 'menunggu_pembayaran',

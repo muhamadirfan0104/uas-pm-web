@@ -4,7 +4,7 @@
 <div class="page-hero d-flex align-items-start justify-content-between gap-3">
     <div>
         <h1>Halaman tidak ditemukan</h1>
-        <p>URL admin yang kamu buka tidak tersedia atau sudah dipindahkan. Gunakan menu sidebar untuk kembali ke fitur yang tersedia.</p>
+        <p>Halaman admin yang Anda akses tidak tersedia.</p>
     </div>
     <div class="page-hero d-flex align-items-start justify-content-between gap-3-actions">
         <a class="btn btn-primary" href="{{ route('admin.dashboard') }}">Kembali ke Dashboard</a>
@@ -17,7 +17,7 @@
         <div>
             <h2 style="margin:0 0 8px">URL admin salah</h2>
             <p style="margin:0;color:var(--muted);line-height:1.7">
-                Pastikan alamat halaman benar. Jika kamu baru saja logout, silakan login ulang terlebih dahulu.
+                Kembali ke dashboard atau masuk ulang ke akun admin.
             </p>
             <div class="actions" style="margin-top:18px">
                 <a class="btn btn-outline-secondary" href="{{ route('admin.produk.index') }}">Produk</a>

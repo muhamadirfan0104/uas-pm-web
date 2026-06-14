@@ -262,7 +262,7 @@
 <section class="hero">
     <div>
         <h1>Ulasan</h1>
-        <p>Kelola penilaian pembeli, cek foto/video ulasan, dan sembunyikan komentar yang tidak layak tampil.</p>
+        <p>Data ulasan pembeli.</p>
     </div>
     <a href="{{ route('pembeli-web.ulasan') }}" target="_blank" rel="noopener" class="btn btn-light border fw-bold px-3">
         <i class="bi bi-box-arrow-up-right me-1 text-muted"></i>
@@ -439,7 +439,7 @@
                     <div class="review-empty">
                         <i class="bi bi-chat-square-text fs-1 d-block mb-2"></i>
                         <strong class="d-block text-dark mb-1">Ulasan tidak ditemukan.</strong>
-                        Ubah kata kunci atau filter untuk melihat ulasan lain.
+                        Data tidak ditemukan.
                     </div>
                 </div>
             @endforelse

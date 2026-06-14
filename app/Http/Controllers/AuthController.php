@@ -68,7 +68,7 @@ class AuthController extends Controller
 
             return back()
                 ->withErrors([
-                    'email' => 'Halaman ini hanya untuk akun admin. Silakan gunakan login pembeli untuk akun pembeli.',
+                    'email' => 'Akun tidak memiliki akses admin.',
                 ])
                 ->onlyInput('email');
         }

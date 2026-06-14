@@ -130,7 +130,7 @@ return new class extends Migration
         Schema::create('pembayaran', function (Blueprint $table) {
             $table->id();
             $table->foreignId('pesanan_id')->constrained('pesanan')->cascadeOnDelete();
-            $table->enum('metode_pembayaran', ['qris', 'va', 'ewallet']);
+            $table->enum('metode_pembayaran', ['transfer_bank', 'cod'])->default('transfer_bank');
             $table->string('referensi_pembayaran', 100)->nullable();
             $table->decimal('jumlah', 10, 2);
             $table->enum('status', ['menunggu_pembayaran','dibayar','gagal','kedaluwarsa','dibatalkan'])->default('menunggu_pembayaran');

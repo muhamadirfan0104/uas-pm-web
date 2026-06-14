@@ -206,7 +206,7 @@
 @section('content')
 @php
     $namaToko = $pengaturan->nama ?: 'SiTahu';
-    $tentangToko = $pengaturan->tentang ?: 'Tahu segar berkualitas yang dibuat setiap hari untuk kebutuhan keluarga, usaha kuliner, dan acara.';
+    $tentangToko = $pengaturan->tentang ?: 'Produk tahu segar berkualitas.';
     $teleponToko = $pengaturan->telepon ?: '';
     $nomorWa = preg_replace('/[^0-9]/', '', $teleponToko);
     if ($nomorWa && str_starts_with($nomorWa, '0')) { $nomorWa = '62' . substr($nomorWa, 1); }
@@ -281,7 +281,7 @@
             <div>
                 <span class="eyebrow mb-2"><i class="bi bi-clock-history"></i> Terbaru</span>
                 <h2 class="section-heading h1 mb-1">Baru tersedia di katalog.</h2>
-                <p class="section-subtitle mb-0">Cek pilihan produk terbaru yang bisa dipesan hari ini.</p>
+                <p class="section-subtitle mb-0">Produk terbaru.</p>
             </div>
             <a href="{{ route('pembeli-web.produk', ['sort' => 'terbaru']) }}" class="btn btn-soft-brand px-4">Buka Semua Produk</a>
         </div>

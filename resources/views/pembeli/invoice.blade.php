@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Invoice {{ $pesanan->nomor_invoice }} - SiTahu</title>
+    <title>Struk Pesanan {{ $pesanan->nomor_invoice }} - SiTahu</title>
 
     <style>
         :root {
@@ -326,7 +326,7 @@
 @endphp
 
 <div class="print-actions">
-    <a href="{{ route('admin.pesanan.show', $pesanan) }}" class="btn">
+    <a href="{{ route('pembeli-web.pesanan.show', $pesanan->nomor_invoice) }}" class="btn">
         Kembali
     </a>
 
@@ -350,7 +350,7 @@
         </div>
 
         <div class="invoice-title">
-            <h2>INVOICE</h2>
+            <h2>STRUK PESANAN</h2>
             <p>{{ $pesanan->nomor_invoice }}</p>
         </div>
     </header>
@@ -490,7 +490,7 @@
         </div>
 
         <div class="footer-note">
-            Invoice ini diterbitkan oleh sistem SiTahu.
+            Struk ini diterbitkan oleh sistem SiTahu.
         </div>
     </main>
 </section>

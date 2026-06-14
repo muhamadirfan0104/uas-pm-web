@@ -63,7 +63,7 @@
             </div>
             <span class="eyebrow mb-2"><i class="bi bi-geo-alt-fill"></i> Alamat penerima</span>
             <h1 class="section-heading h2 mb-2">Alamat Saya</h1>
-            <p class="section-subtitle mb-0">Simpan beberapa alamat dengan nama penerima berbeda. Tekan card alamat untuk melihat detail lengkap.</p>
+            <p class="section-subtitle mb-0">Daftar alamat pengiriman.</p>
         </div>
         <a href="{{ route('pembeli-web.alamat.create') }}" class="btn btn-brand px-4 py-3"><i class="bi bi-plus-circle me-2"></i> Tambah Alamat</a>
     </div>
@@ -77,7 +77,7 @@
                     $mapsUrl = $hasCoordinate ? 'https://www.google.com/maps?q=' . $item->latitude . ',' . $item->longitude : null;
                 @endphp
                 <div class="col-lg-6">
-                    <article class="surface-strong p-4 h-100 address-card-clickable" role="button" tabindex="0" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
+                    <article class="surface-strong p-4 h-100 address-card-clickable" role="button" tabindex="0" data-detail-modal="#{{ $modalId }}">
                         <div class="d-flex justify-content-between gap-3 mb-3">
                             <div class="min-w-0">
                                 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
@@ -162,7 +162,7 @@
                                             <div class="address-detail-row text-center py-4">
                                                 <div class="profile-icon mx-auto mb-3"><i class="bi bi-map"></i></div>
                                                 <h3 class="h6 fw-black mb-1">Titik maps belum dipilih</h3>
-                                                <p class="small text-muted fw-semibold mb-3">Edit alamat ini untuk menentukan titik lokasi langsung dari peta.</p>
+                                                <p class="small text-muted fw-semibold mb-3">Edit alamat.</p>
                                                 <a href="{{ route('pembeli-web.alamat.edit', $item) }}" class="btn btn-brand btn-sm px-3">Pilih Titik Maps</a>
                                             </div>
                                         @endif
@@ -182,7 +182,7 @@
         <div class="surface-strong p-4 p-lg-5 text-center">
             <div class="stat-icon mx-auto mb-3"><i class="bi bi-geo-alt"></i></div>
             <h2 class="h3 fw-bold">Belum ada alamat.</h2>
-            <p class="text-muted mb-4">Tambahkan alamat agar checkout lebih cepat.</p>
+            <p class="text-muted mb-4">Belum ada alamat.</p>
             <a href="{{ route('pembeli-web.alamat.create') }}" class="btn btn-brand px-4 py-3">Tambah Alamat</a>
         </div>
     @endif
@@ -193,6 +193,25 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.address-card-clickable[data-detail-modal]').forEach(function (card) {
+            const openDetail = function (event) {
+                if (event.target.closest('a, button, form, input, .address-action-button')) return;
+                const selector = card.dataset.detailModal;
+                const modalEl = selector ? document.querySelector(selector) : null;
+                if (modalEl && window.bootstrap) {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                }
+            };
+
+            card.addEventListener('click', openDetail);
+            card.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openDetail(event);
+                }
+            });
+        });
+
         const initializedMaps = new Set();
         document.querySelectorAll('.modal').forEach(function (modalEl) {
             modalEl.addEventListener('shown.bs.modal', function () {

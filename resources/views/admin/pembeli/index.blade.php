@@ -163,7 +163,7 @@
 <section class="hero">
     <div>
         <h1>Pembeli</h1>
-        <p>Kelola akun pelanggan, lihat aktivitas belanja, dan pantau pelanggan yang sedang punya pesanan aktif.</p>
+        <p>Data akun pembeli.</p>
     </div>
     <a href="{{ route('admin.semua-pesanan.index') }}" class="btn btn-light border fw-bold px-3">
         <i class="bi bi-journal-text me-1 text-muted"></i>
@@ -312,7 +312,7 @@
                         <div class="buyer-empty">
                             <i class="bi bi-people fs-1 d-block mb-2"></i>
                             <strong class="d-block text-dark mb-1">Data pembeli tidak ditemukan.</strong>
-                            Ubah kata kunci atau filter untuk melihat data lain.
+                            Data tidak ditemukan.
                         </div>
                     </td>
                 </tr>

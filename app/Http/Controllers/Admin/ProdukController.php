@@ -88,10 +88,6 @@ class ProdukController extends Controller
 
     public function destroy(Produk $produk): RedirectResponse
     {
-        foreach ($produk->gambar as $gambar) {
-            Storage::disk('public')->delete($gambar->url_gambar);
-        }
-
         $produk->delete();
 
         return back()->with('success', 'Produk berhasil dihapus.');

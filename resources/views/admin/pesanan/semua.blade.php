@@ -2,8 +2,6 @@
 
 @section('title', 'Semua Pesanan - SiTahu')
 @section('page_title', 'Semua Pesanan')
-@section('page_subtitle', 'Arsip semua invoice dari pesanan aktif, selesai, sampai dibatalkan.')
-
 @section('content')
 @include('admin.partials.ops-page-style')
 
@@ -17,7 +15,7 @@
 <div class="ops-page-head compact">
     <div>
         <h1 class="ops-title">Semua Pesanan</h1>
-        <p class="ops-subtitle">Menu ini menjadi arsip utama seluruh invoice. Gunakan halaman ini untuk mencari pesanan lama, melihat detail, dan mencetak invoice.</p>
+        <p class="ops-subtitle">Daftar seluruh pesanan.</p>
     </div>
 </div>
 
@@ -29,17 +27,17 @@
 </div>
 
 <div class="ops-filter-card compact">
-    <form id="page-filter" class="js-instant-filter" method="GET">
+    <form id="page-filter" method="GET">
         @if($tab !== 'semua')<input type="hidden" name="tab" value="{{ $tab }}">@endif
         <div class="ops-filter-grid orders">
             <div class="ops-field"><label class="ops-label">Cari</label><div class="ops-search"><i class="bi bi-search text-muted"></i><input name="q" value="{{ request('q') }}" placeholder="Invoice, pembeli, HP, atau produk"></div></div>
-            <div class="ops-field"><label class="ops-label">Status pesanan</label><select class="ops-control" name="status"><option value="">Semua</option>@foreach(['menunggu_pembayaran','menunggu_verifikasi','menunggu_konfirmasi','diproses','disiapkan','siap_diambil','dalam_pengantaran','selesai','dibatalkan'] as $s)<option value="{{ $s }}" @selected(request('status')===$s)>{{ $statusLabel($s) }}</option>@endforeach</select></div>
+            <div class="ops-field"><label class="ops-label">Status pesanan</label><select class="ops-control" name="status"><option value="">Semua</option>@foreach(['menunggu_pembayaran','menunggu_verifikasi','diproses','diproses','disiapkan','siap_diambil','dalam_pengantaran','selesai','dibatalkan'] as $s)<option value="{{ $s }}" @selected(request('status')===$s)>{{ $statusLabel($s) }}</option>@endforeach</select></div>
             <div class="ops-field"><label class="ops-label">Status bayar</label><select class="ops-control" name="status_pembayaran"><option value="">Semua</option>@foreach(['menunggu_pembayaran','menunggu_verifikasi','dibayar','ditolak','dibatalkan'] as $s)<option value="{{ $s }}" @selected(request('status_pembayaran')===$s)>{{ $statusLabel($s) }}</option>@endforeach</select></div>
             <div class="ops-field"><label class="ops-label">Metode bayar</label><select class="ops-control" name="metode_pembayaran"><option value="">Semua</option><option value="transfer_bank" @selected(request('metode_pembayaran')==='transfer_bank')>Transfer</option><option value="cod" @selected(request('metode_pembayaran')==='cod')>COD</option></select></div>
             <div class="ops-field"><label class="ops-label">Metode ambil</label><select class="ops-control" name="metode_pengambilan"><option value="">Semua</option><option value="ambil_toko" @selected(request('metode_pengambilan')==='ambil_toko')>Ambil toko</option><option value="kurir_toko" @selected(request('metode_pengambilan')==='kurir_toko')>Kurir toko</option></select></div>
             <div class="ops-field"><label class="ops-label">Dari</label><input type="date" class="ops-control" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}"></div>
             <div class="ops-field"><label class="ops-label">Sampai</label><input type="date" class="ops-control" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}"></div>
-            <div class="ops-filter-actions"><a href="{{ route('admin.semua-pesanan.index') }}" class="ops-btn-reset"><i class="bi bi-x-circle"></i> Reset</a></div>
+            <div class="ops-filter-actions"><button class="ops-btn-apply" type="submit"><i class="bi bi-funnel"></i> Terapkan</button><a href="{{ route('admin.semua-pesanan.index') }}" class="ops-btn-reset"><i class="bi bi-x-circle"></i> Reset</a></div>
         </div>
         @if($hasActiveFilter || $tab !== 'semua')<div class="ops-filter-note"><i class="bi bi-funnel text-brand"></i> Filter aktif. <a href="{{ route('admin.semua-pesanan.index') }}" class="text-brand fw-black text-decoration-none">Bersihkan</a></div>@endif
     </form>

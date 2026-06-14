@@ -2,8 +2,6 @@
 
 @section('title', 'Laporan - SiTahu')
 @section('page_title', 'Laporan')
-@section('page_subtitle', 'Laporan penjualan, akun pembeli, produk, pembayaran, dan stok.')
-
 @section('content')
 @php
     $statusLabel = fn ($value) => ucwords(str_replace('_', ' ', (string) $value));
@@ -11,14 +9,14 @@
     $periodeText = $tanggalMulai->format('d M Y') . ' - ' . $tanggalSelesai->format('d M Y');
     $maxPendapatan = max((float) $laporanHarian->max('pendapatan'), 1);
     $jenisMeta = [
-        'penjualan' => ['label' => 'Penjualan', 'icon' => 'bi-graph-up-arrow', 'desc' => 'Rekap invoice, omzet, produk terjual, dan status transaksi.'],
-        'pembeli' => ['label' => 'Akun Pembeli', 'icon' => 'bi-people', 'desc' => 'Pantau pembeli baru, pembeli aktif, ulasan, dan nilai belanja.'],
-        'produk' => ['label' => 'Produk', 'icon' => 'bi-basket2', 'desc' => 'Evaluasi produk terlaris, pendapatan produk, status tampil, dan stok.'],
-        'pembayaran' => ['label' => 'Pembayaran', 'icon' => 'bi-credit-card', 'desc' => 'Cek performa transfer bank, COD, verifikasi, dan pembayaran berhasil.'],
-        'stok' => ['label' => 'Stok', 'icon' => 'bi-box-seam', 'desc' => 'Riwayat stok, stok menipis, stok habis, dan catatan perubahan.'],
+        'penjualan' => ['label' => 'Penjualan', 'icon' => 'bi-graph-up-arrow', 'desc' => 'Laporan transaksi.'],
+        'pembeli' => ['label' => 'Akun Pembeli', 'icon' => 'bi-people', 'desc' => 'Data pelanggan.'],
+        'produk' => ['label' => 'Produk', 'icon' => 'bi-basket2', 'desc' => 'Data produk.'],
+        'pembayaran' => ['label' => 'Pembayaran', 'icon' => 'bi-credit-card', 'desc' => 'Data pembayaran.'],
+        'stok' => ['label' => 'Stok', 'icon' => 'bi-box-seam', 'desc' => 'Mutasi stok.'],
     ];
     $statusClass = [
-        'menunggu_pembayaran' => 'c-yellow', 'menunggu_verifikasi' => 'c-yellow', 'menunggu_konfirmasi' => 'c-purple',
+        'menunggu_pembayaran' => 'c-yellow', 'menunggu_verifikasi' => 'c-yellow',
         'diproses' => 'c-blue', 'disiapkan' => 'c-purple', 'siap_diambil' => 'c-green', 'dalam_pengantaran' => 'c-blue',
         'selesai' => 'c-green', 'dibatalkan' => 'c-red', 'dibayar' => 'c-green', 'ditolak' => 'c-red', 'gagal' => 'c-red',
     ];
@@ -47,12 +45,42 @@
     .report-card-head { padding:15px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; }
     .report-card-head h2 { margin:0; font-size:.98rem; font-weight:950; letter-spacing:-.035em; }
     .report-card-head p { margin:4px 0 0; color:var(--muted); font-size:.76rem; font-weight:650; }
-    .sales-bars { height:230px; padding:28px 18px 18px; display:flex; align-items:end; gap:9px; overflow-x:auto; }
-    .bar-item { min-width:34px; flex:1; height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:8px; }
-    .bar-fill { width:100%; max-width:32px; min-height:8px; border-radius:999px 999px 8px 8px; background:linear-gradient(180deg,var(--brand),#f1d49c); position:relative; }
-    .bar-fill::before { content:attr(data-tip); position:absolute; top:-28px; left:50%; transform:translateX(-50%); padding:4px 8px; border-radius:999px; background:#111827; color:#fff; font-size:.66rem; font-weight:900; white-space:nowrap; opacity:0; pointer-events:none; }
-    .bar-fill:hover::before { opacity:1; }
-    .bar-label { color:#98a2b3; font-size:.66rem; font-weight:900; white-space:nowrap; }
+    .report-line-box {
+        position: relative;
+        min-height: 262px;
+        overflow-x: auto;
+        padding: 12px;
+        background:
+            linear-gradient(180deg, rgba(255,248,234,.7), rgba(255,255,255,.92)),
+            repeating-linear-gradient(to bottom, transparent 0, transparent 49px, rgba(148,163,184,.18) 50px);
+    }
+    .report-line-svg { min-width:720px; width:100%; height:250px; display:block; }
+    .report-line-grid { stroke:rgba(148,163,184,.20); stroke-width:1; }
+    .report-line-axis { stroke:rgba(102,112,133,.25); stroke-width:1; }
+    .report-line-area { fill:rgba(200,147,53,.13); }
+    .report-line-path { fill:none; stroke:var(--brand); stroke-width:4; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 10px 14px rgba(200,147,53,.18)); }
+    .report-line-point { fill:#fff; stroke:var(--brand); stroke-width:4; cursor:pointer; transition:.15s ease; }
+    .report-line-point-wrap:hover .report-line-point { r:7; fill:var(--brand); }
+    .report-line-value { fill:#7a5618; font-size:10px; font-weight:900; text-anchor:middle; pointer-events:none; }
+    .report-line-label { fill:#98a2b3; font-size:10px; font-weight:850; text-anchor:middle; }
+    .report-line-tooltip {
+        position:fixed;
+        z-index:2000;
+        padding:8px 10px;
+        border-radius:12px;
+        background:#111827;
+        color:#fff;
+        font-size:.72rem;
+        line-height:1.35;
+        font-weight:850;
+        box-shadow:0 14px 35px rgba(17,24,39,.24);
+        opacity:0;
+        pointer-events:none;
+        transform:translate(-50%,-115%);
+        white-space:nowrap;
+        transition:opacity .12s ease;
+    }
+    .report-line-tooltip.show { opacity:1; }
     .mini-list { display:grid; gap:10px; padding:15px 18px 18px; }
     .mini-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; border:1px solid #eef0f3; border-radius:16px; background:#fff; }
     .mini-row .title { font-weight:950; color:var(--text); font-size:.86rem; }
@@ -88,10 +116,14 @@
             <div><label>Tanggal mulai</label><input type="date" name="tanggal_mulai" class="form-control" value="{{ request('tanggal_mulai', $tanggalMulai->format('Y-m-d')) }}"></div>
             <div><label>Tanggal selesai</label><input type="date" name="tanggal_selesai" class="form-control" value="{{ request('tanggal_selesai', $tanggalSelesai->format('Y-m-d')) }}"></div>
             <div style="grid-column:1 / -1;"><label>Pencarian</label><input class="form-control" name="q" value="{{ request('q') }}" placeholder="Invoice, pembeli, produk, referensi..."></div>
-            <div><label>Status pesanan</label><select name="status" class="form-select"><option value="">Semua</option>@foreach(['menunggu_pembayaran','menunggu_verifikasi','menunggu_konfirmasi','diproses','disiapkan','siap_diambil','dalam_pengantaran','selesai','dibatalkan'] as $status)<option value="{{ $status }}" @selected(request('status') === $status)>{{ $statusLabel($status) }}</option>@endforeach</select></div>
+            <div><label>Status pesanan</label><select name="status" class="form-select"><option value="">Semua</option>@foreach(['menunggu_pembayaran','menunggu_verifikasi','diproses','disiapkan','siap_diambil','dalam_pengantaran','selesai','dibatalkan'] as $status)<option value="{{ $status }}" @selected(request('status') === $status)>{{ $statusLabel($status) }}</option>@endforeach</select></div>
             <div><label>Metode bayar</label><select name="metode_pembayaran" class="form-select"><option value="">Semua</option><option value="transfer_bank" @selected(request('metode_pembayaran') === 'transfer_bank')>Transfer Bank</option><option value="cod" @selected(request('metode_pembayaran') === 'cod')>COD</option></select></div>
         </div>
-        <div class="d-flex gap-2 mt-3"><button class="btn btn-brand flex-fill" type="submit"><i class="bi bi-funnel me-1"></i>Terapkan</button><a class="btn btn-light border flex-fill" href="{{ route('admin.laporan.export.csv', request()->query()) }}"><i class="bi bi-download me-1"></i>CSV</a></div>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <button class="btn btn-brand flex-fill" type="submit"><i class="bi bi-funnel me-1"></i>Terapkan</button>
+            <a class="btn btn-light border flex-fill" href="{{ route('admin.laporan.export.excel', request()->query()) }}"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</a>
+            <a class="btn btn-light border flex-fill" href="{{ route('admin.laporan.export.pdf', request()->query()) }}" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+        </div>
     </form>
 </div>
 
@@ -104,16 +136,65 @@
 
 <div class="two-col mb-3">
     <section class="report-card">
-        <div class="report-card-head"><div><h2>Tren pendapatan harian</h2><p>Arahkan kursor ke batang untuk melihat nominal.</p></div><span class="chip c-yellow">{{ $periodeText }}</span></div>
-        <div class="sales-bars">
-            @foreach($laporanHarian as $hari)
-                @php $height = max(8, ((float) $hari['pendapatan'] / $maxPendapatan) * 100); @endphp
-                <div class="bar-item"><div class="bar-fill" style="height:{{ $height }}%;" data-tip="{{ $money($hari['pendapatan']) }}"></div><div class="bar-label">{{ $hari['tanggal'] }}</div></div>
-            @endforeach
+        <div class="report-card-head"><div><h2>Tren Pendapatan</h2><p>{{ $periodeText }}</p></div><span class="chip c-yellow">{{ $periodeText }}</span></div>
+        @php
+            $reportRows = $laporanHarian->values();
+            $reportCount = max($reportRows->count(), 1);
+            $reportSvgWidth = max(720, $reportCount * 52);
+            $reportSvgHeight = 250;
+            $reportPadLeft = 42;
+            $reportPadRight = 28;
+            $reportPadTop = 34;
+            $reportPadBottom = 40;
+            $reportPlotWidth = max(1, $reportSvgWidth - $reportPadLeft - $reportPadRight);
+            $reportPlotHeight = max(1, $reportSvgHeight - $reportPadTop - $reportPadBottom);
+            $reportPoints = $reportRows->map(function ($hari, $index) use ($reportCount, $reportPlotWidth, $reportPlotHeight, $reportPadLeft, $reportPadTop, $maxPendapatan, $money) {
+                $total = (float) ($hari['pendapatan'] ?? 0);
+                $x = $reportPadLeft + ($reportCount > 1 ? (($reportPlotWidth / ($reportCount - 1)) * $index) : ($reportPlotWidth / 2));
+                $y = $reportPadTop + ($reportPlotHeight - (($total / max((float) $maxPendapatan, 1)) * $reportPlotHeight));
+                return [
+                    'x' => round($x, 2),
+                    'y' => round($y, 2),
+                    'label' => $hari['tanggal'],
+                    'full' => $hari['tanggal_lengkap'] ?? $hari['tanggal'],
+                    'value' => $total,
+                    'money' => $money($total),
+                ];
+            });
+            $reportLinePath = $reportPoints->map(fn ($point, $index) => ($index === 0 ? 'M' : 'L') . $point['x'] . ' ' . $point['y'])->implode(' ');
+            $reportAreaPath = $reportPoints->isNotEmpty()
+                ? $reportLinePath . ' L ' . $reportPoints->last()['x'] . ' ' . ($reportSvgHeight - $reportPadBottom) . ' L ' . $reportPoints->first()['x'] . ' ' . ($reportSvgHeight - $reportPadBottom) . ' Z'
+                : '';
+            $reportLabelEvery = max(1, (int) ceil($reportCount / 10));
+            $reportValueEvery = max(1, (int) ceil($reportCount / 8));
+        @endphp
+        <div class="report-line-box js-report-line-chart">
+            <svg class="report-line-svg" viewBox="0 0 {{ $reportSvgWidth }} {{ $reportSvgHeight }}" role="img" aria-label="Grafik garis pendapatan harian">
+                @for($i = 0; $i <= 4; $i++)
+                    @php $gridY = $reportPadTop + (($reportPlotHeight / 4) * $i); @endphp
+                    <line class="report-line-grid" x1="{{ $reportPadLeft }}" y1="{{ $gridY }}" x2="{{ $reportSvgWidth - $reportPadRight }}" y2="{{ $gridY }}"></line>
+                @endfor
+                <line class="report-line-axis" x1="{{ $reportPadLeft }}" y1="{{ $reportSvgHeight - $reportPadBottom }}" x2="{{ $reportSvgWidth - $reportPadRight }}" y2="{{ $reportSvgHeight - $reportPadBottom }}"></line>
+                @if($reportAreaPath)
+                    <path class="report-line-area" d="{{ $reportAreaPath }}"></path>
+                    <path class="report-line-path" d="{{ $reportLinePath }}"></path>
+                @endif
+                @foreach($reportPoints as $index => $point)
+                    <g class="report-line-point-wrap" data-label="{{ $point['full'] }}" data-value="{{ $point['money'] }}">
+                        @if($point['value'] > 0 && $index % $reportValueEvery === 0)
+                            <text class="report-line-value" x="{{ $point['x'] }}" y="{{ max(12, $point['y'] - 13) }}">{{ $point['money'] }}</text>
+                        @endif
+                        <circle class="report-line-point" cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="5"></circle>
+                        @if($index % $reportLabelEvery === 0 || $index === $reportCount - 1)
+                            <text class="report-line-label" x="{{ $point['x'] }}" y="{{ $reportSvgHeight - 15 }}">{{ $point['label'] }}</text>
+                        @endif
+                    </g>
+                @endforeach
+            </svg>
         </div>
     </section>
     <section class="report-card">
-        <div class="report-card-head"><div><h2>Ringkasan cepat</h2><p>Data penting sesuai periode laporan.</p></div></div>
+        <div class="report-card-head"><div><h2>Ringkasan</h2></div></div>
         <div class="mini-list">
             <div class="mini-row"><div><div class="title">Rata-rata transaksi</div><div class="subtext">Dari pembayaran berhasil</div></div><strong>{{ $money($stats['rata_transaksi']) }}</strong></div>
             <div class="mini-row"><div><div class="title">Pembeli baru</div><div class="subtext">Akun dibuat pada periode</div></div><span class="chip c-blue">{{ number_format($pembeliStats['baru']) }}</span></div>
@@ -125,7 +206,7 @@
 
 @if($jenis === 'penjualan')
 <section class="report-card">
-    <div class="report-card-head"><div><h2>Laporan penjualan</h2><p>Daftar invoice, status, metode pembayaran, dan total bayar.</p></div><span class="chip c-gray">{{ number_format($dataTable->total()) }} data</span></div>
+    <div class="report-card-head"><div><h2>Laporan Penjualan</h2></div><span class="chip c-gray">{{ number_format($dataTable->total()) }} data</span></div>
     <div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Pembeli</th><th>Metode</th><th>Status</th><th>Total</th><th>Tanggal</th></tr></thead><tbody>
     @forelse($dataTable as $order)
         <tr><td><strong>{{ $order->nomor_invoice }}</strong><span class="table-sub">{{ $order->item->sum('jumlah') }} item</span></td><td>{{ $order->user?->name ?? '-' }}<span class="table-sub">{{ $order->user?->telepon ?? $order->user?->email ?? '-' }}</span></td><td>{{ $order->pembayaran?->metode_pembayaran === 'cod' ? 'COD' : 'Transfer Bank' }}<span class="table-sub">{{ $order->metode_pengambilan === 'kurir_toko' ? 'Kurir toko' : 'Ambil toko' }}</span></td><td><span class="chip {{ $statusClass[$order->status] ?? 'c-gray' }}">{{ $statusLabel($order->status) }}</span></td><td><strong>{{ $money($order->total_bayar) }}</strong><span class="table-sub">Bayar: {{ $statusLabel($order->pembayaran?->status ?? $order->status_pembayaran) }}</span></td><td>{{ optional($order->tanggal_pesanan)->format('d M Y') }}<span class="table-sub">{{ optional($order->tanggal_pesanan)->format('H:i') }}</span></td></tr>
@@ -137,7 +218,7 @@
 
 @if($jenis === 'pembeli')
 <section class="report-card">
-    <div class="report-card-head"><div><h2>Laporan akun pembeli</h2><p>Akun pembeli, aktivitas belanja, dan nilai transaksi.</p></div><span class="chip c-gray">{{ number_format($dataTable->total()) }} akun</span></div>
+    <div class="report-card-head"><div><h2>Laporan Akun Pembeli</h2></div><span class="chip c-gray">{{ number_format($dataTable->total()) }} akun</span></div>
     <div class="table-wrap"><table><thead><tr><th>Pembeli</th><th>Kontak</th><th>Pesanan periode</th><th>Total belanja</th><th>Status</th><th>Daftar</th></tr></thead><tbody>
     @forelse($dataTable as $buyer)
         <tr><td><strong>{{ $buyer->name }}</strong><span class="table-sub">ID #{{ str_pad($buyer->id,4,'0',STR_PAD_LEFT) }}</span></td><td>{{ $buyer->email }}<span class="table-sub">{{ $buyer->telepon ?: '-' }}</span></td><td>{{ number_format($buyer->total_pesanan_periode) }}</td><td><strong>{{ $money($buyer->total_belanja_periode ?? 0) }}</strong></td><td><span class="chip {{ $buyer->aktif ? 'c-green' : 'c-gray' }}">{{ $buyer->aktif ? 'Aktif' : 'Nonaktif' }}</span></td><td>{{ optional($buyer->created_at)->format('d M Y') }}</td></tr>
@@ -171,8 +252,66 @@
 
 @if($jenis === 'stok')
 <div class="two-col">
-    <section class="report-card"><div class="report-card-head"><div><h2>Laporan stok</h2><p>Riwayat perubahan stok pada periode aktif.</p></div><span class="chip c-gray">{{ number_format($dataTable->total()) }} riwayat</span></div><div class="table-wrap"><table><thead><tr><th>Produk</th><th>Tipe</th><th>Perubahan</th><th>Catatan</th><th>Tanggal</th></tr></thead><tbody>@forelse($dataTable as $history)<tr><td><strong>{{ $history->produk?->nama ?? '-' }}</strong></td><td>{{ $statusLabel($history->tipe) }}</td><td><span class="chip {{ $history->perubahan < 0 ? 'c-red' : 'c-green' }}">{{ $history->perubahan > 0 ? '+' : '' }}{{ number_format($history->perubahan) }}</span></td><td>{{ $history->catatan ?: '-' }}</td><td>{{ optional($history->created_at)->format('d M Y H:i') }}</td></tr>@empty<tr><td colspan="5" class="text-center py-5 text-muted fw-bold">Belum ada riwayat stok.</td></tr>@endforelse</tbody></table></div>@if($dataTable->hasPages())<div class="p-3 border-top">{{ $dataTable->links() }}</div>@endif</section>
-    <section class="report-card"><div class="report-card-head"><div><h2>Stok perlu tindakan</h2><p>Produk menipis dan habis.</p></div></div><div class="mini-list">@forelse($produkStokPerhatian as $produk)<div class="mini-row"><div><div class="title">{{ $produk->nama }}</div><div class="subtext">Minimal stok {{ number_format($produk->min_stok) }}</div></div><span class="chip {{ $produk->stok <= 0 ? 'c-red' : 'c-yellow' }}">Stok {{ number_format($produk->stok) }}</span></div>@empty<div class="empty-soft">Stok aman.</div>@endforelse</div></section>
+    <section class="report-card">
+        <div class="report-card-head">
+            <div>
+                <h2>Laporan mutasi stok</h2>
+                <p>Format mutasi: tambah, kurang, dan sisa stok setelah transaksi.</p>
+            </div>
+            <span class="chip c-gray">{{ number_format($dataTable->total()) }} mutasi</span>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Produk</th>
+                        <th>Uraian Mutasi</th>
+                        <th>Tambah</th>
+                        <th>Kurang</th>
+                        <th>Sisa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($dataTable as $history)
+                        <tr>
+                            <td>{{ optional($history->created_at)->format('d M Y H:i') }}</td>
+                            <td><strong>{{ $history->produk?->nama ?? '-' }}</strong></td>
+                            <td>{{ $history->catatan ?: $statusLabel($history->tipe) }}</td>
+                            <td><span class="chip c-green">{{ ((int) ($history->masuk ?? 0)) > 0 ? number_format($history->masuk) : '-' }}</span></td>
+                            <td><span class="chip c-red">{{ ((int) ($history->keluar ?? 0)) > 0 ? number_format($history->keluar) : '-' }}</span></td>
+                            <td><strong>{{ number_format((int) ($history->sisa_stok ?? 0)) }}</strong></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6" class="text-center py-5 text-muted fw-bold">Belum ada mutasi stok.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if($dataTable->hasPages())<div class="p-3 border-top">{{ $dataTable->links() }}</div>@endif
+    </section>
+    <section class="report-card"><div class="report-card-head"><div><h2>Stok Perhatian</h2></div></div><div class="mini-list">@forelse($produkStokPerhatian as $produk)<div class="mini-row"><div><div class="title">{{ $produk->nama }}</div><div class="subtext">Minimal stok {{ number_format($produk->min_stok) }}</div></div><span class="chip {{ $produk->stok <= 0 ? 'c-red' : 'c-yellow' }}">Stok {{ number_format($produk->stok) }}</span></div>@empty<div class="empty-soft">Stok aman.</div>@endforelse</div></section>
 </div>
 @endif
 @endsection
+
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tooltip = document.createElement('div');
+        tooltip.className = 'report-line-tooltip';
+        document.body.appendChild(tooltip);
+
+        document.querySelectorAll('.report-line-point-wrap').forEach((point) => {
+            point.addEventListener('mousemove', (event) => {
+                tooltip.innerHTML = `<strong>${point.dataset.value || 'Rp 0'}</strong><br><span>${point.dataset.label || ''}</span>`;
+                tooltip.style.left = event.clientX + 'px';
+                tooltip.style.top = event.clientY + 'px';
+                tooltip.classList.add('show');
+            });
+            point.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+        });
+    });
+</script>
+@endpush

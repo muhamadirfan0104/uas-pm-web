@@ -19,7 +19,7 @@
         'icon' => match($key) {
             'menunggu_pembayaran' => 'bi-receipt',
             'menunggu_verifikasi' => 'bi-shield-check',
-            'menunggu_konfirmasi' => 'bi-shop',
+            'diproses' => 'bi-shop',
             'diproses' => 'bi-gear',
             'disiapkan' => 'bi-box-seam',
             'siap_diambil' => 'bi-shop',
@@ -55,7 +55,7 @@
     </div>
     <div class="d-flex gap-2 flex-wrap justify-content-end">
         <a href="{{ route('admin.pesanan.index') }}" class="btn btn-light border fw-bold rounded-4"><i class="bi bi-arrow-left me-1"></i> Kembali</a>
-        <a href="{{ route('admin.pesanan.invoice', $pesanan) }}" target="_blank" class="btn btn-soft"><i class="bi bi-printer me-1"></i> Cetak invoice</a>
+        <a href="{{ route('admin.pesanan.invoice', $pesanan) }}" target="_blank" class="btn btn-soft"><i class="bi bi-printer me-1"></i> Cetak / PDF Invoice</a>
     </div>
 </div>
 
@@ -87,7 +87,7 @@
         </div>
 
         <div class="panel">
-            <div class="panel-head"><div><h2 class="panel-title">Penerima dan pengambilan</h2><p class="panel-sub">Data ini dipakai untuk konfirmasi pesanan kepada pembeli.</p></div></div>
+            <div class="panel-head"><div><h2 class="panel-title">Penerima dan Pengambilan</h2></div></div>
             <div class="panel-body">
                 <div class="info-grid">
                     <div class="info-box"><div class="label">Pembeli akun</div><div class="value">{{ $pesanan->user?->name ?? '-' }}</div><div class="meta mt-1">{{ $pesanan->user?->telepon ?: $pesanan->user?->email }}</div></div>
@@ -103,10 +103,10 @@
             <div class="panel-head"><div><h2 class="panel-title">Tindakan admin</h2><p class="panel-sub">Lanjutkan pesanan sesuai tahapnya.</p></div></div>
             <div class="panel-body action-stack">
                 @if($payment?->metode_pembayaran === 'transfer_bank' && in_array($payment?->status, ['menunggu_pembayaran','menunggu_verifikasi'], true))
-                    <a class="btn btn-soft" href="{{ route('admin.pembayaran.index', ['q'=>$pesanan->nomor_invoice]) }}"><i class="bi bi-shield-check me-1"></i> Cek pembayaran transfer</a>
+                    <a class="btn btn-soft" href="{{ route('admin.pembayaran.index', ['q'=>$pesanan->nomor_invoice]) }}"><i class="bi bi-shield-check me-1"></i> Pembayaran Transfer</a>
                 @endif
                 @if($next)
-                    <form method="POST" action="{{ route('admin.pesanan.status', $pesanan) }}" data-confirm-title="Ubah Status Pesanan" data-confirm-message="Lanjutkan invoice {{ $pesanan->nomor_invoice }} ke tahap {{ $statusLabel($next) }} sesuai alur pesanan?" data-confirm-button="Simpan">
+                    <form method="POST" action="{{ route('admin.pesanan.status', $pesanan) }}" data-confirm-title="Ubah Status Pesanan" data-confirm-message="Lanjutkan invoice {{ $pesanan->nomor_invoice }} ke tahap {{ $statusLabel($next) }}?" data-confirm-button="Simpan">
                         @csrf @method('PATCH')<input type="hidden" name="status" value="{{ $next }}"><button class="btn btn-brand w-100"><i class="bi bi-arrow-right-circle me-1"></i> {{ $actionLabel($next) }}</button>
                     </form>
                 @endif
@@ -115,7 +115,7 @@
                         @csrf @method('PATCH')<input type="hidden" name="status" value="dibatalkan"><button class="btn btn-outline-danger fw-bold rounded-4 w-100"><i class="bi bi-x-circle me-1"></i> Batalkan pesanan</button>
                     </form>
                 @endif
-                @if(!$next && $pesanan->status !== 'dibatalkan')<div class="order-note"><i class="bi bi-info-circle me-1"></i> Tidak ada tindakan cepat untuk tahap ini.</div>@endif
+                @if(!$next && $pesanan->status !== 'dibatalkan')<div class="order-note"><i class="bi bi-info-circle me-1"></i> </div>@endif
             </div>
         </div>
 
@@ -129,7 +129,7 @@
                 @if($proofUrl)
                     <div class="mt-3"><div class="label">Bukti transfer</div>@if($isImageProof)<a href="{{ $proofUrl }}" target="_blank"><img src="{{ $proofUrl }}" class="proof-thumb" alt="Bukti transfer"></a>@else<a href="{{ $proofUrl }}" target="_blank" class="btn btn-light border fw-bold rounded-4">Lihat file bukti</a>@endif</div>
                 @endif
-                @if($payment?->catatan_admin)<div class="order-note mt-3">Catatan admin: {{ $payment->catatan_admin }}</div>@endif
+                @if($payment?->catatan_admin)<div class="order-note mt-3">Catatan: {{ $payment->catatan_admin }}</div>@endif
             </div>
         </div>
     </div>

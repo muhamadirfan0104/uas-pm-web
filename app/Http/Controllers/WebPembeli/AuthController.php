@@ -76,7 +76,7 @@ class AuthController extends Controller
 
         if ($user->role !== 'pembeli') {
             return back()
-                ->withErrors(['login' => 'Akun ini bukan akun pembeli. Gunakan halaman login admin untuk akun admin.'])
+                ->withErrors(['login' => 'Akun tidak memiliki akses pembeli.'])
                 ->onlyInput('login')
                 ->with('auth_modal', 'login');
         }
@@ -169,7 +169,7 @@ class AuthController extends Controller
 
         return redirect()
             ->intended(route('pembeli-web.home'))
-            ->with('success', 'Registrasi berhasil. Akun pembeli sudah masuk dan siap digunakan.');
+            ->with('success', 'Registrasi berhasil.');
     }
 
     public function logout(Request $request): RedirectResponse

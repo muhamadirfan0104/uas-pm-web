@@ -37,7 +37,7 @@
         </a>
 
         @if(! $compact)
-            <p class="small text-muted line-clamp-2 mb-3">{{ $produk->deskripsi ?: 'Produk tahu segar yang cocok untuk hidangan harian keluarga.' }}</p>
+            <p class="small text-muted line-clamp-2 mb-3">{{ $produk->deskripsi ?: 'Produk tahu segar berkualitas.' }}</p>
         @endif
 
         <div class="d-flex align-items-center justify-content-between gap-2 mt-auto mb-3">

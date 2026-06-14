@@ -17,7 +17,7 @@ return new class extends Migration
     public function down(): void
     {
         if (Schema::hasColumn('users', 'role')) {
-            DB::statement("ALTER TABLE users MODIFY role ENUM('admin','kasir','pembeli') NOT NULL DEFAULT 'pembeli'");
+            DB::statement("ALTER TABLE users MODIFY role ENUM('admin','pembeli') NOT NULL DEFAULT 'pembeli'");
         }
     }
 };

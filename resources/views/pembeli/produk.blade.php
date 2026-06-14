@@ -142,7 +142,7 @@
         <div class="empty-catalog text-center">
             <div class="stat-icon mx-auto mb-3"><i class="bi bi-search"></i></div>
             <h2 class="h4 fw-bold">Produk tidak ditemukan.</h2>
-            <p class="text-muted mb-4">Coba gunakan kata kunci lain dari kolom pencarian atas atau reset filter untuk melihat semua produk.</p>
+            <p class="text-muted mb-4">Produk tidak ditemukan.</p>
             <a href="{{ route('pembeli-web.produk') }}" class="btn btn-brand px-4 py-3">Reset Filter</a>
         </div>
     @endif

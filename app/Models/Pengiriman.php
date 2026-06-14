@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Pengiriman extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'pengiriman';
 
     protected $fillable = [
@@ -22,6 +25,6 @@ class Pengiriman extends Model
 
     public function pesanan()
     {
-        return $this->belongsTo(Pesanan::class, 'pesanan_id');
+        return $this->belongsTo(Pesanan::class, 'pesanan_id')->withTrashed();
     }
 }

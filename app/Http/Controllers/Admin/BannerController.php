@@ -83,7 +83,6 @@ class BannerController extends Controller
 
     public function destroy(Banner $banner): RedirectResponse
     {
-        Storage::disk('public')->delete($banner->url_gambar);
         $banner->delete();
 
         return back()->with('success', 'Banner berhasil dihapus.');

@@ -5,7 +5,7 @@
 <div class="hero">
     <div>
         <h1>Tambah produk</h1>
-        <p>Lengkapi informasi produk yang akan tampil di katalog pembeli.</p>
+        <p></p>
     </div>
     <a href="{{ route('admin.produk.index') }}" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i> Kembali</a>
 </div>

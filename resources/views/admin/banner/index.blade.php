@@ -114,7 +114,7 @@
         <div class="col-12">
             <div class="page-card p-5 text-center">
                 <div class="fw-bold mb-1">Belum ada banner</div>
-                <div class="text-muted small mb-3">Tambahkan banner untuk mengisi area utama di beranda pembeli.</div>
+                <div class="text-muted small mb-3">Kelola banner beranda.</div>
                 <button class="btn btn-brand" type="button" data-bs-toggle="modal" data-bs-target="#modalBannerCreate">Tambah Banner</button>
             </div>
         </div>

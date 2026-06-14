@@ -51,7 +51,7 @@ class PengaturanToko extends Model
                 'longitude_toko' => null,
                 'tarif_per_km' => 3000,
                 'biaya_minimum_pengiriman' => 5000,
-                'radius_maksimal_km' => 10,
+                'radius_maksimal_km' => 0,
                 'area_pengiriman' => 'Area sekitar toko',
                 'info_pembayaran' => 'Transfer bank diverifikasi admin setelah bukti pembayaran dikirim.',
                 'bank_nama' => 'BCA',

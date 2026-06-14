@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PengaturanToko;
+use App\Models\RekeningToko;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PengaturanTokoController extends Controller
@@ -14,8 +16,13 @@ class PengaturanTokoController extends Controller
     public function edit(): View
     {
         $pengaturan = PengaturanToko::utama();
+        $rekeningList = RekeningToko::query()
+            ->orderByDesc('utama')
+            ->orderBy('urutan')
+            ->orderBy('id')
+            ->get();
 
-        return view('admin.pengaturan.edit', compact('pengaturan'));
+        return view('admin.pengaturan.edit', compact('pengaturan', 'rekeningList'));
     }
 
     public function update(Request $request): RedirectResponse
@@ -40,6 +47,12 @@ class PengaturanTokoController extends Controller
             'bank_nama' => ['nullable', 'string', 'max:100'],
             'bank_nomor_rekening' => ['nullable', 'string', 'max:60'],
             'bank_atas_nama' => ['nullable', 'string', 'max:120'],
+            'rekening' => ['nullable', 'array'],
+            'rekening.*.nama_bank' => ['nullable', 'string', 'max:100'],
+            'rekening.*.nomor_rekening' => ['nullable', 'string', 'max:80'],
+            'rekening.*.atas_nama' => ['nullable', 'string', 'max:150'],
+            'rekening.*.aktif' => ['nullable', 'boolean'],
+            'rekening_utama' => ['nullable', 'integer'],
             'tentang' => ['nullable', 'string', 'max:2000'],
         ], [
             'nama.required' => 'Nama toko wajib diisi.',
@@ -62,7 +75,22 @@ class PengaturanTokoController extends Controller
             'radius_maksimal_km.min' => 'Radius maksimal tidak boleh minus.',
         ]);
 
-        unset($data['logo_url']);
+        $rekeningInput = collect($data['rekening'] ?? [])
+            ->map(function ($item, $index) {
+                return [
+                    'nama_bank' => trim((string) ($item['nama_bank'] ?? '')),
+                    'nomor_rekening' => trim((string) ($item['nomor_rekening'] ?? '')),
+                    'atas_nama' => trim((string) ($item['atas_nama'] ?? '')),
+                    'aktif' => (bool) ($item['aktif'] ?? false),
+                    'urutan' => $index + 1,
+                ];
+            })
+            ->filter(fn ($item) => $item['nama_bank'] !== '' || $item['nomor_rekening'] !== '' || $item['atas_nama'] !== '')
+            ->values();
+
+        $utamaIndex = (int) $request->input('rekening_utama', 0);
+
+        unset($data['logo_url'], $data['rekening'], $data['rekening_utama']);
 
         if ($request->hasFile('logo_url')) {
             if ($pengaturan->logo_url) {
@@ -76,7 +104,35 @@ class PengaturanTokoController extends Controller
         $data['biaya_minimum_pengiriman'] = $data['biaya_minimum_pengiriman'] ?? 0;
         $data['radius_maksimal_km'] = $data['radius_maksimal_km'] ?? 0;
 
-        $pengaturan->update($data);
+        DB::transaction(function () use ($pengaturan, $data, $rekeningInput, $utamaIndex) {
+            $pengaturan->update($data);
+
+            RekeningToko::query()->delete();
+
+            $rekeningInput->each(function ($item, $index) use ($pengaturan, $utamaIndex) {
+                RekeningToko::query()->create([
+                    'nama_bank' => $item['nama_bank'] !== '' ? $item['nama_bank'] : 'Bank',
+                    'nomor_rekening' => $item['nomor_rekening'] !== '' ? $item['nomor_rekening'] : '-',
+                    'atas_nama' => $item['atas_nama'] !== '' ? $item['atas_nama'] : ($pengaturan->nama ?: 'SiTahu'),
+                    'aktif' => $item['aktif'],
+                    'utama' => $index === $utamaIndex,
+                    'urutan' => $item['urutan'],
+                ]);
+            });
+
+            $rekeningUtama = RekeningToko::query()
+                ->orderByDesc('utama')
+                ->orderBy('urutan')
+                ->first();
+
+            if ($rekeningUtama) {
+                $pengaturan->update([
+                    'bank_nama' => $rekeningUtama->nama_bank,
+                    'bank_nomor_rekening' => $rekeningUtama->nomor_rekening,
+                    'bank_atas_nama' => $rekeningUtama->atas_nama,
+                ]);
+            }
+        });
 
         return redirect()
             ->route('admin.pengaturan.edit')

@@ -189,9 +189,9 @@
     $jumlahUlasan = (int) $jumlahUlasan;
     $totalTerjual = (int) ($totalTerjual ?? 0);
     $beratLabel = $produk->berat ? rtrim(rtrim(number_format((float) $produk->berat, 2, ',', '.'), '0'), ',') . ' kg' : '-';
-    $deskripsiProduk = $produk->deskripsi ?: 'Produk tahu segar yang cocok untuk kebutuhan harian dan pesanan keluarga.';
-    $saranSimpan = $produk->saran_penyimpanan ?: 'Simpan di tempat bersih dan sejuk. Untuk kualitas terbaik, segera olah setelah pembelian.';
-    $saranSaji = $produk->saran_penyajian ?: 'Cocok untuk digoreng, ditumis, dicampur sayur, atau dijadikan lauk keluarga.';
+    $deskripsiProduk = $produk->deskripsi ?: 'Produk tahu segar berkualitas.';
+    $saranSimpan = $produk->saran_penyimpanan ?: '-';
+    $saranSaji = $produk->saran_penyajian ?: '-';
     $isiLabel = $produk->isi_per_satuan ? $produk->isi_per_satuan . ' pcs' : '-';
     $masaSimpanLabel = $produk->masa_simpan ? $produk->masa_simpan . ' hari' : '-';
     $waProduk = preg_replace('/[^0-9]/', '', $pengaturan->telepon ?? '');
@@ -339,7 +339,7 @@
                     <div class="simple-list">
                         <div class="simple-list-item"><div class="icon"><i class="bi bi-shop"></i></div><div><div class="title">Ambil di toko</div><div class="text">Pesanan bisa diambil setelah diproses.</div></div></div>
                         <div class="simple-list-item"><div class="icon"><i class="bi bi-geo-alt"></i></div><div><div class="title">Kurir toko</div><div class="text">Area layanan: {{ $pengaturan->area_pengiriman ?: 'sekitar toko' }}.</div></div></div>
-                        <div class="simple-list-item"><div class="icon"><i class="bi bi-wallet2"></i></div><div><div class="title">Pembayaran</div><div class="text">{{ $pengaturan->info_pembayaran ?: 'Pembayaran mengikuti pilihan checkout.' }}</div></div></div>
+                        <div class="simple-list-item"><div class="icon"><i class="bi bi-wallet2"></i></div><div><div class="title">Pembayaran</div><div class="text">{{ $pengaturan->info_pembayaran ?: 'Sesuai pilihan checkout.' }}</div></div></div>
                     </div>
                 </div>
             </div>
@@ -407,7 +407,7 @@
                     <div class="simple-info-card text-center">
                         <i class="bi bi-funnel fs-1 text-brand"></i>
                         <h3 class="h5 fw-black mt-2">Belum ada ulasan pada filter ini.</h3>
-                        <p class="text-muted mb-0">Pilih filter semua ulasan untuk melihat penilaian pembeli lainnya.</p>
+                        <p class="text-muted mb-0"></p>
                     </div>
                 @endif
             @else

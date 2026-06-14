@@ -47,7 +47,7 @@
 </div>
 
 <div class="ops-filter-card compact">
-    <form id="page-filter" class="js-instant-filter" method="GET">
+    <form id="page-filter" method="GET">
         @if($tab !== 'semua')<input type="hidden" name="tab" value="{{ $tab }}">@endif
         <div class="ops-filter-grid shipping-only">
             <div class="ops-field"><label class="ops-label">Cari</label><div class="ops-search"><i class="bi bi-search text-muted"></i><input name="q" value="{{ request('q') }}" placeholder="Invoice, penerima, HP, atau alamat"></div></div>
@@ -55,7 +55,7 @@
             <div class="ops-field"><label class="ops-label">Status</label><select class="ops-control" name="status"><option value="">Semua</option><option value="belum_diproses" @selected(request('status')==='belum_diproses')>Siap logistik</option>@foreach(['siap_diambil','dalam_pengantaran'] as $s)<option value="{{ $s }}" @selected(request('status')===$s)>{{ $statusLabel($s) }}</option>@endforeach</select></div>
             <div class="ops-field"><label class="ops-label">Dari</label><input type="date" class="ops-control" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}"></div>
             <div class="ops-field"><label class="ops-label">Sampai</label><input type="date" class="ops-control" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}"></div>
-            <div class="ops-filter-actions"><a href="{{ route('admin.pengiriman.index') }}" class="ops-btn-reset"><i class="bi bi-x-circle"></i> Reset</a></div>
+            <div class="ops-filter-actions"><button class="ops-btn-apply" type="submit"><i class="bi bi-funnel"></i> Terapkan</button><a href="{{ route('admin.pengiriman.index') }}" class="ops-btn-reset"><i class="bi bi-x-circle"></i> Reset</a></div>
         </div>
         @if($hasActiveFilter || $tab !== 'semua')<div class="ops-filter-note"><i class="bi bi-funnel text-brand"></i> Filter aktif. <a href="{{ route('admin.pengiriman.index') }}" class="text-brand fw-black text-decoration-none">Bersihkan</a></div>@endif
     </form>
@@ -123,14 +123,14 @@
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <form method="POST" action="{{ route('admin.pengiriman.pengaturan.update') }}" class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
             @csrf @method('PUT')
-            <div class="modal-header bg-white border-bottom p-4"><div><h5 class="modal-title fw-black">Pengaturan toko dan tarif</h5><div class="text-muted small fw-bold">Dipakai untuk alamat pengambilan dan perhitungan ongkir kurir toko.</div></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header bg-white border-bottom p-4"><div><h5 class="modal-title fw-black">Pengaturan Pengiriman</h5></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body p-4 modal-body-soft">
                 <div class="row g-4">
                     <div class="col-lg-5">
                         <div class="modal-card mb-3"><label class="form-label-modern">Alamat toko</label><textarea class="form-control form-control-modern" rows="4" name="alamat" placeholder="Alamat lengkap titik pengambilan">{{ old('alamat', $pengaturan->alamat) }}</textarea></div>
                         <div class="modal-card"><div class="row g-3"><div class="col-6"><label class="form-label-modern">Jam buka</label><input class="form-control form-control-modern" type="time" name="jam_buka" value="{{ old('jam_buka', $pengaturan->jam_buka) }}"></div><div class="col-6"><label class="form-label-modern">Jam tutup</label><input class="form-control form-control-modern" type="time" name="jam_tutup" value="{{ old('jam_tutup', $pengaturan->jam_tutup) }}"></div><div class="col-6"><label class="form-label-modern">Tarif / km</label><input class="form-control form-control-modern" type="number" min="0" name="tarif_per_km" value="{{ old('tarif_per_km', $pengaturan->tarif_per_km) }}"></div><div class="col-6"><label class="form-label-modern">Minimum ongkir</label><input class="form-control form-control-modern" type="number" min="0" name="biaya_minimum_pengiriman" value="{{ old('biaya_minimum_pengiriman', $pengaturan->biaya_minimum_pengiriman) }}"></div><div class="col-6"><label class="form-label-modern">Radius maksimal</label><input class="form-control form-control-modern" type="number" min="0" step="0.01" name="radius_maksimal_km" value="{{ old('radius_maksimal_km', $pengaturan->radius_maksimal_km) }}"></div><div class="col-6"><label class="form-label-modern">Area layanan</label><input class="form-control form-control-modern" name="area_pengiriman" value="{{ old('area_pengiriman', $pengaturan->area_pengiriman) }}" placeholder="Kota/area"></div></div></div>
                     </div>
-                    <div class="col-lg-7"><div class="modal-card"><div class="d-flex justify-content-between gap-2 align-items-start mb-3"><div><div class="fw-black">Titik lokasi toko</div><div class="ops-muted">Klik peta atau geser marker supaya titik toko tidak diisi manual.</div></div><button type="button" id="btnUseMyLocation" class="btn btn-light border fw-bold rounded-4"><i class="bi bi-crosshair me-1"></i> Lokasi saya</button></div><input type="hidden" name="latitude_toko" id="latitudeTokoInput" value="{{ old('latitude_toko', $mapLat) }}"><input type="hidden" name="longitude_toko" id="longitudeTokoInput" value="{{ old('longitude_toko', $mapLng) }}"><div id="mapPickerToko" data-lat="{{ old('latitude_toko', $mapLat) }}" data-lng="{{ old('longitude_toko', $mapLng) }}"></div><div class="row g-2 mt-3"><div class="col-6"><div class="summary-row"><span>Latitude</span><strong id="latitudeTokoPreview">{{ old('latitude_toko', $mapLat) }}</strong></div></div><div class="col-6"><div class="summary-row"><span>Longitude</span><strong id="longitudeTokoPreview">{{ old('longitude_toko', $mapLng) }}</strong></div></div></div></div></div>
+                    <div class="col-lg-7"><div class="modal-card"><div class="d-flex justify-content-between gap-2 align-items-start mb-3"><div><div class="fw-black">Titik Lokasi Toko</div></div><button type="button" id="btnUseMyLocation" class="btn btn-light border fw-bold rounded-4"><i class="bi bi-crosshair me-1"></i> Lokasi saya</button></div><input type="hidden" name="latitude_toko" id="latitudeTokoInput" value="{{ old('latitude_toko', $mapLat) }}"><input type="hidden" name="longitude_toko" id="longitudeTokoInput" value="{{ old('longitude_toko', $mapLng) }}"><div id="mapPickerToko" data-lat="{{ old('latitude_toko', $mapLat) }}" data-lng="{{ old('longitude_toko', $mapLng) }}"></div><div class="row g-2 mt-3"><div class="col-6"><div class="summary-row"><span>Latitude</span><strong id="latitudeTokoPreview">{{ old('latitude_toko', $mapLat) }}</strong></div></div><div class="col-6"><div class="summary-row"><span>Longitude</span><strong id="longitudeTokoPreview">{{ old('longitude_toko', $mapLng) }}</strong></div></div></div></div></div>
                 </div>
             </div>
             <div class="modal-footer bg-white p-4"><button class="btn btn-light border fw-bold rounded-4" type="button" data-bs-dismiss="modal">Batal</button><button class="btn btn-brand px-4" type="submit">Simpan pengaturan</button></div>
@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function () {
             btnUseMyLocation.disabled = false;
             btnUseMyLocation.innerHTML = '<i class="bi bi-crosshair me-1"></i> Lokasi saya';
         }, function () {
-            window.showSitahuToast?.('Gagal mengambil lokasi. Pastikan izin lokasi aktif.', 'error');
+            window.showSitahuToast?.('Gagal mengambil lokasi.', 'error');
             btnUseMyLocation.disabled = false;
             btnUseMyLocation.innerHTML = '<i class="bi bi-crosshair me-1"></i> Lokasi saya';
         }, {enableHighAccuracy:true, timeout:10000});

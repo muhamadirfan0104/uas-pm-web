@@ -227,10 +227,22 @@
     $jarakKirim = $deliveryQuote['jarak'] ?? null;
     $initialShipping = old('metode_pengambilan') === 'kurir_toko' ? $biayaKirim : 0;
     $alamatToko = $pengaturan->alamat ?: 'Alamat toko belum diatur.';
-    $bankNama = trim((string) ($pengaturan->bank_nama ?? '')) ?: 'Bank belum diatur';
-    $bankNomor = trim((string) ($pengaturan->bank_nomor_rekening ?? '')) ?: 'Nomor rekening belum diatur';
-    $bankAtasNama = trim((string) ($pengaturan->bank_atas_nama ?? '')) ?: ($pengaturan->nama ?: 'SiTahu');
-    $catatanPembayaran = trim((string) ($pengaturan->info_pembayaran ?? '')) ?: 'Transfer dapat dilakukan setelah pesanan dibuat. Nomor rekening dan form upload bukti akan muncul pada pop up konfirmasi pembayaran.';
+    $storeMapsUrl = ($pengaturan->latitude_toko && $pengaturan->longitude_toko)
+        ? 'https://www.google.com/maps?q=' . $pengaturan->latitude_toko . ',' . $pengaturan->longitude_toko
+        : null;
+    $rekeningList = \App\Models\RekeningToko::daftarAktif();
+    if ($rekeningList->isEmpty()) {
+        $rekeningList = collect([(object) [
+            'nama_bank' => trim((string) ($pengaturan->bank_nama ?? '')) ?: 'Bank belum diatur',
+            'nomor_rekening' => trim((string) ($pengaturan->bank_nomor_rekening ?? '')) ?: 'Nomor rekening belum diatur',
+            'atas_nama' => trim((string) ($pengaturan->bank_atas_nama ?? '')) ?: ($pengaturan->nama ?: 'SiTahu'),
+        ]]);
+    }
+    $rekeningUtama = $rekeningList->first();
+    $bankNama = $rekeningUtama->nama_bank;
+    $bankNomor = $rekeningUtama->nomor_rekening;
+    $bankAtasNama = $rekeningUtama->atas_nama;
+    $catatanPembayaran = trim((string) ($pengaturan->info_pembayaran ?? '')) ?: 'Transfer dilakukan setelah pesanan dibuat.';
     $selectedAlamatId = (int) old('alamat_id', $alamatUtama?->id);
     $selectedAlamat = $alamatPembeli->firstWhere('id', $selectedAlamatId) ?? $alamatUtama;
 @endphp
@@ -239,8 +251,7 @@
      data-store-lat="{{ $pengaturan->latitude_toko }}"
      data-store-lng="{{ $pengaturan->longitude_toko }}"
      data-rate-per-km="{{ (float) ($pengaturan->tarif_per_km ?? 0) }}"
-     data-min-shipping="{{ (float) ($pengaturan->biaya_minimum_pengiriman ?? 0) }}"
-     data-max-radius="{{ (float) ($pengaturan->radius_maksimal_km ?? 0) }}">
+     data-min-shipping="{{ (float) ($pengaturan->biaya_minimum_pengiriman ?? 0) }}">
     <div class="breadcrumb-modern">
         <a href="{{ route('pembeli-web.keranjang.index') }}">Keranjang</a>
         <i class="bi bi-chevron-right small"></i>
@@ -252,7 +263,7 @@
             <div>
                 <span class="eyebrow mb-3"><i class="bi bi-bag-check-fill"></i> Checkout pesanan</span>
                 <h1 class="checkout-title">Selesaikan pesanan Anda.</h1>
-                <p class="checkout-lead">Pastikan alamat penerima, produk, pilihan pengambilan, dan metode pembayaran sudah sesuai sebelum pesanan dibuat.</p>
+                <p class="checkout-lead"></p>
             </div>
             <div class="checkout-steps">
                 <span class="step-pill"><span>1</span> Produk</span>
@@ -272,7 +283,7 @@
                             <div class="checkout-icon"><i class="bi bi-geo-alt"></i></div>
                             <div>
                                 <h2>Alamat penerima</h2>
-                                <p>Pilih nama, nomor HP, email, dan alamat yang akan dipakai untuk pesanan ini.</p>
+                                <p></p>
                             </div>
                         </div>
                         <a href="{{ route('pembeli-web.alamat.create', ['redirect' => 'checkout']) }}" class="btn btn-soft-brand btn-sm px-3"><i class="bi bi-plus-circle me-1"></i> Tambah</a>
@@ -367,7 +378,7 @@
                             <div class="checkout-icon"><i class="bi bi-truck"></i></div>
                             <div>
                                 <h2>Pengambilan pesanan</h2>
-                                <p>Pilih ambil di toko atau gunakan kurir toko sesuai kebutuhan.</p>
+                                <p></p>
                             </div>
                         </div>
                     </div>
@@ -394,9 +405,8 @@
                                 <i class="bi bi-calculator text-brand mt-1"></i>
                                 <div class="small fw-semibold text-muted">
                                     Ongkir dihitung otomatis dari titik toko ke titik alamat penerima. Estimasi jarak:
-                                    <strong class="text-dark js-distance-text">{{ $jarakKirim ? number_format((float) $jarakKirim, 2, ',', '.') . ' km' : 'pilih alamat bertitik maps' }}</strong>.
-                                    Tarif: <strong class="text-dark">{{ $rupiah($pengaturan->tarif_per_km ?? 0) }}/km</strong>, minimum <strong class="text-dark">{{ $rupiah($pengaturan->biaya_minimum_pengiriman ?? 0) }}</strong>.
-                                    <span class="d-block mt-1 js-radius-warning text-danger fw-bold" style="display:none !important;">Alamat ini berada di luar radius layanan toko.</span>
+                                    <strong class="text-dark js-distance-text">{{ $jarakKirim ? number_format((float) $jarakKirim, 2, ',', '.') . ' km' : 'belum tersedia' }}</strong>.
+                                    Tarif: <strong class="text-dark">{{ $rupiah($pengaturan->tarif_per_km ?? 0) }}/km</strong>, minimum <strong class="text-dark">{{ $rupiah($pengaturan->biaya_minimum_pengiriman ?? 0) }}</strong>. Tidak ada batas radius checkout.
                                 </div>
                             </div>
                         </div>
@@ -407,6 +417,11 @@
                                 <div>
                                     <div class="fw-black mb-1">Alamat toko</div>
                                     <div class="text-muted fw-semibold small lh-lg">{{ $alamatToko }}</div>
+                                    @if($storeMapsUrl)
+                                        <a href="{{ $storeMapsUrl }}" target="_blank" rel="noopener" class="btn btn-soft-brand btn-sm px-3 mt-2">
+                                            <i class="bi bi-map me-1"></i>Buka Google Maps
+                                        </a>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -419,7 +434,7 @@
                             <div class="checkout-icon"><i class="bi bi-wallet2"></i></div>
                             <div>
                                 <h2>Pembayaran</h2>
-                                <p>Pilih metode pembayaran yang tersedia untuk pesanan ini.</p>
+                                <p></p>
                             </div>
                         </div>
                     </div>
@@ -461,7 +476,7 @@
 
                         <div class="checkout-note mb-3">
                             <label class="form-label-mini">Catatan untuk toko</label>
-                            <textarea name="catatan" rows="3" class="form-control checkout-field" placeholder="Contoh: ambil sore hari, jangan terlalu banyak air, atau catatan lain untuk toko.">{{ old('catatan') }}</textarea>
+                            <textarea name="catatan" rows="3" class="form-control checkout-field" placeholder="Catatan pesanan">{{ old('catatan') }}</textarea>
                         </div>
 
                         <label class="checkout-agreement" for="setuju">
@@ -589,7 +604,6 @@
         const distanceText = document.querySelector('.js-distance-text');
         const summaryDistance = document.querySelector('.js-summary-distance');
         const deliveryFeeLabel = document.querySelector('.js-delivery-fee-label');
-        const radiusWarning = document.querySelector('.js-radius-warning');
         const totalText = document.querySelector('.js-total-text');
         const totalTextMobile = document.querySelector('.js-total-text-mobile');
         const rupiah = value => 'Rp ' + Number(value || 0).toLocaleString('id-ID');
@@ -668,13 +682,12 @@
             const storeLng = Number(page?.dataset.storeLng || 0);
             const rate = Number(page?.dataset.ratePerKm || 0);
             const minFee = Number(page?.dataset.minShipping || 0);
-            const maxRadius = Number(page?.dataset.maxRadius || 0);
             if (!storeLat || !storeLng || !selectedAddressLat || !selectedAddressLng) {
                 return { fee: minFee, distance: null };
             }
             const distance = haversineKm(storeLat, storeLng, selectedAddressLat, selectedAddressLng);
             const fee = Math.max(minFee, Math.ceil((distance * rate) / 100) * 100);
-            return { fee, distance, outsideRadius: maxRadius > 0 && distance > maxRadius };
+            return { fee, distance };
         }
 
         function updateShipping() {
@@ -689,9 +702,8 @@
             if (deliveryNote) deliveryNote.classList.toggle('d-none', !isDelivery);
             if (deliveryFeeLabel) deliveryFeeLabel.textContent = rupiah(shipping);
             if (shippingText) shippingText.textContent = rupiah(shipping);
-            if (distanceText) distanceText.textContent = distance ? distance.toFixed(2).replace('.', ',') + ' km' : 'pilih alamat bertitik maps';
+            if (distanceText) distanceText.textContent = distance ? distance.toFixed(2).replace('.', ',') + ' km' : 'belum tersedia';
             if (summaryDistance) summaryDistance.textContent = isDelivery && distance ? distance.toFixed(2).replace('.', ',') + ' km' : '-';
-            if (radiusWarning) radiusWarning.style.setProperty('display', isDelivery && quote.outsideRadius ? 'block' : 'none', 'important');
             if (totalText) {
                 totalText.dataset.shipping = shipping;
                 totalText.textContent = rupiah(subtotal + shipping);

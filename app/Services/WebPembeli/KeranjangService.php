@@ -22,6 +22,18 @@ class KeranjangService
         return $this->dataSession();
     }
 
+
+    public function ringkasan(int $limit = 5): array
+    {
+        $data = $this->data();
+
+        return [
+            'items' => collect($data['items'] ?? [])->take($limit)->values(),
+            'totalItem' => (int) ($data['totalItem'] ?? 0),
+            'totalBelanja' => (float) ($data['totalBelanja'] ?? 0),
+        ];
+    }
+
     public function totalItem(): int
     {
         return (int) $this->data()['totalItem'];

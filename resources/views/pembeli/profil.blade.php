@@ -268,7 +268,7 @@
                                     <div class="profile-card-line bg-light">
                                         <div class="d-flex gap-3">
                                             <i class="bi bi-info-circle text-brand"></i>
-                                            <div class="small text-muted fw-semibold">Data ini dipakai untuk login, invoice, dan konfirmasi pesanan. Nama penerima pengiriman tetap dapat berbeda melalui menu Alamat Saya.</div>
+                                            <div class="small text-muted fw-semibold"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -300,7 +300,7 @@
                                     <div class="profile-card-line bg-light">
                                         <div class="d-flex gap-3">
                                             <i class="bi bi-shield-lock text-brand"></i>
-                                            <div class="small text-muted fw-semibold">Gunakan password minimal 6 karakter. Setelah password diganti, akun tetap login di perangkat ini.</div>
+                                            <div class="small text-muted fw-semibold"></div>
                                         </div>
                                     </div>
                                 </div>

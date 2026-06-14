@@ -165,19 +165,6 @@ class UlasanController extends Controller
 
     public function destroy(Ulasan $ulasan): RedirectResponse
     {
-        if ($ulasan->foto_ulasan) {
-            Storage::disk('public')->delete($ulasan->foto_ulasan);
-        }
-
-        if ($ulasan->video_ulasan) {
-            Storage::disk('public')->delete($ulasan->video_ulasan);
-        }
-
-        $ulasan->load('media');
-        foreach ($ulasan->media as $media) {
-            Storage::disk('public')->delete($media->path);
-        }
-
         $ulasan->delete();
 
         return back()->with('success', 'Ulasan berhasil dihapus.');

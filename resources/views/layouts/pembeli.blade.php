@@ -2,7 +2,7 @@
     use Illuminate\Support\Str;
 
     $pengaturanLayout = \App\Models\PengaturanToko::utama();
-    $keranjangDataLayout = app(\App\Services\WebPembeli\KeranjangService::class)->data();
+    $keranjangDataLayout = app(\App\Services\WebPembeli\KeranjangService::class)->ringkasan(5);
     $keranjangTotalLayout = $keranjangDataLayout['totalItem'] ?? 0;
     $keranjangTotalBelanjaLayout = $keranjangDataLayout['totalBelanja'] ?? 0;
     $keranjangPreviewLayout = collect($keranjangDataLayout['items'] ?? [])->take(5);
@@ -783,7 +783,7 @@
             </div>
             <div class="border-top mt-5 pt-4 d-flex flex-column flex-md-row justify-content-between gap-2 text-muted small fw-semibold">
                 <span>&copy; {{ date('Y') }} {{ $namaTokoLayout }}. Semua hak cipta dilindungi.</span>
-                <span>Dibuat untuk pengalaman belanja yang cepat, jelas, dan terpercaya.</span>
+                <span>Belanja produk tahu segar dengan mudah.</span>
             </div>
         </div>
     </footer>
@@ -799,11 +799,11 @@
                                 <div class="position-relative" style="z-index:1;">
                                     <span class="badge rounded-pill mb-3" style="background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.18);">Akun pembeli</span>
                                     <h2 class="section-heading text-white h1 mb-3" id="loginModalLabel">Masuk untuk lanjut belanja.</h2>
-                                    <p class="mb-0" style="color:rgba(255,255,255,.78); line-height:1.75;">Keranjang yang sudah Anda isi sebelum login akan otomatis masuk ke akun setelah berhasil masuk.</p>
+                                    <p class="mb-0" style="color:rgba(255,255,255,.78); line-height:1.75;">Masuk untuk melanjutkan pesanan.</p>
                                 </div>
                                 <div>
-                                    <div class="auth-modal-benefit"><i class="bi bi-bag-check"></i><div><div class="fw-bold">Keranjang aman</div><small style="color:rgba(255,255,255,.72);">Produk pilihan tetap tersimpan.</small></div></div>
-                                    <div class="auth-modal-benefit"><i class="bi bi-receipt"></i><div><div class="fw-bold">Pantau pesanan</div><small style="color:rgba(255,255,255,.72);">Lihat status pembayaran dan pengiriman.</small></div></div>
+                                    <div class="auth-modal-benefit"><i class="bi bi-bag-check"></i><div><div class="fw-bold">Keranjang</div></div></div>
+                                    <div class="auth-modal-benefit"><i class="bi bi-receipt"></i><div><div class="fw-bold">Pesanan</div></div></div>
                                 </div>
                             </div>
                         </div>
@@ -854,11 +854,11 @@
                                 <div class="position-relative" style="z-index:1;">
                                     <span class="badge rounded-pill mb-3" style="background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.18);">Daftar pembeli</span>
                                     <h2 class="section-heading text-white h1 mb-3" id="registerModalLabel">Buat akun belanja.</h2>
-                                    <p class="mb-0" style="color:rgba(255,255,255,.78); line-height:1.75;">Setelah daftar, Anda langsung masuk dan bisa lanjut checkout dari keranjang.</p>
+                                    
                                 </div>
                                 <div>
-                                    <div class="auth-modal-benefit"><i class="bi bi-person-check"></i><div><div class="fw-bold">Checkout cepat</div><small style="color:rgba(255,255,255,.72);">Data kontak tersimpan untuk pesanan berikutnya.</small></div></div>
-                                    <div class="auth-modal-benefit"><i class="bi bi-star"></i><div><div class="fw-bold">Beri ulasan</div><small style="color:rgba(255,255,255,.72);">Bagikan foto/video setelah pesanan selesai.</small></div></div>
+                                    <div class="auth-modal-benefit"><i class="bi bi-person-check"></i><div><div class="fw-bold">Checkout</div></div></div>
+                                    <div class="auth-modal-benefit"><i class="bi bi-star"></i><div><div class="fw-bold">Ulasan</div></div></div>
                                 </div>
                             </div>
                         </div>
@@ -978,6 +978,24 @@
         </div>
     </div>
 
+<div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-body p-4 text-center">
+                <div class="mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center text-warning-emphasis bg-warning-subtle" style="width:64px;height:64px;">
+                    <i class="bi bi-exclamation-triangle fs-3"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2" id="globalConfirmTitle">Konfirmasi Tindakan</h5>
+                <p class="text-muted small mb-0" id="globalConfirmMessage">Lanjutkan tindakan ini?</p>
+            </div>
+            <div class="modal-footer border-0 bg-light p-3 justify-content-center gap-2">
+                <button type="button" class="btn btn-light border fw-bold px-4" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-brand fw-bold px-4" id="globalConfirmButton">Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -1000,6 +1018,53 @@
                 toastText.textContent = message || 'Informasi berhasil diperbarui.';
                 toast.show();
             };
+
+
+            let pendingConfirmForm = null;
+            const globalConfirmModalEl = document.getElementById('globalConfirmModal');
+            const globalConfirmTitle = document.getElementById('globalConfirmTitle');
+            const globalConfirmMessage = document.getElementById('globalConfirmMessage');
+            const globalConfirmButton = document.getElementById('globalConfirmButton');
+            const globalConfirmModal = globalConfirmModalEl ? new bootstrap.Modal(globalConfirmModalEl) : null;
+
+            document.querySelectorAll('form[data-confirm-title], form[data-confirm-message]').forEach((form) => {
+                form.addEventListener('submit', (event) => {
+                    if (form.dataset.confirmed === '1') {
+                        form.dataset.confirmed = '0';
+                        return;
+                    }
+
+                    event.preventDefault();
+                    pendingConfirmForm = form;
+
+                    if (globalConfirmTitle) {
+                        globalConfirmTitle.textContent = form.dataset.confirmTitle || 'Konfirmasi Tindakan';
+                    }
+
+                    if (globalConfirmMessage) {
+                        globalConfirmMessage.textContent = form.dataset.confirmMessage || 'Lanjutkan tindakan ini?';
+                    }
+
+                    if (globalConfirmButton) {
+                        globalConfirmButton.textContent = form.dataset.confirmButton || 'Lanjutkan';
+                    }
+
+                    globalConfirmModal?.show();
+                });
+            });
+
+            globalConfirmButton?.addEventListener('click', () => {
+                if (!pendingConfirmForm) return;
+
+                pendingConfirmForm.dataset.confirmed = '1';
+                globalConfirmModal?.hide();
+
+                if (typeof pendingConfirmForm.requestSubmit === 'function') {
+                    pendingConfirmForm.requestSubmit();
+                } else {
+                    pendingConfirmForm.submit();
+                }
+            });
 
             const authModalToOpen = @json($authModalLayout);
             if (authModalToOpen) {

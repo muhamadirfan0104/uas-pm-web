@@ -121,7 +121,6 @@ class DashboardController extends Controller
                 ->where('status', 'ditolak')
                 ->count(),
 
-            'dibayar' => (int) ($statusPesanan['dibayar'] ?? 0),
             'diproses' => (int) ($statusPesanan['diproses'] ?? 0),
             'siap_diambil' => (int) ($statusPesanan['siap_diambil'] ?? 0),
             'dalam_pengantaran' => (int) ($statusPesanan['dalam_pengantaran'] ?? 0),
@@ -226,7 +225,6 @@ class DashboardController extends Controller
 
         $statusOperasional = collect([
             ['key' => 'menunggu_pembayaran', 'label' => 'Belum Bayar', 'value' => (int) ($stats['menunggu_pembayaran'] ?? 0), 'icon' => 'bi-hourglass-split'],
-            ['key' => 'dibayar', 'label' => 'Sudah Dibayar', 'value' => (int) ($stats['dibayar'] ?? 0), 'icon' => 'bi-wallet2'],
             ['key' => 'diproses', 'label' => 'Diproses', 'value' => (int) ($stats['diproses'] ?? 0), 'icon' => 'bi-gear'],
             ['key' => 'siap_diambil', 'label' => 'Siap Diambil', 'value' => (int) ($stats['siap_diambil'] ?? 0), 'icon' => 'bi-bag-check'],
             ['key' => 'dalam_pengantaran', 'label' => 'Dikirim', 'value' => (int) ($stats['dalam_pengantaran'] ?? 0), 'icon' => 'bi-truck'],
@@ -258,8 +256,8 @@ class DashboardController extends Controller
             ],
             [
                 'label' => 'Pesanan siap diproses',
-                'desc' => 'Pesanan dibayar yang perlu segera dikerjakan toko.',
-                'value' => (int) ($stats['dibayar'] ?? 0),
+                'desc' => 'Pesanan transfer sudah diterima atau COD yang otomatis masuk proses.',
+                'value' => (int) ($stats['diproses'] ?? 0),
                 'route' => route('admin.pesanan.index'),
                 'icon' => 'bi-box-seam',
                 'tone' => 'primary',

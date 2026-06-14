@@ -7,11 +7,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE pembayaran MODIFY metode_pembayaran ENUM('qris', 'tunai') NOT NULL DEFAULT 'qris'");
+        DB::statement("ALTER TABLE pembayaran MODIFY metode_pembayaran ENUM('transfer_bank','cod') NOT NULL DEFAULT 'transfer_bank'");
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE pembayaran MODIFY metode_pembayaran ENUM('qris', 'va', 'ewallet') NOT NULL DEFAULT 'qris'");
+        DB::statement("ALTER TABLE pembayaran MODIFY metode_pembayaran ENUM('transfer_bank','cod') NOT NULL DEFAULT 'transfer_bank'");
     }
 };

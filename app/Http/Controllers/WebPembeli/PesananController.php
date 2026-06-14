@@ -23,7 +23,7 @@ class PesananController extends Controller
 
         $statusGroups = [
             'menunggu_pembayaran' => ['menunggu_pembayaran', 'menunggu_verifikasi'],
-            'diproses' => ['menunggu_konfirmasi', 'diproses', 'disiapkan'],
+            'diproses' => ['diproses', 'disiapkan'],
             'siap_diterima' => ['siap_diambil', 'dalam_pengantaran'],
             'selesai' => ['selesai'],
             'dibatalkan' => ['dibatalkan'],
@@ -82,11 +82,18 @@ class PesananController extends Controller
         return view('pembeli.detail-pesanan', compact('pesanan', 'pengaturan'));
     }
 
+    public function invoice(string $nomor_invoice): View
+    {
+        $pesanan = $this->ambilPesananLogin($nomor_invoice);
+
+        return view('pembeli.invoice', compact('pesanan'));
+    }
+
     public function cancel(string $nomor_invoice): RedirectResponse
     {
         $pesanan = $this->ambilPesananLogin($nomor_invoice);
 
-        if (! in_array($pesanan->status, ['menunggu_pembayaran', 'menunggu_verifikasi', 'menunggu_konfirmasi'], true)) {
+        if (! in_array($pesanan->status, ['menunggu_pembayaran', 'menunggu_verifikasi'], true)) {
             return back()->with('error', 'Pesanan tidak bisa dibatalkan karena sudah masuk proses toko.');
         }
 
@@ -148,7 +155,7 @@ class PesananController extends Controller
         $data = $request->validate([
             'bukti_transfer' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
         ], [
-            'bukti_transfer.required' => 'Pilih file bukti transfer terlebih dahulu.',
+            'bukti_transfer.required' => 'File bukti transfer wajib diunggah.',
             'bukti_transfer.mimes' => 'Bukti transfer harus berupa JPG, PNG, WEBP, atau PDF.',
             'bukti_transfer.max' => 'Ukuran bukti transfer maksimal 4 MB.',
         ]);

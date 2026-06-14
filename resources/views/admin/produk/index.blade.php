@@ -42,7 +42,7 @@
     <div>
         <span class="chip c-yellow mb-3"><i class="bi bi-basket2"></i> Manajemen katalog</span>
         <h1>Produk toko</h1>
-        <p>Kelola informasi produk yang dilihat pembeli: nama, foto, harga, satuan, deskripsi, dan status tampil.</p>
+        <p>Data produk.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap justify-content-lg-end">
         <button class="btn btn-brand px-3" type="button" data-bs-toggle="modal" data-bs-target="#modalProdukCreate">
@@ -196,7 +196,7 @@
                 <div class="modal-header border-0 px-4 pt-4">
                     <div>
                         <h5 class="modal-title fw-black">Tambah produk</h5>
-                        <p class="text-muted small mb-0">Lengkapi informasi yang akan dilihat pembeli di katalog.</p>
+                        <p class="text-muted small mb-0"></p>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>

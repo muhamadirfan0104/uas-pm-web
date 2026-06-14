@@ -16,7 +16,7 @@ return new class extends Migration
         }
 
         if (Schema::hasTable('pembayaran')) {
-            DB::statement("ALTER TABLE pembayaran MODIFY metode_pembayaran ENUM('qris','tunai','cod','transfer_bank') NOT NULL DEFAULT 'transfer_bank'");
+            DB::statement("ALTER TABLE pembayaran MODIFY metode_pembayaran ENUM('transfer_bank','cod') NOT NULL DEFAULT 'transfer_bank'");
             DB::statement("ALTER TABLE pembayaran MODIFY status ENUM('menunggu_pembayaran','dibayar','ditolak','gagal','kedaluwarsa','dibatalkan') NOT NULL DEFAULT 'menunggu_pembayaran'");
 
             Schema::table('pembayaran', function (Blueprint $table) {
@@ -52,7 +52,7 @@ return new class extends Migration
                 }
             });
 
-            DB::statement("ALTER TABLE pembayaran MODIFY metode_pembayaran ENUM('qris','tunai') NOT NULL DEFAULT 'qris'");
+            DB::statement("ALTER TABLE pembayaran MODIFY metode_pembayaran ENUM('transfer_bank','cod') NOT NULL DEFAULT 'transfer_bank'");
             DB::statement("ALTER TABLE pembayaran MODIFY status ENUM('menunggu_pembayaran','dibayar','gagal','kedaluwarsa','dibatalkan') NOT NULL DEFAULT 'menunggu_pembayaran'");
         }
 

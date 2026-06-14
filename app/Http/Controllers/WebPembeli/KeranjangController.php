@@ -103,7 +103,7 @@ class KeranjangController extends Controller
             ->values();
 
         if ($selectedProductIds->isEmpty()) {
-            return back()->with('error', 'Pilih minimal satu produk yang ingin di-checkout.');
+            return back()->with('error', 'Pilih minimal satu produk.');
         }
 
         session([$this->selectedSessionKey => $selectedProductIds->all()]);
@@ -112,7 +112,7 @@ class KeranjangController extends Controller
         if (! Auth::check() || Auth::user()?->role !== 'pembeli') {
             return back()
                 ->with('auth_modal', 'login')
-                ->with('success', 'Produk sudah dipilih. Masuk atau daftar dulu untuk melanjutkan checkout.');
+                ->with('success', 'Login diperlukan untuk melanjutkan checkout.');
         }
 
         return redirect()->route('pembeli-web.checkout.index');
